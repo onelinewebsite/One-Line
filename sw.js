@@ -1,12 +1,12 @@
-const CACHE='one-line-v34-mobile-otp-20260928';
+const CACHE='one-line-v33-ui-fixes-20260927';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./receiver.html','./b2b.html',
-  './css/styles-1.css','./css/styles-2.css','./css/styles-3.css','./css/v32.css','./css/v34.css','./css/admin.css',
+  './css/styles-1.css','./css/styles-2.css','./css/styles-3.css','./css/v32.css','./css/admin.css',
   './js/config.js','./js/data.js','./js/msg91-widget.js','./js/backend.js','./js/designer.js','./js/app.js','./js/admin.js',
   './one-line-logo.webp','./favicon.png','./icon-192.png','./icon-512.png','./manifest.webmanifest',
   './assets/product-placeholder.svg','./assets/category-placeholder.svg','./assets/crew-tee.webp','./assets/crew-tee-back.webp','./assets/polo-shirt.webp',
   './assets/polo-shirt-back.webp','./assets/sports-jersey.webp','./assets/sports-jersey-back.webp','./assets/sleeve-side-neutral.webp','./assets/contact-support.webp',
-  './assets/fast-uniform/shirt-preview.webp','./assets/fast-uniform/shirt-mask.png','./assets/team-tshirt-user.jpg','./assets/team-sportswear-user.jpg','./assets/team-polo-user.jpg'
+  './assets/fast-uniform/shirt-preview.webp','./assets/fast-uniform/shirt-mask.png'
 ];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)));});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)));await self.clients.claim();})());});
