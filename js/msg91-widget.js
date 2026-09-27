@@ -48,7 +48,6 @@
       tokenAuth:C.MSG91_WIDGET_TOKEN,
       identifier:lastIdentifier||'',
       exposeMethods:true,
-      captchaRenderId:'one-line-msg91-captcha',
       success:()=>{},failure:()=>{}
     };
   }
@@ -89,8 +88,7 @@
     lastIdentifier=String(identifier||'').replace(/\D/g,'');requestId='';
     if(!/^91\d{10}$/.test(lastIdentifier))throw new Error('Enter a valid 10-digit Indian mobile number.');
     await load();
-    // Re-initialize before every fresh send. The custom auth modal is re-rendered between attempts,
-    // so this remounts MSG91 CAPTCHA (when enabled) into the current DOM container.
+    // Re-initialize before each fresh send so the exposed custom-UI methods use the current identifier.
     if(typeof window.initSendOTP==='function')window.initSendOTP(config());
     await waitForMethods();
     return await new Promise((resolve,reject)=>{

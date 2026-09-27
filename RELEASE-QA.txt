@@ -1,37 +1,45 @@
-OneLine v31 final QA — 2026-09-27
+OneLine v32 refined final QA — 2026-09-27
 
-PASS — JavaScript syntax: config/data/MSG91 wrapper/backend/designer/customer/admin
-PASS — Supabase Edge Function TypeScript syntax parse: shared/otp-session/customer-event/place-order/admin-user
-PASS — all local HTML/CSS/JS/image references found
-PASS — service-worker v31 cache contains the production runtime and designer assets
-PASS — no demo products, demo categories, or demo orders are seeded
-PASS — supplied Supabase project URL + publishable key are wired in js/config.js
+PASS — JavaScript syntax: config/data/MSG91 wrapper/backend/designer/customer/admin/service worker
+PASS — all local HTML/CSS/JS/image references used by HTML/CSS are present
+PASS — every service-worker CORE path exists
+PASS — service-worker cache bumped to one-line-v32-profile-ui-20260927
+PASS — all customer + portal HTML cache-busting query versions updated to v32
+PASS — supplied Supabase URL + publishable key are wired in js/config.js
 PASS — supplied MSG91 Widget ID + tokenAuth are wired in js/config.js
 PASS — account-level MSG91 AuthKey is NOT embedded in browser files
+PASS — OTP UI has no captcha container and uses minimal number -> OTP -> name sequence
+PASS — OTP send no longer creates a customer session before explicit OTP verification
+PASS — mobile number, OTP and name inputs are all required
+PASS — mobile change from Profile restarts OTP verification
 PASS — custom OTP UI uses MSG91 sendOtp / retryOtp / verifyOtp
 PASS — MSG91 access token is verified server-side before OneLine customer session creation
-PASS — OTP is requested only on cart/order actions, not on initial site open
-PASS — verified customer cart/checkout/order activity logging present
+PASS — OTP is not forced on initial site open
 PASS — full home customization card is clickable
-PASS — mobile customization/catalogue/category/team-order sizing overrides present
-PASS — category cards are equalized and categories with zero live products are hidden
-PASS — bottom Categories route opens the full live category screen
+PASS — Build Your Own section/logo sizing refined for desktop and mobile
+PASS — team teaser uses three online real-photo apparel references
+PASS — Open team order CTA is centered and responsive
+PASS — multiple-size banner has symmetric mobile padding/margins
+PASS — bottom center Create text removed; + icon only
+PASS — Profile replaces Cart in bottom navigation
+PASS — Profile contains Cart, Orders, Designer, Team order, legal/info and edit profile actions
+PASS — Cart title is only “Cart”; no quantity appears beside the title
+PASS — Cart restyled as a simple retail cart instead of accounting-style presentation
+PASS — mobile menu changed to a simple one-column dropdown
+PASS — About / Terms / Privacy / Shipping & Returns content updated
+PASS — category cards stay equalized; categories with zero live products are hidden
 PASS — Upload Your Design Jersey supports T-Shirt / Sportswear / Polo + unlimited roster rows
+PASS — every roster row requires name + number + size
 PASS — bulk per-size quantities + independent linked-subitem quantities present
 PASS — searchable code/barcode/name/category/subcategory support present
 PASS — product/subitem code generation and manual six-character validation enforced in database
 PASS — barcode overrides item code as requested
-PASS — admin section Edit -> Done controls present; Done explicitly blurs active input on mobile
 PASS — Admin/Management/Staff/Order Receiving role portals present
-PASS — admin account creation/suspension/update Edge Function present
-PASS — stock desk and server-side stock movement history present
 PASS — catalogue orders atomically re-check/decrement stock in Postgres
 PASS — order RPC is server-only; browser identity/pricing is not trusted
-PASS — no obsolete otp-request/otp-verify Edge Functions remain
-PASS — production schema no longer creates the obsolete OTP-request table
 
 GO-LIVE ACTIONS STILL REQUIRED ON THE CLIENT PROJECT
-1. Run supabase/schema.sql once on the supplied fresh Supabase project.
-2. Deploy the four included Edge Functions.
-3. Add the already-created MSG91 account AuthKey as the MSG91_AUTH_KEY Edge Function secret.
-4. Create the first Supabase Auth admin user + matching public.profiles row using supabase/SETUP.md.
+1. Run supabase/schema.sql once on the supplied Supabase project if it has not already been run.
+2. Deploy/update the four included Edge Functions.
+3. Add the private MSG91 account AuthKey as the MSG91_AUTH_KEY Edge Function secret.
+4. Create the first Supabase Auth admin user + matching public.profiles row if not already created.

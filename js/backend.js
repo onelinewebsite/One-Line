@@ -67,10 +67,10 @@
   }
   async function requestOtp(phone){
     if(!window.OneLineOTP)throw new Error('OTP service is not available.');
-    const mobile=cleanPhone(phone),result=await window.OneLineOTP.send(mobile);
-    // Invisible verification may return an access token immediately.
-    if(result?.accessToken)return createCustomerSession(mobile,result.accessToken,'');
-    return result;
+    const mobile=cleanPhone(phone);
+    // Keep the customer flow explicit: number -> OTP -> name. A verified
+    // customer session is created only after verifyOtp() succeeds.
+    return window.OneLineOTP.send(mobile);
   }
   async function retryOtp(){
     if(!window.OneLineOTP)throw new Error('OTP service is not available.');

@@ -1,4 +1,4 @@
-# OneLine v31 — Supabase + MSG91 go-live
+# OneLine v32 — Supabase + MSG91 go-live
 
 The frontend is already configured for the client Supabase project and MSG91 OTP Widget. No demo catalogue is shipped.
 
@@ -36,10 +36,10 @@ values ('PASTE_AUTH_USER_UUID','owner','OneLine Owner','admin',true);
 After this first admin logs in at `admin.html`, the Accounts section can create Admin, Management, Staff and Order Receiving logins.
 
 ## 5. Upload the site
-Upload the contents of this folder to the existing static host. The service worker uses cache `one-line-v31-live-supabase-msg91-widget-20260927`, so old v30 code is replaced automatically after activation.
+Upload the contents of this folder to the existing static host. The service worker uses cache `one-line-v32-profile-ui-20260927`, so old v30 code is replaced automatically after activation.
 
 ## Live OTP flow
-Customer opens the site without login → attempts to add a product/design to cart → mobile number → MSG91 Widget sends OTP → customer enters OTP → Widget returns a short-lived access token → `otp-session` verifies that token with MSG91 using the secret AuthKey → OneLine creates a 30-day customer session → asks for name → continues the original cart action.
+Customer opens the site without login → attempts to add a product/design to cart → mobile number → MSG91 Widget sends OTP → customer enters OTP → Widget returns a short-lived access token → `otp-session` verifies that token with MSG91 using the secret AuthKey → OneLine creates a 30-day customer session → required name step → continues the original cart action.
 
 ## Important checks
 - MSG91 Widget: India allowed, demo credentials blank, user-existence validation disabled, deprecated webhook skipped.

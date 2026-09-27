@@ -43,7 +43,7 @@
     chevron:'<path d="m6 9 6 6 6-6"/>', upload:'<path d="M12 16V4m0 0L7 9m5-5 5 5M5 20h14"/>', rotate:'<path d="M20 11a8 8 0 1 0-2 5M20 4v7h-7"/>',
     box:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 4v5"/>', external:'<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 13v7H4V6h7"/>',
     clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/>', eye:'<path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2"/>',
-    phone:'<path d="M7 3 4 5c0 8 7 15 15 15l2-3-5-3-2 2c-3-1-5-3-6-6l2-2-3-5Z"/>', edit:'<path d="m4 20 4-.8L19 8.2 15.8 5 4.8 16 4 20Z"/><path d="m13.8 7 3.2 3.2"/>',
+    phone:'<path d="M7 3 4 5c0 8 7 15 15 15l2-3-5-3-2 2c-3-1-5-3-6-6l2-2-3-5Z"/>', user:'<circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4.2 3.2-6.3 7.5-6.3s6.7 2.1 7.5 6.3"/>', edit:'<path d="m4 20 4-.8L19 8.2 15.8 5 4.8 16 4 20Z"/><path d="m13.8 7 3.2 3.2"/>',
     contact:'<circle cx="8.5" cy="7.5" r="3"/><path d="M3.5 18c.7-3 2.4-4.5 5-4.5s4.3 1.5 5 4.5"/><path d="M15 6h6v7h-3l-3 2V6Z"/><path d="M17.5 9.5h1"/>',
     share:'<circle cx="18" cy="5" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="19" r="2"/><path d="m8 11 8-5M8 13l8 5"/>',
     zoom:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M10.5 7.5v6M7.5 10.5h6"/>',
