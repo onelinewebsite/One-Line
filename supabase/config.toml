@@ -1,0 +1,8 @@
+[functions.otp-session]
+verify_jwt = false
+[functions.customer-event]
+verify_jwt = false
+[functions.place-order]
+verify_jwt = false
+[functions.admin-user]
+verify_jwt = true
