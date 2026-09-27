@@ -47,3 +47,6 @@ Customer opens the site without login → attempts to add a product/design to ca
 - Product/category images are uploaded to the public `product-images` bucket by Admin/Management only.
 - Catalogue orders are stock-checked and deducted atomically on the server.
 - Custom/team artwork is uploaded by the server when the order is placed.
+
+## MSG91 OTP widget settings
+For this custom OTP UI, keep **Captcha disabled** in the MSG91 OTP Widget settings. The website initializes the MSG91 SDK once, sends only one request per submit, reuses the returned request ID for resend/verify, and performs server-side access-token verification through the Supabase Edge Function.

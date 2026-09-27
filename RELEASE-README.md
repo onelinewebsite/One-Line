@@ -60,3 +60,6 @@ No fake online-payment success is included. Current checkout uses the configured
 
 
 Updated to v33: header cart icon, default profile icon, old-model customizer card, team-order content fixes, legal modal back-close behavior, and hardened OTP widget init.
+
+
+v34: mobile drawer matching supplied reference, supplied team images, customizer mobile sizing, custom size quantities, cart SVG everywhere, OTP adapter simplified to one SDK init / one request, guest profile copy simplified, and catalog view-all button removed.
