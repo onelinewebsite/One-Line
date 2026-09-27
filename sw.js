@@ -1,4 +1,4 @@
-const CACHE='one-line-v32-profile-ui-20260927';
+const CACHE='one-line-v33-ui-fixes-20260927';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./receiver.html','./b2b.html',
   './css/styles-1.css','./css/styles-2.css','./css/styles-3.css','./css/v32.css','./css/admin.css',

@@ -4,9 +4,9 @@
   const S=window.OneLineStore;
   let client=null,readyPromise=null;
   try{
-    if(localStorage.getItem('one-line-production-reset-v31')!=='1'){
+    if(localStorage.getItem('one-line-production-reset-v33')!=='1'){
       ['custom-store-products-v3','custom-store-categories-v3','custom-store-orders-v3','custom-store-cart-v3','one-line-v21-products-migrated','one-line-v24-uniforms-migrated','one-line-v21-categories-migrated'].forEach(k=>localStorage.removeItem(k));
-      localStorage.setItem('one-line-production-reset-v31','1');
+      localStorage.setItem('one-line-production-reset-v33','1');
     }
   }catch(_){}
   function local(key,value){const writing=arguments.length===2;try{if(writing){localStorage.setItem(key,JSON.stringify(value));window.dispatchEvent(new CustomEvent('one-line-change',{detail:{key}}));return value;}return JSON.parse(localStorage.getItem(key)||'null');}catch(_){return writing?value:null;}}

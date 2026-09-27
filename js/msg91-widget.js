@@ -98,16 +98,21 @@
   }
   async function retry(){
     await load();
+    if(typeof window.initSendOTP==='function')window.initSendOTP(config());
+    await waitForMethods();
     return await new Promise((resolve,reject)=>{
       try{window.retryOtp(null,data=>{requestId=requestIdFrom(data)||requestId;resolve({data,requestId});},err=>reject(normalizeError(err)),requestId||undefined);}
       catch(e){reject(normalizeError(e));}
     });
   }
   async function verify(otp){
-    await load();const code=String(otp||'').replace(/\D/g,'');if(code.length<4)throw new Error('Enter the OTP you received.');
+    await load();
+    if(typeof window.initSendOTP==='function')window.initSendOTP(config());
+    await waitForMethods();
+    const code=String(otp||'').replace(/\D/g,'');if(code.length<4)throw new Error('Enter the OTP you received.');
     return await new Promise((resolve,reject)=>{
       try{window.verifyOtp(code,data=>{const accessToken=accessTokenFrom(data);if(!accessToken){reject(new Error('OTP was accepted but the verification token was missing. Please retry.'));return;}resolve({data,accessToken,identifier:deepFind(data,['identifier','mobile','phone'])||lastIdentifier,requestId});},err=>reject(normalizeError(err)),requestId||undefined);}
-      catch(e){reject(normalizeError(e));}
+      catch(e){const msg=normalizeError(e).message||'';reject(/reading '\w+'/.test(msg)?new Error('OTP service is not ready yet. Please tap resend and try again.') : normalizeError(e));}
     });
   }
   function reset(){requestId='';lastIdentifier='';}

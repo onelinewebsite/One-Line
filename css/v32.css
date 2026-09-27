@@ -193,3 +193,73 @@
 .team-open-button{position:relative!important;justify-content:center!important;text-align:center!important;padding-left:42px!important;padding-right:42px!important}
 .team-open-button>span{width:100%!important;text-align:center!important}
 .team-open-button>.icon{position:absolute!important;right:15px!important;top:50%!important;transform:translateY(-50%)!important}
+
+
+/* v33 fixes */
+.cart-head-link,.profile-head-link{width:42px;height:42px;border:1px solid #ded5e0;border-radius:12px;background:#fff;display:grid;place-items:center;cursor:pointer;color:#4f4053;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.cart-head-link:hover,.profile-head-link:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(50,25,54,.08);border-color:#cfbfd2}
+.cart-head-link .icon,.profile-head-link .icon{width:19px;height:19px}
+.header-actions{display:flex;align-items:center;gap:10px}
+
+.old-model-hero .hero-visual{background:linear-gradient(180deg,#efe5f1 0%,#eadced 100%)!important;border:0!important;border-radius:30px!important;overflow:hidden!important}
+.old-model-card{box-shadow:none!important;border:0!important}
+.old-model-card:before{display:none!important}
+.old-model-card .hero-grid-label{top:18px!important;left:18px!important;border-radius:18px!important;background:#4b235c!important;color:#fff!important;padding:0 18px!important;height:48px!important;display:flex;align-items:center;letter-spacing:.12em!important;font-size:11px!important;box-shadow:0 10px 24px rgba(53,20,62,.18)!important}
+.hero-card-stage{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:76px 38px 88px}
+.hero-card-panel{position:absolute;inset:84px 68px 106px;border-radius:42px;background:rgba(255,255,255,.54);box-shadow:inset 0 0 0 2px rgba(255,255,255,.38),0 18px 40px rgba(89,54,99,.08)}
+.old-product-orbit{position:relative!important;width:min(620px,92%)!important;height:100%!important;display:grid!important;place-items:center!important}
+.old-product-orbit>img{position:relative!important;z-index:3!important;width:min(76%,430px)!important;height:auto!important;max-height:74%!important;filter:drop-shadow(0 22px 28px rgba(61,31,68,.16))!important;animation:heroFloat 4.5s ease-in-out infinite!important}
+@keyframes heroFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.old-model-card .orbit-ring{position:absolute!important;left:50%!important;top:60%!important;transform:translate(-50%,-50%)!important;width:74%!important;height:26%!important;border:2px solid rgba(125,60,148,.24)!important;border-radius:50%!important;opacity:1!important;z-index:1!important}
+.text-brand-badge{right:8%!important;bottom:18%!important;min-width:240px!important;padding:14px 18px 14px 14px!important;border-radius:18px!important;display:flex!important;align-items:center!important;gap:14px!important;z-index:4!important}
+.text-brand-badge img{display:none!important}
+.badge-mark{width:54px;height:54px;border-radius:50%;border:4px solid #7a1c8d;background:#fff;display:grid;place-items:center;color:#7a1c8d;line-height:1;box-shadow:0 8px 20px rgba(52,22,59,.12)}
+.badge-mark b{font-size:28px;display:block;font-weight:900}
+.badge-mark small{font-size:8px;font-weight:700;color:#5f5363;margin-top:-2px}
+.text-brand-badge strong{font-size:13px!important;letter-spacing:.14em!important}
+.text-brand-badge small{display:none!important}
+.old-model-card .floating-tool{z-index:5!important;min-width:142px!important;height:48px!important;border-radius:16px!important;padding:0 14px!important;font-size:13px!important}
+.old-model-card .floating-tool .icon{width:18px!important;height:18px!important}
+.old-model-card .tool-a{left:28px!important;top:190px!important}
+.old-model-card .tool-b{right:24px!important;top:334px!important}
+.old-model-card .tool-c{left:64px!important;bottom:122px!important}
+.old-model-card .visual-cta{left:50%!important;transform:translateX(-50%)!important;right:auto!important;bottom:20px!important;width:min(480px,calc(100% - 40px))!important;height:56px!important;border-radius:18px!important;background:linear-gradient(180deg,#9211a8,#6a0c7f)!important;box-shadow:0 18px 38px rgba(91,12,109,.22)!important;justify-content:space-between!important;padding:0 26px!important;z-index:5!important}
+.old-model-card .visual-cta span{letter-spacing:.12em!important}
+
+.team-open-button{min-height:54px!important;border-radius:16px!important;font-size:13px!important;background:linear-gradient(180deg,#6f1384,#4c1157)!important;box-shadow:0 16px 34px rgba(71,19,83,.16)!important}
+.team-section-heading h2{max-width:480px}
+.real-team-preview button>span{aspect-ratio:5/4!important}
+
+.site-header nav.open{display:grid!important;gap:0!important;grid-template-columns:1fr!important;top:70px!important;left:14px!important;right:14px!important;padding:10px!important;border:1px solid #eadfee!important;border-radius:18px!important;background:#fff!important;box-shadow:0 22px 42px rgba(49,25,54,.16)!important;overflow:hidden!important}
+.site-header nav.open button{min-height:46px!important;padding:0 14px!important;border:0!important;border-bottom:1px solid #f2edf3!important;background:transparent!important;text-align:left!important;font-size:13px!important;font-weight:680!important;color:#3f3543!important;display:flex!important;align-items:center!important}
+.site-header nav.open button:last-child{border-bottom:0!important}
+
+.profile-avatar.profile-avatar-icon{background:linear-gradient(145deg,#efe7f1,#f6f2f7)!important;color:#64116f!important;border:1px solid #e3d8e6}
+.profile-avatar.profile-avatar-icon .icon{width:34px;height:34px}
+.guest-profile .profile-avatar.profile-avatar-icon{background:#f4eef6!important}
+.legal-head-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.legal-back{border:0;background:transparent;padding:0;color:#60126d;display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;cursor:pointer}
+.legal-back .icon{width:16px;height:16px}
+
+@media(max-width:760px){
+  .header-actions{gap:8px}
+  .cart-head-link,.profile-head-link{width:38px;height:38px;border-radius:10px}
+  .old-model-hero .hero-copy{min-height:auto!important;padding:34px 4px 14px!important}
+  .old-model-card{height:465px!important;min-height:465px!important;border-radius:26px!important}
+  .hero-card-stage{padding:62px 18px 84px!important}
+  .hero-card-panel{inset:72px 26px 108px!important;border-radius:28px!important}
+  .old-product-orbit>img{width:min(76vw,296px)!important;max-height:65%!important}
+  .old-model-card .orbit-ring{width:74%!important;height:22%!important;top:58%!important}
+  .old-model-card .tool-a{left:10px!important;top:145px!important}
+  .old-model-card .tool-b{right:10px!important;top:248px!important}
+  .old-model-card .tool-c{left:14px!important;bottom:118px!important}
+  .old-model-card .floating-tool{min-width:110px!important;height:38px!important;padding:0 10px!important;font-size:10px!important;border-radius:12px!important}
+  .old-model-card .floating-tool .icon{width:14px!important;height:14px!important}
+  .text-brand-badge{right:14px!important;bottom:88px!important;min-width:0!important;padding:8px 10px!important;gap:10px!important;border-radius:14px!important;max-width:220px!important}
+  .badge-mark{width:42px!important;height:42px!important;border-width:3px!important}
+  .badge-mark b{font-size:22px!important}
+  .badge-mark small{font-size:7px!important}
+  .text-brand-badge strong{font-size:10px!important}
+  .old-model-card .visual-cta{left:14px!important;right:14px!important;transform:none!important;width:auto!important;height:48px!important;padding:0 18px!important;border-radius:14px!important}
+  .site-header nav.open{top:64px!important;left:12px!important;right:12px!important}
+}

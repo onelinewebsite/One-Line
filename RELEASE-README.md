@@ -57,3 +57,6 @@ If a barcode is supplied, that barcode becomes the item code. Without a barcode,
 
 ## Payments
 No fake online-payment success is included. Current checkout uses the configured offline options. A payment gateway can be added later without changing the catalogue/order architecture.
+
+
+Updated to v33: header cart icon, default profile icon, old-model customizer card, team-order content fixes, legal modal back-close behavior, and hardened OTP widget init.
