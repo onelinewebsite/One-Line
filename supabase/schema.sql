@@ -696,12 +696,15 @@ create table if not exists public.custom_catalog_items (
   category_id uuid not null references public.custom_catalog_categories(id) on delete cascade,
   title text not null,
   description text not null default '',
+  rate numeric(12,2),
   images text[] not null default '{}',
   active boolean not null default true,
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.custom_catalog_items add column if not exists rate numeric(12,2);
 
 create index if not exists idx_custom_catalog_categories_sort on public.custom_catalog_categories(active,sort_order,name);
 create index if not exists idx_custom_catalog_items_category_sort on public.custom_catalog_items(category_id,active,sort_order,created_at);

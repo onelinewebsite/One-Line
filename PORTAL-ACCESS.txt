@@ -28,3 +28,10 @@ IMPORTANT
 These are default setup credentials. After confirming all portals work, change the passwords from Admin > Accounts.
 
 To create/reset these accounts, deploy the current admin-user Edge Function if needed, sign in to Admin, open Accounts, and click “Create / reset access”.
+
+
+V47 SIMPLE PORTALS
+Admin: Ready Made, Categories, Custom Catalogue, Enquiries, Subitems, Accounts, Settings
+Management: Ready Made, Custom Catalogue, Subitems, Settings
+Staff: Stock / Sold, Settings
+Order Receiving: Orders, Settings

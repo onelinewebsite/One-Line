@@ -4003,3 +4003,8 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
   .header-actions .install-button span{display:none!important}
   .header-actions .install-button{width:42px!important;padding:0!important;justify-content:center!important}
 }
+
+
+/* ===== v47 Custom Catalogue enquiry polish ===== */
+.custom-catalog-rate{display:block;margin:5px 0 2px;color:#681273;font-size:14px;font-weight:850}.custom-item-rate{width:max-content;margin:8px 0 14px;padding:8px 12px;border-radius:10px;background:#f7eef8;color:#64116f;font-size:20px;font-weight:900}.custom-catalog-enquiry-button.sent{background:#eef6e6!important;color:#315116!important;border:1px solid #cfe1bb!important}.auth-intro{margin:-2px 0 14px;color:#746d77;font-size:12px;line-height:1.5}.custom-enquiry-note b{font-size:14px}.custom-enquiry-note span{font-size:12px;line-height:1.5}
+@media(max-width:640px){.custom-item-rate{font-size:18px}.custom-catalog-enquiry-button{min-height:52px;font-size:14px}.simple-auth-card h2{font-size:22px}.simple-auth-card input{min-height:50px;font-size:15px}.simple-auth-card .primary{min-height:50px;font-size:14px}}

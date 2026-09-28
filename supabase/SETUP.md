@@ -6,7 +6,7 @@ This build keeps customer profile, cart and order history on Supabase. Device st
 If the v43/v44 build is already working, do **not** recreate the database.
 
 1. Supabase → SQL Editor → New query.
-2. Run the root file `RUN-NEXT-v46.sql` once.
+2. Run the root file `RUN-NEXT-v47.sql` once.
 3. No new Edge Function is required for v46. Keep the currently deployed `otp-session`, `customer-event`, `customer-account`, `place-order`, and `admin-user` functions.
 
 This v46 bundle is intended for the current v45 database. For a much older database, use the full `supabase/schema.sql` on a fresh project or reconcile the older migrations before applying v46. If it never received the v41 server-account sync, `supabase/migrations/v41_server_account_sync.sql` remains available as a reference migration.

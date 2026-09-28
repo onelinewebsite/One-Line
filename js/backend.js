@@ -101,7 +101,7 @@
     if(mapped.settings&&Object.keys(mapped.settings).length){const prev=S?.getSettings?.()||{};local('custom-store-settings-v3',{...prev,whatsapp:mapped.settings.whatsapp||prev.whatsapp||''});}
     if(mapped.prints?.length)local('custom-store-print-types-v3',mapped.prints.map(x=>({name:x.name,price:Number(x.price||0),note:x.note||'',lightOnly:!!x.light_only,active:x.active!==false})));
     if(mapped.delivery?.length)local('custom-store-delivery-v3',mapped.delivery.map(x=>({name:x.name,note:x.note||'',active:x.active!==false})));
-    // v46 keeps Customize Catalogue separate from Ready Made. Tables are optional until RUN-NEXT-v46.sql is applied.
+    // v47 keeps Custom Catalogue separate from Ready Made. Tables are optional until RUN-NEXT-v47.sql is applied.
     // Never let a missing new table break the existing storefront.
     let customCategories=[],customItems=[];
     try{

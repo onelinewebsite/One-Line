@@ -1,23 +1,31 @@
-# One-Line v46
+# One-Line v47
 
-This build keeps the v43 role cleanup, v44 responsive cart fixes and v45 shareable Customize Catalogue/enquiry flow, then upgrades Admin + Management product handling using the uploaded Wellone management workflow as the reference.
+This release simplifies the Admin and Management portals and keeps Ready Made and Custom Catalogue as separate workflows.
 
-## Deploy
+## Admin
+- Ready Made
+- Categories
+- Custom Catalogue
+- Enquiries
+- Subitems
+- Accounts
+- Settings
 
-1. Upload the full project.
-2. In Supabase SQL Editor run `RUN-NEXT-v46.sql` once.
-3. Wait for GitHub Pages/hosting deployment and refresh the site once. The v46 service worker removes older caches automatically.
+## Management
+- Ready Made
+- Custom Catalogue
+- Subitems
+- Settings
 
-No new Edge Function is required.
+Stock/Sold remains in Staff. Order handling remains in Order Receiving.
 
-## v46 portal split
+## Custom Catalogue
+- Separate categories and items
+- Multiple images + description
+- Optional rate (leave blank to hide it)
+- Shareable catalogue/category/item pages
+- Enquiry button: logged-in customer sends immediately; signed-out customer is asked to create/sign in to an account by phone OTP and name if needed
+- Admin Enquiries records the item and verified customer details
 
-- **Ready Made**: normal stock products only. They use the existing store Categories / Ready Made navigation and never appear as Customize Catalogue ideas.
-- **Customize Catalogue**: separate enquiry-only categories/items with multiple images and descriptions. They remain in the separate Customize Catalogue customer section and keep the v45 share/enquiry flow.
-- **Admin**: full access and destructive controls.
-- **Management**: can add/edit Ready Made products, Customize Catalogue categories/items and reusable Subitems. Product/category destructive deletes stay Admin-only.
-- **Staff**: stock/sold desk only, unchanged.
-
-## Wellone-style product/subitem upgrades
-
-Ready Made products and Subitems now support a faster option workflow: Simple / One Option / Colour + Option product modes, bulk quick-add option values, exact quantity and rate per option, exact barcodes, hide/show per option, and separate option images uploaded to Supabase Storage.
+## Update
+Upload the full v47 build, then run `RUN-NEXT-v47.sql` once in Supabase SQL Editor.

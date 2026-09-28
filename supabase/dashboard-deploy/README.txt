@@ -1,6 +1,6 @@
 Supabase Dashboard manual deploy copies for One-Line v46.
 
-For the current v45 live project, run RUN-NEXT-v46.sql from the project root once.
+For the current live project, run RUN-NEXT-v47.sql from the project root once.
 The v46 Ready Made / Customize Catalogue management update does not require redeploying OTP/customer functions.
 
 If you do need to redeploy customer functions from the Dashboard for another reason, use these matching files:
