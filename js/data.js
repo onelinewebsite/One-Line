@@ -102,8 +102,9 @@
   function designedSurfaces(design){return ["front","back","rightSleeve","leftSleeve"].filter(s=>{const d=surfaceDesign(design,s);return d.layers?.length||d.text||d.uploadedImage;});}
   function designPreview(design,surface,className){
     surface=surface||"front";const d=surfaceDesign(design,surface),sleeve=surface.includes("Sleeve");
-    const garment=sleeve?(design.sleeveImage||"assets/sleeve-side-neutral.webp"):surface==="back"?(design.garmentBackImage||design.garmentImage):design.garmentImage;
-    const mirror=surface==="rightSleeve"?" scaleX(-1)":"",zone="zone-"+surface;
+    const fallbackSleeve=design.sleeveImage||"assets/sleeve-side-neutral.webp";
+    const garment=surface==="leftSleeve"?(design.leftSleeveImage||fallbackSleeve):surface==="rightSleeve"?(design.rightSleeveImage||fallbackSleeve):surface==="back"?(design.garmentBackImage||design.garmentImage):design.garmentImage;
+    const mirror=(surface==="rightSleeve"&&!design.rightSleeveImage)?" scaleX(-1)":"",zone="zone-"+surface;
     const layers=(d.layers?.length?d.layers:[
       d.text?{type:'text',value:d.text,font:d.font,color:d.textColor,size:d.textSize,rotation:d.textRotation,position:d.positions.text,scale:d.textScale}:null,
       d.uploadedImage?{type:'image',src:d.uploadedImage,size:d.imageSize,rotation:d.imageRotation,position:d.positions.image,scale:d.imageScale}:null
