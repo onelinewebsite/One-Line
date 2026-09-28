@@ -49,6 +49,9 @@
   const b2bProducts=()=>state.products.filter(p=>p.audience==='b2b');
   const img=(src,alt,cls,fallback)=>'<img src="'+S.esc(src||fallback||'assets/product-placeholder.svg')+'" alt="'+S.esc(alt||'')+'" class="'+S.esc(cls||'')+'" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=\''+S.esc(fallback||'assets/product-placeholder.svg')+'\'">';
   function logo(compact){return '<div class="brand" aria-label="One-Line"><img class="brand-mark" src="one-line-logo.webp" alt="">'+(compact?'':'<span class="brand-copy"><b>One-Line</b><small>CUSTOM APPAREL STUDIO</small></span>')+'</div>';}
+  const QUARTZ_SITE='https://quartzsolution.netlify.app/';
+  function developerCredit(extraClass){return '<div class="developer-credit '+S.esc(extraClass||'')+'">Developed by <a href="'+QUARTZ_SITE+'" target="_blank" rel="noopener noreferrer">Quartz Web Solutions</a></div>';}
+  function clearMenuModalState(){if(!state.menu)return;try{if(history.state?.oneLineModal==='menu'){const next={...(history.state||{})};delete next.oneLineModal;history.replaceState(next,'',location.href);}}catch(_){}state.menu=false;root.querySelector('.site-header nav.open')?.classList.remove('open');root.querySelector('.menu-scrim')?.remove();syncModalScrollLock();}
   function showToast(text){state.toast=text;render();setTimeout(()=>{if(state.toast===text){state.toast='';render();}},2200);}
   function rememberScroll(){
     try{if(history.state?.oneLine)history.replaceState({...history.state,scrollY:window.scrollY},'',location.href);}catch(_){}
@@ -223,7 +226,7 @@
       '<button class="drawer-item" data-action="whatsapp" data-message="Hi, I need help with One-Line."><span class="drawer-icon">'+I('contact')+'</span><span>Help & Support</span>'+I('chevron')+'</button>'+installNav+'<button class="drawer-item" data-legal="About"><span class="drawer-icon">'+I('shield')+'</span><span>About OneLine</span>'+I('chevron')+'</button></div>'+account;
     return '<div class="announcement"><span>CUSTOM APPAREL · BULK ORDERS · TEAM KITS</span><b>ONE DESIGN. EVERY SIZE.</b></div><header class="site-header"><button class="mobile-menu" data-action="menu" aria-label="Open menu">'+I('menu')+'</button><button class="logo-button" data-go="home">'+logo(false)+'</button><nav class="'+(state.menu?'open':'')+'">'+drawer+'</nav><div class="header-actions"><button class="b2b-head-link" data-go="b2b">B2B</button>'+installHead+'<button data-go="cart" class="cart-head-link" aria-label="Open cart">'+I('cart')+'</button></div></header>'+(state.menu?'<button class="menu-scrim" data-action="close-menu" aria-label="Close menu"></button>':'');
   }
-  function footer(){return '<footer><div class="footer-main">'+logo(false)+'<p>Design custom apparel, upload a finished T-shirt, sportswear or polo design for the whole team, or order ready-made garments in exact size quantities.</p><div><b>SHOP</b><button data-go="catalog">Ready-made catalogue</button><button data-go="customize">Custom designer</button><button data-go="teamUpload">Team order</button><button data-go="b2b">B2B catalogue</button></div><div><b>INFORMATION</b>'+Object.keys(legalCopy).map(x=>'<button data-legal="'+x+'">'+x+'</button>').join('')+'</div><div><b>ACCOUNT</b><button data-go="profile">Profile</button><button data-go="cart">Cart</button><button data-go="orders">Orders</button></div></div><div class="footer-bottom"><span>© 2026 OneLine</span><span>Custom apparel · team orders · bulk size quantities</span></div></footer>';}
+  function footer(){return '<footer><div class="footer-main">'+logo(false)+'<p>Design custom apparel, upload a finished T-shirt, sportswear or polo design for the whole team, or order ready-made garments in exact size quantities.</p><div><b>SHOP</b><button data-go="catalog">Ready-made catalogue</button><button data-go="customize">Custom designer</button><button data-go="teamUpload">Team order</button><button data-go="b2b">B2B catalogue</button></div><div><b>INFORMATION</b>'+Object.keys(legalCopy).map(x=>'<button data-legal="'+x+'">'+x+'</button>').join('')+'</div><div><b>ACCOUNT</b><button data-go="profile">Profile</button><button data-go="cart">Cart</button><button data-go="orders">Orders</button></div></div><div class="footer-bottom"><span>© 2026 OneLine</span><span>Custom apparel · team orders · bulk size quantities</span><span>Developed by <a class="developer-credit-inline" href="'+QUARTZ_SITE+'" target="_blank" rel="noopener noreferrer">Quartz Web Solutions</a></span></div></footer>';}
   function bottom(){
     const accountActive=['profile','cart','orders','checkout'].includes(state.screen);
     return '<nav class="mobile-bottom"><button data-go="home" class="'+(state.screen==='home'?'active':'')+'">'+I('home')+'Home</button><button data-go="categories" class="'+(['categories','catalog','product'].includes(state.screen)?'active':'')+'">'+I('filter')+'Categories</button><button data-go="customize" class="create-only '+(state.screen==='customize'?'active':'')+'" aria-label="Create custom apparel">'+I('plus')+'</button><button data-go="teamUpload" class="'+(state.screen==='teamUpload'?'active':'')+'">'+I('image')+'Team</button><button data-go="profile" class="'+(accountActive?'active':'')+'">'+I('user')+'Profile</button></nav>';
@@ -360,7 +363,7 @@
 
   function render(){
     state.products=S.getProducts();state.categories=S.getCategories();state.settings=S.getSettings();state.customer=B?.customerSession?.()||state.customer;
-    if(state.screen==='customize'){root.innerHTML='<div id="designer-root"></div>'+authModal()+toast();window.OneLineDesigner.mount(document.getElementById('designer-root'),{onBack:()=>navigateBack('home'),onAdd:item=>{item.itemType='custom_design';if(!(B?.customerSession?.()?.token)){state.pendingCustomItem=item;state.pendingAction='custom-add';state.authModal=true;state.authStep='phone';state.authError='';render();return;}addCart(item,false);go('cart');}});syncModalScrollLock();bind();return;}
+    if(state.screen==='customize'){root.innerHTML='<div id="designer-root"></div>'+developerCredit('designer-developer-credit')+authModal()+toast();window.OneLineDesigner.mount(document.getElementById('designer-root'),{onBack:()=>navigateBack('home'),onAdd:item=>{item.itemType='custom_design';if(!(B?.customerSession?.()?.token)){state.pendingCustomItem=item;state.pendingAction='custom-add';state.authModal=true;state.authStep='phone';state.authError='';render();return;}addCart(item,false);go('cart');}});syncModalScrollLock();bind();return;}
     const audience=state.screen.startsWith('b2b')?'b2b':'retail';
     root.innerHTML='<div class="view-root">'+header()+page()+footer()+bottom()+filterModal(audience)+(state.legal?legal():'')+(state.paymentDemo?paymentModal():'')+authModal()+imageZoomModal()+toast()+whatsappFloat()+'</div>';syncModalScrollLock();bind();bindZoomViewer();positionWhatsapp();
   }
@@ -451,7 +454,7 @@
     root.querySelectorAll('[data-team-open]').forEach(x=>x.addEventListener('click',()=>{state.teamType=x.dataset.teamOpen;go('teamUpload');}));
     root.querySelectorAll('[data-open-product]').forEach(x=>x.addEventListener('click',e=>{if(e.target.closest('.product-slide-track'))return;e.stopPropagation();openProduct(x.dataset.openProduct,x.dataset.audience);}));
     root.querySelectorAll('[data-category]').forEach(x=>{x.addEventListener('click',e=>{if(e.target.closest('[data-share-kind]'))return;resetFilters(x.dataset.category);go('catalog');});x.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('[data-share-kind]')){e.preventDefault();resetFilters(x.dataset.category);go('catalog');}});});
-    root.querySelectorAll('[data-legal]').forEach(x=>x.addEventListener('click',()=>openLegal(x.dataset.legal)));
+    root.querySelectorAll('[data-legal]').forEach(x=>x.addEventListener('click',()=>{if(x.closest('.site-header nav')&&state.menu)clearMenuModalState();openLegal(x.dataset.legal);}));
     const catalogSearch=root.querySelector('[data-catalog-search]');if(catalogSearch)catalogSearch.addEventListener('input',e=>{state.catalogQuery=e.target.value;render();requestAnimationFrame(()=>{const n=root.querySelector('[data-catalog-search]');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length);}catch(_){}}});});
     root.querySelectorAll('[data-product-color]').forEach(x=>x.addEventListener('click',()=>{state.color=x.dataset.productColor;state.previewImage='';state.bulkQty={};render();}));
     root.querySelectorAll('[data-product-image]').forEach(x=>x.addEventListener('click',()=>{if(state.selected)state.previewImage=x.dataset.productImage;render();}));
@@ -481,11 +484,12 @@
     const profileNameForm=root.querySelector('[data-profile-name]');if(profileNameForm)profileNameForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(profileNameForm),name=String(fd.get('name')||'').trim();if(name.length<2)return;state.customer={...(B?.customerSession?.()||state.customer||{}),name};B?.setCustomerSession?.(state.customer);state.profileEditing=false;render();await B?.customerEvent?.('customer_name',{name});});
 
     root.querySelectorAll('[data-action]').forEach(x=>x.addEventListener('click',async()=>{
-      const a=x.dataset.action;
+      const a=x.dataset.action,fromDrawer=!!x.closest('.site-header nav');
+      if(fromDrawer&&state.menu&&a!=='close-menu'&&a!=='menu')clearMenuModalState();
       if(a==='menu'){if(state.menu)closeMenu(false);else openMenu();}
       else if(a==='close-menu'){closeMenu(false);}
       else if(a==='nav-back')navigateBack(x.dataset.fallback||'home');
-      else if(a==='install')install();
+      else if(a==='install'){await install();if(fromDrawer)render();}
       else if(a==='open-filter'){state.filterDraft={categories:clone(state.filterCategories),subs:clone(state.filterSubs),options:clone(state.filterOptions)};state.filterOpen=true;render();}
       else if(a==='close-filter')closeFilter(false);
       else if(a==='reset-filter-draft'){state.filterDraft={categories:[],subs:[],options:[]};render();}
@@ -509,7 +513,7 @@
       else if(a==='complete-order')await completeOrder();
       else if(a==='close-legal'){closeLegal(false);}
       else if(a==='view-order'){state.orderPlaced=false;go('orders');}
-      else if(a==='whatsapp')openWhatsApp(x.dataset.message||'Hi, I need a custom apparel quotation.');
+      else if(a==='whatsapp'){openWhatsApp(x.dataset.message||'Hi, I need a custom apparel quotation.');if(fromDrawer)render();}
       else if(a==='uniform-enquiry')openWhatsApp('Hi, I need a fast uniform customization quote. Please share options for garment colour, logo/text, sizes and quantity.');
       else if(a==='close-zoom')closeZoom();
       else if(a==='zoom-prev')changeZoomImage(-1);
@@ -564,7 +568,7 @@
   window.addEventListener('appinstalled',()=>{state.installPrompt=null;render();});
   window.addEventListener('storage',()=>{state.products=S.getProducts();state.categories=S.getCategories();state.orders=S.getOrders();state.settings=S.getSettings();render();});
   window.addEventListener('one-line-change',()=>{state.products=S.getProducts();state.categories=S.getCategories();state.orders=S.getOrders();state.settings=S.getSettings();});
-  document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('dragstart',e=>{if(!e.target.closest('input[type=file]'))e.preventDefault();});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.zoomImage){closeZoom();}else if(e.key==='Escape'&&state.filterOpen){closeFilter(false);}else if(e.key==='Escape'&&state.menu){state.menu=false;render();}if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))e.preventDefault();});document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
+  document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('dragstart',e=>{if(!e.target.closest('input[type=file]'))e.preventDefault();});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.zoomImage){closeZoom();}else if(e.key==='Escape'&&state.filterOpen){closeFilter(false);}else if(e.key==='Escape'&&state.menu){closeMenu(false);}if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))e.preventDefault();});document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
   try{
     const valid=['home','categories','catalog','product','cart','checkout','orders','profile','customize','teamUpload','b2b','b2bProduct'];const hash=location.hash.replace('#','');const params=new URLSearchParams(location.search);let initial=valid.includes(hash)?hash:'home';
     const sharedCategory=params.get('category'),sharedSub=params.get('subcategory'),sharedProduct=params.get('product'),sharedAudience=params.get('audience'),sharedSection=params.get('section');
@@ -582,5 +586,5 @@
     if(e.state?.oneLineZoom){state.screen=next||state.screen;const gallery=state.selected?productGallery(state.selected):[];state.zoomImages=gallery.length?gallery:[e.state.zoomSrc].filter(Boolean);state.zoomIndex=Math.max(0,Math.min(state.zoomImages.length-1,Number(e.state.zoomIndex||0)));state.zoomImage=e.state.zoomSrc||state.zoomImages[state.zoomIndex]||'';state.zoomAlt=e.state.zoomAlt||'Product image';state.zoomScale=1;state.zoomX=0;state.zoomY=0;render();return;}
     resetZoomState();state.legal='';state.screen=next||'home';state.menu=false;state.filterOpen=false;state.filterDraft=null;render();requestAnimationFrame(()=>window.scrollTo(0,Number(e.state?.scrollY||0)));
   });
-  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=35').catch(()=>{});render();B?.ready?.().then(r=>{state.backendReady=true;if(r?.error)state.backendError=r.error.message||String(r.error);state.products=S.getProducts();state.categories=S.getCategories();state.settings=S.getSettings();const qp=new URLSearchParams(location.search).get('product');if(qp&&!state.selected){const p=state.products.find(x=>String(x.id)===String(qp));if(p){state.selected=p;state.color=p.colors?.[0]||'';state.screen=p.audience==='b2b'?'b2bProduct':'product';}}render();}).catch(e=>{state.backendReady=true;state.backendError=e.message||String(e);render();});if(state.sharedSection==='shirt-colour'){setTimeout(()=>document.querySelector('[data-fast-uniform]')?.scrollIntoView({behavior:'auto',block:'start'}),120);}
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=36').catch(()=>{});render();B?.ready?.().then(r=>{state.backendReady=true;if(r?.error)state.backendError=r.error.message||String(r.error);state.products=S.getProducts();state.categories=S.getCategories();state.settings=S.getSettings();const qp=new URLSearchParams(location.search).get('product');if(qp&&!state.selected){const p=state.products.find(x=>String(x.id)===String(qp));if(p){state.selected=p;state.color=p.colors?.[0]||'';state.screen=p.audience==='b2b'?'b2bProduct':'product';}}render();}).catch(e=>{state.backendReady=true;state.backendError=e.message||String(e);render();});if(state.sharedSection==='shirt-colour'){setTimeout(()=>document.querySelector('[data-fast-uniform]')?.scrollIntoView({behavior:'auto',block:'start'}),120);}
 })();

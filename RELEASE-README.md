@@ -1,43 +1,21 @@
-# OneLine v34 — mobile/tablet drawer + custom size quantities + OTP cleanup
+# OneLine v36 — sleeve alignment + menu/quantity/customizer polish
 
-This is the full OneLine customer website, custom apparel designer, team-order flow, bulk catalogue and role portal build. It contains no demo orders and keeps the existing live Supabase architecture.
+This build continues from the selected v35 full project and keeps the existing Supabase, OTP, catalogue, cart, team-order and role-portal architecture.
 
-## v34 customer changes
-- Rebuilt the **mobile and tablet menu** as a full-height off-canvas drawer at about three-quarters of the viewport width, with icon cards, active state, account card and background scroll lock. Desktop keeps the normal horizontal navigation.
-- Kept the existing **old-style home customizer opener** (`old-model-hero` / `old-model-card`) rather than replacing it with the newer redesign.
-- Added the three supplied T-shirt, sportswear and polo images to **“Send one design. Add the whole team.”** as local project assets.
-- Added a Manrope-first UI font stack and refreshed responsive text/control sizing so mobile and tablet controls are not microscopically small.
-- Removed the unwanted **View all products** CTA.
-- Changed customer cart/bag actions to the shopping-cart SVG throughout the customer flow.
-- Removed the guest-profile sentence asking the customer to verify their mobile number when ready to order.
-- The custom designer now supports **independent quantities for XS, S, M, L, XL, XXL and 3XL**, e.g. S × 4 and M × 13, with an automatic total and size breakdown saved into the cart design data.
-- Removed the black outer border/ring treatment from garment colour swatches and the custom-colour control.
-- Enlarged and stacked the customizer appropriately through tablet width while preserving the practical front/back/right-sleeve/left-sleeve editor.
+## v36 changes
+- Re-centered both **Left sleeve** and **Right sleeve** customization views. The sleeve artwork area now sits on the visible sleeve instead of being offset to the wrong side.
+- Simplified **Size quantities**: removed the top, bottom, outer and between-size divider lines; kept a clean single control surface with soft quantity inputs.
+- Mobile/tablet menu now has **sharp full-height edges** (no curved outer drawer edge), a larger close control, touch scrolling, extra bottom scroll room and safe-area padding.
+- Menu actions now dismiss the open drawer when the selected destination/action opens. Browser Back continues to close an open drawer first.
+- Removed the fixed **50px text size cap** and other visual max-size constraints for custom text/artwork. The size ranges expand as needed and corner-handle resizing is not capped at the old limit.
+- Removed the instruction below the garment that said to drag a print layer / use the corner handle or controls.
+- Added a small **Developed by Quartz Web Solutions** link to the customer footer, customizer bottom and role portals.
+- Cache/build bumped to **v36**.
 
-## OTP cleanup
-- MSG91 Widget initialization now happens once instead of being re-initialized before each send/retry/verify operation.
-- OTP request ID state is preserved for retry and verification.
-- Duplicate rapid sends/retries are deduplicated with in-flight and short guard windows.
-- The normal phone form no longer resets the OTP wrapper immediately before sending.
-- Explicit number changes/logout still clear the OTP transaction state.
-- The browser-safe MSG91 Widget ID/token remain in `js/config.js`; the private account AuthKey is still not stored in browser files.
-
-## Cache / release
-- Customer cache-busting is v34.
-- Service-worker cache: `one-line-v34-mobile-otp-sizeqty-20260928`.
-- New local team assets are included in the PWA service-worker core cache.
-
-## Existing commerce / admin architecture retained
-- Team-order upload with roster rows.
-- Ready-made catalogue, search, category/subcategory filtering and share links.
-- Bulk per-size quantities for catalogue products and linked subitems.
-- Cart, checkout and order history.
-- Supabase-backed Admin / Management / Staff / Receiver portals.
-- Server-side OTP access-token verification before OneLine customer session creation.
-- Server-side order/stock validation.
-
-## Go-live requirements
-1. Keep the supplied Supabase schema/functions deployed on the client project.
-2. Deploy/update the included Edge Functions if the deployed copies are older: `admin-user`, `customer-event`, `otp-session`, `place-order`.
-3. Keep the private MSG91 account AuthKey in the `MSG91_AUTH_KEY` Supabase Edge Function secret, never in browser JavaScript.
-4. Ensure the MSG91 widget configuration itself is active for the production domain/number flow.
+## Existing fixes retained
+- Current-screen OTP/login modal without jumping the user back to Home.
+- Mobile/tablet drawer design and header profile-icon removal from v35.
+- Accurate canvas-based garment recolouring.
+- Per-size custom-order quantities.
+- Old-style main-page customization section.
+- Cart SVG icons, cleaned catalogue/categories view and team-order naming changes.
