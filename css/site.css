@@ -3630,3 +3630,323 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 /* ===== v43 final overrides ===== */
 .profile-head-link{display:grid!important}
 @media(min-width:1025px){.profile-head-link{display:grid!important}}
+
+/* ===== v44.css ===== */
+/* OneLine v44 — cart spacing + responsive layout hardening.
+   This block intentionally stays last so older cart experiments cannot win the cascade. */
+
+/* Prevent grid children from forcing horizontal overflow at awkward viewport widths. */
+.simple-cart-page,
+.simple-cart-page .cart-layout,
+.simple-cart-page .cart-list,
+.simple-cart-page .improved-cart-item,
+.simple-cart-page .cart-item-info,
+.simple-cart-page .clean-order-summary{
+  min-width:0!important;
+}
+
+.simple-cart-page{
+  padding-top:42px!important;
+  padding-bottom:88px!important;
+  overflow-x:clip;
+}
+.simple-cart-page .cart-title{
+  align-items:flex-end!important;
+  gap:28px!important;
+  margin-bottom:26px!important;
+}
+.simple-cart-page .cart-title>div{
+  min-width:0;
+  max-width:760px;
+}
+.simple-cart-page .cart-title h1{
+  margin:8px 0 10px!important;
+  font-size:clamp(54px,5.2vw,72px)!important;
+  line-height:.9!important;
+}
+.simple-cart-page .cart-title p{
+  margin:0!important;
+  max-width:680px;
+  color:#504954;
+  font-size:13px!important;
+  line-height:1.55!important;
+}
+.simple-cart-page .cart-title .back-button{
+  flex:0 0 auto;
+  align-self:flex-end;
+  margin-bottom:2px;
+}
+
+/* Desktop cart: the first column now exactly matches the thumbnail width.
+   This fixes the image/text collision visible in the supplied desktop screenshot. */
+.simple-cart-page .cart-layout{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) clamp(300px,24vw,330px)!important;
+  gap:24px!important;
+  align-items:start!important;
+}
+.simple-cart-page .cart-list{
+  display:grid!important;
+  gap:14px!important;
+  align-content:start;
+}
+.simple-cart-page .improved-cart-item{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:160px minmax(0,1fr) 102px 34px!important;
+  grid-template-rows:auto!important;
+  gap:18px!important;
+  align-items:center!important;
+  min-height:190px!important;
+  margin:0!important;
+  padding:15px!important;
+  overflow:hidden!important;
+}
+.simple-cart-page .cart-ready-preview,
+.simple-cart-page .cart-custom-preview{
+  grid-column:1!important;
+  grid-row:1!important;
+  width:160px!important;
+  min-width:160px!important;
+  height:auto!important;
+  aspect-ratio:3/4!important;
+  align-self:center!important;
+  border-radius:12px!important;
+  overflow:hidden!important;
+}
+.simple-cart-page .cart-item-info{
+  grid-column:2!important;
+  grid-row:1!important;
+  align-self:center!important;
+  padding:2px 0!important;
+}
+.simple-cart-page .cart-item-info>span{
+  display:block;
+  margin-bottom:5px;
+  line-height:1.35!important;
+}
+.simple-cart-page .cart-item-info h3{
+  margin:0 0 6px!important;
+  font-size:18px!important;
+  line-height:1.18!important;
+  overflow-wrap:anywhere;
+}
+.simple-cart-page .cart-item-info p{
+  margin:0 0 9px!important;
+  font-size:10px!important;
+  line-height:1.5!important;
+  overflow-wrap:anywhere;
+}
+.simple-cart-page .cart-bulk-breakdown{
+  margin:8px 0!important;
+  gap:6px!important;
+}
+.simple-cart-page .cart-bulk-breakdown span{
+  max-width:100%;
+  line-height:1.25!important;
+  white-space:normal;
+}
+.simple-cart-page .cart-design-meta{
+  margin:7px 0!important;
+}
+.simple-cart-page .cart-item-info>strong{
+  display:block;
+  margin-top:8px;
+  font-size:18px;
+  line-height:1.2;
+}
+.simple-cart-page .qty-static,
+.simple-cart-page .qty-control{
+  grid-column:3!important;
+  grid-row:1!important;
+  position:static!important;
+  justify-self:center!important;
+  align-self:center!important;
+  margin:0!important;
+}
+.simple-cart-page .qty-static{
+  min-width:52px!important;
+}
+.simple-cart-page .qty-static b{
+  font-size:18px!important;
+  line-height:1!important;
+}
+.simple-cart-page .qty-static small{
+  margin-top:5px;
+  font-size:8px!important;
+}
+.simple-cart-page .remove-item{
+  grid-column:4!important;
+  grid-row:1!important;
+  position:static!important;
+  justify-self:center!important;
+  align-self:center!important;
+  width:34px!important;
+  height:34px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+  border-radius:10px!important;
+}
+.simple-cart-page .remove-item:hover{
+  background:#f7f2f7!important;
+  color:#a63049!important;
+}
+.simple-cart-page .remove-item .icon{
+  width:17px!important;
+  height:17px!important;
+}
+
+.simple-cart-page .clean-order-summary{
+  top:94px!important;
+  width:100%!important;
+  margin:0!important;
+  padding:22px!important;
+}
+.simple-cart-page .clean-order-summary>.eyebrow{
+  display:block;
+  margin-bottom:14px;
+}
+.simple-cart-page .clean-order-summary .summary-line{
+  margin:0!important;
+  padding:10px 0!important;
+}
+.simple-cart-page .clean-order-summary .summary-total{
+  margin:11px 0 0!important;
+  padding:18px 0 0!important;
+}
+.simple-cart-page .clean-order-summary>small{
+  margin:10px 0 17px!important;
+}
+.simple-cart-page .clean-order-summary>.primary{
+  min-height:48px!important;
+}
+.simple-cart-page .clean-order-summary .cart-edit-design{
+  min-height:38px!important;
+  margin-top:8px!important;
+}
+
+/* Laptop: retain two columns but reduce media/action widths proportionally. */
+@media(min-width:1051px) and (max-width:1199px){
+  .simple-cart-page{padding-top:38px!important}
+  .simple-cart-page .cart-title{margin-bottom:24px!important}
+  .simple-cart-page .cart-layout{grid-template-columns:minmax(0,1fr) 300px!important;gap:18px!important}
+  .simple-cart-page .improved-cart-item{grid-template-columns:138px minmax(0,1fr) 96px 32px!important;gap:14px!important;min-height:170px!important;padding:13px!important}
+  .simple-cart-page .cart-ready-preview,.simple-cart-page .cart-custom-preview{width:138px!important;min-width:138px!important}
+  .simple-cart-page .cart-item-info h3{font-size:17px!important}
+  .simple-cart-page .clean-order-summary{padding:19px!important}
+}
+
+/* Tablet / small laptop: stack the summary instead of crushing the product card. */
+@media(min-width:761px) and (max-width:1050px){
+  .simple-cart-page{padding-top:34px!important;padding-bottom:74px!important}
+  .simple-cart-page .cart-title{margin-bottom:22px!important;gap:18px!important}
+  .simple-cart-page .cart-title h1{font-size:58px!important}
+  .simple-cart-page .cart-layout{grid-template-columns:minmax(0,1fr)!important;gap:16px!important}
+  .simple-cart-page .improved-cart-item{grid-template-columns:138px minmax(0,1fr) 96px 34px!important;gap:15px!important;min-height:170px!important;padding:13px!important}
+  .simple-cart-page .cart-ready-preview,.simple-cart-page .cart-custom-preview{width:138px!important;min-width:138px!important}
+  .simple-cart-page .clean-order-summary{position:static!important;max-width:none!important;padding:20px!important}
+  .simple-cart-page .clean-order-summary .summary-line{padding:8px 0!important}
+}
+
+/* Phones: use a true two-column card. Thumbnail spans both rows and actions sit below details. */
+@media(max-width:760px){
+  .simple-cart-page{
+    width:100%!important;
+    padding:24px 14px calc(94px + env(safe-area-inset-bottom))!important;
+  }
+  .simple-cart-page .cart-title{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:start!important;
+    gap:10px 14px!important;
+    margin-bottom:18px!important;
+  }
+  .simple-cart-page .cart-title>div{max-width:none!important}
+  .simple-cart-page .cart-title h1{font-size:44px!important;margin:6px 0 8px!important}
+  .simple-cart-page .cart-title p{font-size:11px!important;line-height:1.5!important;max-width:34rem!important}
+  .simple-cart-page .cart-title .back-button{align-self:start!important;margin-top:4px!important;margin-bottom:0!important;white-space:nowrap}
+  .simple-cart-page .cart-layout{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+  .simple-cart-page .cart-list{gap:10px!important}
+  .simple-cart-page .improved-cart-item{
+    grid-template-columns:96px minmax(0,1fr)!important;
+    grid-template-rows:auto auto!important;
+    column-gap:12px!important;
+    row-gap:8px!important;
+    align-items:start!important;
+    min-height:0!important;
+    padding:10px!important;
+    border-radius:15px!important;
+  }
+  .simple-cart-page .cart-ready-preview,
+  .simple-cart-page .cart-custom-preview{
+    grid-column:1!important;
+    grid-row:1 / span 2!important;
+    width:96px!important;
+    min-width:96px!important;
+    height:auto!important;
+    aspect-ratio:3/4!important;
+    align-self:start!important;
+    border-radius:11px!important;
+  }
+  .simple-cart-page .cart-item-info{
+    grid-column:2!important;
+    grid-row:1!important;
+    align-self:start!important;
+    padding:1px 30px 0 0!important;
+  }
+  .simple-cart-page .cart-item-info>span{font-size:7.5px!important;margin-bottom:4px!important}
+  .simple-cart-page .cart-item-info h3{font-size:15px!important;line-height:1.2!important;margin-bottom:5px!important}
+  .simple-cart-page .cart-item-info p{font-size:8.5px!important;line-height:1.45!important;margin-bottom:6px!important}
+  .simple-cart-page .cart-bulk-breakdown{gap:4px!important;margin:6px 0!important}
+  .simple-cart-page .cart-bulk-breakdown span{font-size:8px!important;padding:4px 7px!important}
+  .simple-cart-page .cart-design-meta{gap:4px!important;margin:5px 0!important}
+  .simple-cart-page .cart-design-meta span,.simple-cart-page .cart-design-meta b{font-size:7px!important}
+  .simple-cart-page .cart-item-info>strong{font-size:15px!important;margin-top:6px!important}
+  .simple-cart-page .qty-static,
+  .simple-cart-page .qty-control{
+    grid-column:2!important;
+    grid-row:2!important;
+    position:static!important;
+    justify-self:start!important;
+    align-self:end!important;
+    margin:0!important;
+  }
+  .simple-cart-page .qty-static{
+    min-width:0!important;
+    display:flex!important;
+    align-items:baseline!important;
+    gap:5px!important;
+  }
+  .simple-cart-page .qty-static b{font-size:15px!important}
+  .simple-cart-page .qty-static small{margin:0!important;font-size:7.5px!important}
+  .simple-cart-page .qty-control{height:34px!important}
+  .simple-cart-page .qty-control button{width:32px!important;height:32px!important}
+  .simple-cart-page .qty-control span{width:28px!important}
+  .simple-cart-page .remove-item{
+    position:absolute!important;
+    right:8px!important;
+    top:8px!important;
+    width:30px!important;
+    height:30px!important;
+    border-radius:9px!important;
+  }
+  .simple-cart-page .remove-item .icon{width:15px!important;height:15px!important}
+  .simple-cart-page .clean-order-summary{padding:17px!important;border-radius:15px!important}
+  .simple-cart-page .clean-order-summary>.eyebrow{margin-bottom:10px!important}
+  .simple-cart-page .clean-order-summary .summary-line{padding:7px 0!important;font-size:11px!important}
+  .simple-cart-page .clean-order-summary .summary-total{padding-top:15px!important}
+  .simple-cart-page .clean-order-summary .summary-total strong{font-size:25px!important}
+  .simple-cart-page .clean-order-summary>small{font-size:9px!important;margin:8px 0 14px!important}
+}
+
+@media(max-width:390px){
+  .simple-cart-page{padding-left:10px!important;padding-right:10px!important}
+  .simple-cart-page .cart-title{grid-template-columns:1fr!important}
+  .simple-cart-page .cart-title .back-button{grid-row:1!important;justify-self:end!important;margin-bottom:-28px!important;z-index:1}
+  .simple-cart-page .cart-title h1{font-size:41px!important}
+  .simple-cart-page .improved-cart-item{grid-template-columns:88px minmax(0,1fr)!important;column-gap:10px!important;padding:9px!important}
+  .simple-cart-page .cart-ready-preview,.simple-cart-page .cart-custom-preview{width:88px!important;min-width:88px!important}
+  .simple-cart-page .cart-item-info{padding-right:27px!important}
+  .simple-cart-page .cart-item-info h3{font-size:14px!important}
+}
