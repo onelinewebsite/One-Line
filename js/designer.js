@@ -73,7 +73,7 @@
       surface:saved?.surface||"front",designs:normalizeDesigns(saved?.designs||saved?.surfaceDesigns),
       active:null,pickerOpen:null,fileMode:'add',replaceLayerId:null,printMethods:S.getPrints(),printType:saved?.printType||S.getPrints()[0]?.name||"DTF Print"
     };
-    const pointers=new Map();let pinch=null,transformGesture=null,lastTap={time:0,id:""},resizeTimer=null;
+    const pointers=new Map();let transformGesture=null,resizeTimer=null;const garmentImageCache=new Map();
     let colourPickerH=210,colourPickerS=.55,colourPickerV=.55,colourPickerValue='#1f2c43';
     const hexToRgb=value=>{let h=String(value||'').replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255];};
     const rgbToHex=(r,g,b)=>'#'+[r,g,b].map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
@@ -108,7 +108,7 @@
     function handles(layer){return '<button class="layer-remove" data-action="remove-layer" data-layer-id="'+S.esc(layer.id)+'" aria-label="Delete selected item">'+I('close')+'</button><button class="layer-rotate" data-transform="'+S.esc(layer.id)+'" aria-label="Rotate and resize selected item">'+I('rotate')+'</button>';}
     function layerHtml(layer){
       const pos=layer.position||{x:50,y:50},selected=state.active===layer.id;
-      if(layer.type==='text')return '<div class="design-layer text-layer '+(selected?'selected':'')+'" data-layer-id="'+S.esc(layer.id)+'" data-layer-type="text" title="Double tap to edit" style="left:'+pos.x+'%;top:'+pos.y+'%;color:'+S.esc(layer.color)+';font-family:'+S.esc(layer.font)+';font-size:'+clampText(layer.size)+'px;transform:translate(-50%,-50%) rotate('+Number(layer.rotation||0)+'deg)"><span class="layer-text-content">'+S.esc(layer.value)+'</span>'+handles(layer)+'</div>';
+      if(layer.type==='text')return '<div class="design-layer text-layer '+(selected?'selected':'')+'" data-layer-id="'+S.esc(layer.id)+'" data-layer-type="text" style="left:'+pos.x+'%;top:'+pos.y+'%;color:'+S.esc(layer.color)+';font-family:'+S.esc(layer.font)+';font-size:'+clampText(layer.size)+'px;transform:translate(-50%,-50%) rotate('+Number(layer.rotation||0)+'deg)"><span class="layer-text-content">'+S.esc(layer.value)+'</span>'+handles(layer)+'</div>';
       return '<div class="design-layer image-layer '+(selected?'selected':'')+'" data-layer-id="'+S.esc(layer.id)+'" data-layer-type="image" style="left:'+pos.x+'%;top:'+pos.y+'%;width:'+Math.max(10,Number(layer.size||82))+'px;transform:translate(-50%,-50%) rotate('+Number(layer.rotation||0)+'deg)"><img src="'+S.esc(layer.src)+'" alt="Uploaded artwork" draggable="false">'+handles(layer)+'</div>';
     }
     function layerList(){
@@ -125,7 +125,26 @@
     function garmentColourPickerHtml(){
       return '<div class="fast-colour-overlay garment-colour-overlay" data-garment-picker aria-hidden="true"><div class="fast-colour-sheet" role="dialog" aria-modal="true" aria-label="Choose any colour"><div class="fast-colour-head"><strong>Choose any colour</strong><button type="button" data-garment-picker-close aria-label="Close">×</button></div><div class="fast-sv-wrap"><canvas width="640" height="360" data-garment-sv></canvas><i data-garment-sv-cursor></i></div><input class="fast-hue" data-garment-hue type="range" min="0" max="360" value="210" aria-label="Hue"><div class="fast-picker-bottom"><i data-garment-colour-preview></i><label><span>#</span><input data-garment-hex value="1F2C43" maxlength="6" inputmode="text" aria-label="Hex colour"></label><button type="button" data-garment-picker-apply>Apply</button></div></div></div>';
     }
-    function setGarmentTintPreview(value){const tint=root.querySelector('.compact-garment > .garment-tint');if(tint)tint.style.background=value;}
+    function drawGarmentColour(value){
+      const canvas=root.querySelector('[data-garment-canvas]');if(!canvas)return;
+      const src=canvas.dataset.garmentSrc||garmentSrc(),ctx=canvas.getContext('2d',{willReadFrequently:true});if(!ctx)return;
+      const hex=String(value||colourValue(state.color));
+      const target=hexToRgb(/^#[0-9a-f]{6}$/i.test(hex)?hex:colourValue(state.color));
+      const paint=img=>{
+        if(!canvas.isConnected)return;
+        canvas.width=img.naturalWidth||img.width||1000;canvas.height=img.naturalHeight||img.height||1000;
+        ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        let image;try{image=ctx.getImageData(0,0,canvas.width,canvas.height);}catch(_){return;}
+        const d=image.data;let base=0,count=0;
+        for(let i=0;i<d.length;i+=4){if(d[i+3]<28)continue;base+=(d[i]*.2126+d[i+1]*.7152+d[i+2]*.0722)/255;count++;}
+        base=count?base/count:.9;
+        for(let i=0;i<d.length;i+=4){if(d[i+3]<8)continue;const lum=(d[i]*.2126+d[i+1]*.7152+d[i+2]*.0722)/255,ratio=clamp(lum/Math.max(.08,base),.34,1.24);if(ratio<=1){const shade=.44+.56*ratio;d[i]=target[0]*shade;d[i+1]=target[1]*shade;d[i+2]=target[2]*shade;}else{const lift=clamp((ratio-1)*1.55,0,.33);d[i]=target[0]+(255-target[0])*lift;d[i+1]=target[1]+(255-target[1])*lift;d[i+2]=target[2]+(255-target[2])*lift;}}
+        ctx.putImageData(image,0,0);
+      };
+      const cached=garmentImageCache.get(src);if(cached?.complete&&cached.naturalWidth){paint(cached);return;}
+      const img=new Image();garmentImageCache.set(src,img);img.onload=()=>paint(img);img.src=src;
+    }
+    function setGarmentTintPreview(value){drawGarmentColour(value);}
     function bindGarmentColourPicker(){
       const overlay=root.querySelector('[data-garment-picker]'),sv=root.querySelector('[data-garment-sv]'),ctx=sv?.getContext('2d'),cursor=root.querySelector('[data-garment-sv-cursor]'),hue=root.querySelector('[data-garment-hue]'),hex=root.querySelector('[data-garment-hex]'),preview=root.querySelector('[data-garment-colour-preview]');if(!overlay||!sv||!ctx)return;
       const draw=()=>{const w=sv.width,h=sv.height,[r,g,b]=hsvToRgb(colourPickerH,1,1);ctx.fillStyle=rgbToHex(r,g,b);ctx.fillRect(0,0,w,h);let g1=ctx.createLinearGradient(0,0,w,0);g1.addColorStop(0,'#fff');g1.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g1;ctx.fillRect(0,0,w,h);g1=ctx.createLinearGradient(0,0,0,h);g1.addColorStop(0,'rgba(0,0,0,0)');g1.addColorStop(1,'#000');ctx.fillStyle=g1;ctx.fillRect(0,0,w,h);if(cursor){cursor.style.left=(colourPickerS*100)+'%';cursor.style.top=((1-colourPickerV)*100)+'%';}};
@@ -153,9 +172,8 @@
           '<div class="compact-designer-bar"><section class="stage-garment-type"><label>Type</label><div class="garment-type-cards">'+models.map(m=>'<button data-action="model-card" data-value="'+S.esc(m.name)+'" class="'+(m.name===state.model.name?'active':'')+'"><b>'+S.esc(m.type)+'</b>'+(m.typeExtra?'<small>+'+S.money(m.typeExtra)+'</small>':'<small>Base type</small>')+'</button>').join('')+'</div></section><div class="compact-surface-tabs" aria-label="Choose print area">'+surfaces.map(x=>'<button data-action="surface" data-value="'+x.id+'" class="'+(x.id===state.surface?'active':'')+'"><span class="full-label">'+x.label+'</span><span class="short-label">'+x.short+'</span>'+(state.designs[x.id].layers.length?'<i></i>':'')+'</button>').join('')+'</div></div>'+
           '<div class="stage-topline"><span>'+surfaceLabel()+'</span><span>GARMENT LOCKED · MOVE PRINT ONLY</span></div>'+
           '<div class="shirt-canvas compact-shirt-canvas view-'+state.surface+'"><div class="live-garment compact-garment garment-'+state.surface+' locked-garment"><div class="garment-depth"></div>'+
-            '<img class="garment-photo '+(sleeve?'sleeve-photo ':'')+(state.surface==='rightSleeve'?'mirror-sleeve':'')+'" src="'+src+'" alt="'+S.esc(state.model.name+' '+surfaceLabel())+'" draggable="false">'+
-            '<div class="garment-tint '+(sleeve?'sleeve-tint ':'')+(state.surface==='rightSleeve'?'mirror-sleeve':'')+'" style="background:'+colourValue(state.color)+';mask-image:url('+src+');-webkit-mask-image:url('+src+')"></div>'+
-            '<div class="print-area surface-'+state.surface+'" data-print-area>'+current().layers.map(layerHtml).join('')+'</div></div></div><p class="drag-hint">'+I('move')+' Move any layer · pinch or corner handle to resize/rotate · double tap text to edit</p></section>'+
+            '<canvas class="garment-photo garment-colour-canvas '+(sleeve?'sleeve-photo ':'')+(state.surface==='rightSleeve'?'mirror-sleeve':'')+'" data-garment-canvas data-garment-src="'+S.esc(src)+'" aria-label="'+S.esc(state.model.name+' '+surfaceLabel())+'"></canvas>'+
+            '<div class="print-area surface-'+state.surface+'" data-print-area>'+current().layers.map(layerHtml).join('')+'</div></div></div><p class="drag-hint">'+I('move')+' Drag a print layer to position it. Use the corner handle or controls to resize and rotate.</p></section>'+
           '<aside class="designer-controls compact-controls"><div class="control-head"><span>DESIGN CONTROLS</span><div class="control-head-actions"><small>'+surfaceLabel()+'</small><button type="button" class="designer-section-share" data-action="share-designer" aria-label="Share customizer">'+I('share')+'</button></div></div>'+
             '<section class="control-block garment-colour-control"><label>Garment colour</label><div class="swatches garment-colour-swatches">'+presetColours.map(c=>'<button aria-label="'+c+'" title="'+c+'" data-action="color" data-value="'+c+'" class="'+(state.color===c?'active':'')+'" style="background:'+S.palette[c]+'">'+(state.color===c?I('check'):'')+'</button>').join('')+'<button type="button" aria-label="Choose any colour" title="Choose any colour" data-action="custom-color-open" class="custom-colour-swatch '+(usingCustomColour()?'active':'')+'"></button></div><button type="button" class="choose-any-colour-row" data-action="custom-color-open"><span><i style="background:'+customColourValue()+'"></i>Choose any colour</span>'+I('chevron')+'</button></section>'+
             '<div class="quick-layer-tools unlimited-add-tools"><button data-action="add-text">'+I('type')+'<span>Add text</span></button><button data-action="choose-image">'+I('image')+'<span>Add image</span></button><input data-file hidden type="file" accept="image/*" multiple></div>'+
@@ -166,7 +184,7 @@
             '<section class="control-block print-control"><label>Printing type</label><div class="print-options">'+state.printMethods.map(p=>{const disabled=!!(p.lightOnly&&dark);return '<button data-action="print" data-value="'+S.esc(p.name)+'" class="'+(state.printType===p.name?'active ':'')+(disabled?'disabled':'')+'" '+(disabled?'disabled aria-disabled="true"':'')+'><span>'+(state.printType===p.name?I('check'):'')+'</span><b>'+S.esc(p.name)+'</b><small>'+S.esc(p.note)+'</small><strong>+'+S.money(p.price)+'</strong></button>';}).join('')+'</div>'+darkPrintNote()+'</section>'+
             '<div class="designer-total refined-total"><div><small>Estimated total</small><strong data-estimated-total>'+S.money(unitPrice()*totalPieces())+'</strong><span data-piece-summary>'+state.model.type+' · '+state.material.name+' · '+designedCount()+' print area'+(designedCount()===1?'':'s')+' · '+totalPieces()+' piece'+(totalPieces()===1?'':'s')+(sizeSummary()?' · '+S.esc(sizeSummary()):'')+'</span></div><div class="qty-static custom-total-pieces"><b data-size-total>'+totalPieces()+'</b><small>pcs</small></div></div><button class="primary wide refined-add" data-action="add" '+(totalPieces()<1?'disabled':'')+'>Add custom design to cart '+I('cart')+'</button>'+
           '</aside></div></main>'+garmentColourPickerHtml();
-      bind();bindGarmentColourPicker();requestAnimationFrame(syncCurrentScale);
+      bind();bindGarmentColourPicker();drawGarmentColour(colourValue(state.color));requestAnimationFrame(syncCurrentScale);
     }
 
     function chooseModel(value){const found=models.find(m=>m.name===value);if(found){state.model=found;saveDraft();}}
@@ -232,22 +250,18 @@
 
       root.querySelectorAll('.design-layer[data-layer-id]').forEach(el=>{
         const id=el.dataset.layerId;
-        el.addEventListener('dblclick',e=>{const l=layerById(id);if(l?.type==='text'){e.preventDefault();e.stopPropagation();focusTextEditor(id);}});
         el.addEventListener('pointerdown',e=>{
-          if(e.target.closest('button'))return;e.preventDefault();e.stopPropagation();const l=layerById(id);if(!l)return;const now=Date.now();
-          if(l.type==='text'&&lastTap.id===id&&now-lastTap.time<330){lastTap={time:0,id:''};focusTextEditor(id);return;}lastTap={time:now,id};
+          if(e.target.closest('button'))return;e.preventDefault();e.stopPropagation();const l=layerById(id);if(!l)return;
           selectLayer(id);try{el.setPointerCapture(e.pointerId);}catch(_){}
           const area=root.querySelector('[data-print-area]')?.getBoundingClientRect();if(!area)return;const px=area.left+(l.position.x/100)*area.width,py=area.top+(l.position.y/100)*area.height;
-          pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,id,offsetX:e.clientX-px,offsetY:e.clientY-py});const pts=[...pointers.values()].filter(p=>p.id===id);
-          if(pts.length===2)pinch={id,distance:Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)||1,angle:Math.atan2(pts[1].y-pts[0].y,pts[1].x-pts[0].x)*180/Math.PI,size:l.size,rotation:l.rotation||0};
+          pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,id,offsetX:e.clientX-px,offsetY:e.clientY-py});
         });
         el.addEventListener('pointermove',e=>{
-          const p=pointers.get(e.pointerId);if(!p||p.id!==id)return;e.preventDefault();p.x=e.clientX;p.y=e.clientY;const l=layerById(id),area=root.querySelector('[data-print-area]')?.getBoundingClientRect();if(!l||!area)return;const pts=[...pointers.values()].filter(x=>x.id===id);
-          if(pts.length>=2){if(!pinch||pinch.id!==id){pinch={id,distance:Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)||1,angle:Math.atan2(pts[1].y-pts[0].y,pts[1].x-pts[0].x)*180/Math.PI,size:l.size,rotation:l.rotation||0};}const dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)||1,ang=Math.atan2(pts[1].y-pts[0].y,pts[1].x-pts[0].x)*180/Math.PI;l.size=l.type==='text'?clampText(pinch.size*(dist/pinch.distance)):Math.max(10,pinch.size*(dist/pinch.distance));l.rotation=Math.round(pinch.rotation+(ang-pinch.angle));}
-          else{l.position.x=clamp((e.clientX-p.offsetX-area.left)/area.width*100,-30,130);l.position.y=clamp((e.clientY-p.offsetY-area.top)/area.height*100,-30,130);}
+          const p=pointers.get(e.pointerId);if(!p||p.id!==id)return;e.preventDefault();p.x=e.clientX;p.y=e.clientY;const l=layerById(id),area=root.querySelector('[data-print-area]')?.getBoundingClientRect();if(!l||!area)return;
+          l.position.x=clamp((e.clientX-p.offsetX-area.left)/area.width*100,-30,130);l.position.y=clamp((e.clientY-p.offsetY-area.top)/area.height*100,-30,130);
           applyLayerStyle(l);
         });
-        const end=e=>{if(!pointers.has(e.pointerId))return;pointers.delete(e.pointerId);if([...pointers.values()].filter(p=>p.id===id).length<2)pinch=null;syncCurrentScale();};
+        const end=e=>{if(!pointers.has(e.pointerId))return;pointers.delete(e.pointerId);syncCurrentScale();};
         el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
       });
       root.querySelectorAll('[data-transform]').forEach(handle=>{

@@ -1,0 +1,95 @@
+/* OneLine v35 — menu cleanup, accurate customizer colour, current-screen OTP */
+
+/* Header: profile entry is intentionally not shown here. Account access stays in menu/bottom nav. */
+.profile-head-link{display:none!important}
+
+/* Categories page: cards only, no title or explanatory copy. */
+.categories-only-page{padding-top:clamp(26px,5vw,58px)!important;padding-bottom:clamp(70px,9vw,120px)!important}
+.categories-only-grid{margin-top:0!important}
+.category-name-only>div:not(.category-photo){padding-bottom:18px!important}
+.category-name-only h3{margin-bottom:0!important}
+.category-name-only p{display:none!important}
+
+/* Customizer garment: one recoloured bitmap, so selected colour and garment use the same RGB source. */
+.compact-garment>.garment-colour-canvas{
+  inset:auto!important;left:50%!important;top:50%!important;width:auto!important;height:auto!important;
+  max-width:100%!important;max-height:100%!important;object-fit:initial!important;
+  transform:translate(-50%,-50%)!important;filter:drop-shadow(0 28px 22px rgba(46,20,52,.18))!important;
+  opacity:1!important;mix-blend-mode:normal!important;border-radius:0!important;
+}
+.compact-garment>.garment-colour-canvas.sleeve-photo{width:auto!important;height:auto!important;max-width:84%!important;max-height:92%!important;inset:auto!important;filter:drop-shadow(0 24px 18px rgba(46,20,52,.17))!important;opacity:1!important}
+.compact-garment>.garment-colour-canvas.mirror-sleeve{transform:translate(-50%,-50%) scaleX(-1)!important}
+
+/* One clean size quantity surface; no card-inside-card look. */
+.custom-size-quantity-control{background:#fff!important;border:1px solid #e7dfe9!important;box-shadow:none!important}
+.custom-size-qty-grid{gap:0!important;border-top:1px solid #ece5ee!important;border-bottom:1px solid #ece5ee!important;padding:7px 0!important}
+.custom-size-qty-grid label{background:transparent!important;border:0!important;border-radius:0!important;padding:7px 8px!important;gap:7px!important;position:relative}
+.custom-size-qty-grid label:not(:last-child):after{content:"";position:absolute;right:0;top:15%;height:70%;width:1px;background:#eee7ef}
+.custom-size-qty-grid span{text-align:center!important;font-size:10px!important;color:#5d4d61!important}
+.custom-size-qty-grid input{height:42px!important;border:1px solid #ded5e1!important;border-radius:10px!important;background:#faf8fb!important;box-shadow:none!important;font-size:15px!important;font-weight:800!important}
+.size-qty-heading{margin-bottom:10px!important}.size-qty-example{margin-top:10px!important}
+
+@media(max-width:1024px){
+  /* One full drawer surface. Individual nav rows are intentionally transparent. */
+  .site-header nav.open{
+    width:76vw!important;max-width:620px!important;height:100dvh!important;min-height:100vh!important;
+    padding:0 18px max(28px,env(safe-area-inset-bottom))!important;border-radius:0 24px 24px 0!important;
+    background:#fff!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:contain!important;
+  }
+  .site-header nav.open .drawer-top{
+    min-height:112px!important;padding:22px 2px 18px!important;border-bottom:1px solid #ece6ed!important;
+    align-items:center!important;flex:0 0 auto!important;
+  }
+  .site-header nav.open .drawer-brand-button .brand{gap:12px!important;align-items:center!important}
+  .site-header nav.open .drawer-brand-button .brand-mark{width:54px!important;height:54px!important;flex:0 0 54px!important}
+  .site-header nav.open .drawer-brand-button .brand-copy{gap:5px!important;line-height:1!important}
+  .site-header nav.open .drawer-brand-button .brand-copy b{font-size:20px!important;line-height:1!important;letter-spacing:-.03em!important}
+  .site-header nav.open .drawer-brand-button .brand-copy small{font-size:9px!important;line-height:1.35!important;letter-spacing:.095em!important;color:#8c7e8f!important}
+
+  .drawer-links{display:grid!important;grid-template-columns:1fr!important;gap:0!important;padding:12px 0 8px!important;flex:0 0 auto!important}
+  .site-header nav.open .drawer-item,.site-header nav.open .drawer-divider~.drawer-item{
+    min-height:54px!important;grid-template-columns:40px minmax(0,1fr) 18px!important;gap:10px!important;
+    padding:0 5px!important;border:0!important;border-radius:0!important;background:transparent!important;
+    box-shadow:none!important;color:#251d28!important;font-size:13.5px!important;font-weight:720!important;
+    position:relative!important;
+  }
+  .site-header nav.open .drawer-item:hover,.site-header nav.open .drawer-item:focus,.site-header nav.open .drawer-item:active{background:transparent!important;box-shadow:none!important}
+  .site-header nav.open .drawer-item.active-menu{background:transparent!important;border:0!important;color:#7b1788!important}
+  .site-header nav.open .drawer-item.active-menu:before{content:"";position:absolute;left:-18px;top:12px;bottom:12px;width:3px;border-radius:4px;background:#7b1788}
+  .site-header nav.open .drawer-icon{width:34px!important;height:34px!important;background:transparent!important;border:0!important}
+  .site-header nav.open .drawer-divider{margin:7px 0!important;background:#eee8ef!important}
+  .site-header nav.open .drawer-account{margin:12px 0 0!important;flex:0 0 auto!important}
+  .site-header nav.open .nav-install{background:transparent!important}
+
+  .compact-garment>.garment-colour-canvas.sleeve-photo{max-width:94%!important;max-height:94%!important}
+  .custom-size-qty-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+
+@media(max-width:600px){
+  .site-header nav.open{width:78vw!important;padding-left:16px!important;padding-right:16px!important;border-radius:0 21px 21px 0!important}
+  .site-header nav.open .drawer-top{min-height:102px!important;padding-top:19px!important;padding-bottom:16px!important}
+  .site-header nav.open .drawer-brand-button .brand-mark{width:48px!important;height:48px!important;flex-basis:48px!important}
+  .site-header nav.open .drawer-brand-button .brand-copy b{font-size:18px!important}
+  .site-header nav.open .drawer-brand-button .brand-copy small{font-size:8.5px!important}
+  .drawer-links{padding-top:9px!important}
+  .site-header nav.open .drawer-item,.site-header nav.open .drawer-divider~.drawer-item{min-height:51px!important;font-size:12.8px!important;grid-template-columns:37px minmax(0,1fr) 16px!important}
+  .custom-size-qty-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .custom-size-qty-grid label{padding:7px 5px!important}.custom-size-qty-grid input{height:41px!important;padding:0 4px!important}
+}
+@media(max-width:390px){
+  .custom-size-qty-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .custom-size-qty-grid label:nth-child(3n):after{display:none}
+}
+
+/* Keep the account/sign-in row on the same single drawer surface too. */
+@media(max-width:1024px){
+  .site-header nav.open .drawer-account{
+    margin-top:8px!important;padding:12px 5px!important;border:0!important;border-top:1px solid #eee8ef!important;
+    border-radius:0!important;background:transparent!important;box-shadow:none!important;
+  }
+  .site-header nav.open .drawer-account:hover,.site-header nav.open .drawer-account:focus,.site-header nav.open .drawer-account:active{
+    background:transparent!important;box-shadow:none!important;
+  }
+  .site-header nav.open .drawer-account-icon{background:transparent!important;border:0!important;border-radius:0!important}
+}
