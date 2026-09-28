@@ -16,7 +16,36 @@
   const session=()=>local(C.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1')||null;
   const setSession=v=>local(C.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1',v);
   const clearSession=()=>localStorage.removeItem(C.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1');
-  const invoke=async(name,body,auth=true)=>{const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');const headers={};if(!auth)headers['x-one-line-public']='1';const {data,error}=await sb.functions.invoke(name,{body,headers});if(error)throw error;if(data?.error)throw new Error(data.error);return data;};
+  async function invokePublicDirect(name,body){
+    const base=String(C.SUPABASE_URL||'').replace(/\/$/,'');
+    if(!base)throw new Error('Supabase is not configured yet.');
+    const url=base+'/functions/v1/'+encodeURIComponent(name);
+    // text/plain keeps this request CORS-simple, so the browser does not have
+    // to complete an OPTIONS preflight before public Edge Functions.
+    const response=await fetch(url,{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},body:JSON.stringify(body||{})});
+    const raw=await response.text();let data={};
+    try{data=raw?JSON.parse(raw):{};}catch(_){data={error:raw||('Edge Function '+name+' returned an invalid response.')}}
+    if(!response.ok||data?.error)throw new Error(String(data?.error||data?.message||('Edge Function '+name+' failed ('+response.status+').')));
+    return data;
+  }
+  const invoke=async(name,body,auth=true)=>{
+    const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');
+    if(!auth){
+      let directError=null;
+      try{return await invokePublicDirect(name,body);}catch(err){directError=err;}
+      try{
+        const {data,error}=await sb.functions.invoke(name,{body});
+        if(error)throw error;if(data?.error)throw new Error(data.error);return data;
+      }catch(err){
+        const first=String(directError?.message||'').trim(),second=String(err?.message||'').trim();
+        if(/failed to fetch|networkerror|load failed|failed to send a request/i.test(first+' '+second)){
+          throw new Error('Could not connect to the One-Line verification server. The OTP itself was received, but the Supabase Edge Function is not reachable. Deploy the latest otp-session function and try again.');
+        }
+        throw directError||err;
+      }
+    }
+    const {data,error}=await sb.functions.invoke(name,{body});if(error)throw error;if(data?.error)throw new Error(data.error);return data;
+  };
   const values=(rows,key)=>[...new Set((rows||[]).map(x=>String(x?.[key]||'').trim()).filter(Boolean))];
   function mapData(data){
     const cats=data.categories||[],subs=data.subcategories||[],variants=data.product_variants||[],subitems=data.subitems||[],subvars=data.subitem_variants||[],links=data.product_subitems||[];
