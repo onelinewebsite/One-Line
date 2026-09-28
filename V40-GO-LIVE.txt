@@ -1,0 +1,26 @@
+ONE-LINE v40 — WHAT TO DO AFTER THE OLD schema.sql IS ALREADY RUN
+
+1) Supabase > SQL Editor > New query
+   Run: RUN-NEXT-v40.sql
+   (same file is also at supabase/migrations/v40_customer_accounts.sql)
+
+2) Deploy/redeploy these Edge Functions from this v40 project:
+   - otp-session              Verify JWT OFF
+   - customer-event           Verify JWT OFF
+   - customer-account         Verify JWT OFF   [NEW]
+   - place-order              Verify JWT OFF
+
+3) Keep your existing Edge Function secret:
+   MSG91_AUTH_KEY
+   Do not put the AuthKey in frontend files.
+
+4) Upload the v40 website files to the host/GitHub.
+
+5) Test:
+   - Existing phone + OTP: should go straight into the old customer account if a name is already saved.
+   - New phone + OTP: asks name once, then keeps that account by phone.
+   - Profile: edit name, business/institution, post/role; phone is read-only.
+   - Old orders: appear in My Orders after login.
+   - Admin/Management: Customers + Live carts pages show customer/cart tracking.
+
+Customizer garment layout was not changed in v40.

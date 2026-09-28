@@ -10,7 +10,11 @@ Deno.serve(async(req)=>{
     for(const item of items){
       if(item?.itemType==='team_design'&&item?.design?.artworkDataUrl){const decoded=decodeDataUrl(String(item.design.artworkDataUrl));if(decoded){const path=`orders/${s.customer_id}/${crypto.randomUUID()}.${decoded.ext}`;const up=await db.storage.from('product-images').upload(path,decoded.bytes,{contentType:decoded.type,cacheControl:'31536000',upsert:false});if(up.error)throw up.error;item.design.artworkUrl=db.storage.from('product-images').getPublicUrl(path).data.publicUrl;delete item.design.artworkDataUrl;}}
     }
-    const q=await db.rpc('place_bulk_order',{p_customer_id:s.customer_id,p_customer_name:String(details.customerName||details.name||customer.name||''),p_phone:String(customer.phone||details.phone||''),p_address:String(details.address||''),p_business:String(details.business||''),p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:items});if(q.error)throw q.error;
+    const customerName=String(details.customerName||details.name||customer.name||'').trim().slice(0,120);
+    const business=String(details.business||customer.business_name||'').trim().slice(0,160);
+    const q=await db.rpc('place_bulk_order',{p_customer_id:s.customer_id,p_customer_name:customerName,p_phone:String(customer.phone||details.phone||''),p_address:String(details.address||''),p_business:business,p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:items});if(q.error)throw q.error;
+    await db.from('customers').update({name:customerName||customer.name||'',business_name:business||customer.business_name||'',updated_at:new Date().toISOString(),last_seen_at:new Date().toISOString()}).eq('id',s.customer_id);
+    await db.from('customer_carts').upsert({customer_id:s.customer_id,items:[],piece_count:0,total:0,updated_at:new Date().toISOString()},{onConflict:'customer_id'});
     await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'order_placed',payload:{order:q.data}});
     return json({ok:true,order:q.data});
   }catch(e){return json({error:e instanceof Error?e.message:'Order could not be placed.'},400)}

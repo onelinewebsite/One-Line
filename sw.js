@@ -1,7 +1,7 @@
-const CACHE='one-line-v39-old-customizer-garments-20260928';
+const CACHE='one-line-v40-persistent-account-admin-20260928';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./receiver.html','./b2b.html',
-  './css/styles-1.css','./css/styles-2.css','./css/styles-3.css','./css/v32.css','./css/v34.css','./css/v35.css','./css/v36.css','./css/v37.css','./css/v38.css','./css/v39.css','./css/admin.css',
+  './css/styles-1.css','./css/styles-2.css','./css/styles-3.css','./css/v32.css','./css/v34.css','./css/v35.css','./css/v36.css','./css/v37.css','./css/v38.css','./css/v39.css','./css/v40.css','./css/admin.css',
   './js/config.js','./js/data.js','./js/msg91-widget.js','./js/backend.js','./js/designer.js','./js/app.js','./js/admin.js',
   './one-line-logo.webp','./favicon.png','./icon-192.png','./icon-512.png','./manifest.webmanifest',
   './assets/product-placeholder.svg','./assets/category-placeholder.svg','./assets/crew-tee.webp','./assets/crew-tee-back.webp','./assets/polo-shirt.webp',

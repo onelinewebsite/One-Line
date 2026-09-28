@@ -12,6 +12,7 @@ From a machine with the Supabase CLI installed and logged in, link this project 
 supabase link --project-ref eiozlrnrvlfyflddemla
 supabase functions deploy otp-session --no-verify-jwt
 supabase functions deploy customer-event --no-verify-jwt
+supabase functions deploy customer-account --no-verify-jwt
 supabase functions deploy place-order --no-verify-jwt
 supabase functions deploy admin-user
 ```
@@ -36,10 +37,10 @@ values ('PASTE_AUTH_USER_UUID','owner','OneLine Owner','admin',true);
 After this first admin logs in at `admin.html`, the Accounts section can create Admin, Management, Staff and Order Receiving logins.
 
 ## 5. Upload the site
-Upload the contents of this folder to the existing static host. The service worker uses cache `one-line-v32-profile-ui-20260927`, so old v30 code is replaced automatically after activation.
+Upload the contents of this folder to the existing static host. The service worker uses cache `one-line-v40-persistent-account-admin-20260928`, so the browser replaces the older cached build after activation.
 
 ## Live OTP flow
-Customer opens the site without login → attempts to add a product/design to cart → mobile number → MSG91 Widget sends OTP → customer enters OTP → Widget returns a short-lived access token → `otp-session` verifies that token with MSG91 using the secret AuthKey → OneLine creates a 30-day customer session → required name step → continues the original cart action.
+Customer opens the site without login → attempts to add a product/design to cart → mobile number → MSG91 Widget sends OTP → customer enters OTP → Widget returns a short-lived access token → `otp-session` verifies that token with MSG91 using the secret AuthKey → OneLine creates a 30-day customer session → returning customers with a saved name continue immediately; only a new/nameless customer is asked for a name → continues the original cart action.
 
 ## Important checks
 - MSG91 Widget: India allowed, demo credentials blank, user-existence validation disabled, deprecated webhook skipped.
@@ -47,3 +48,17 @@ Customer opens the site without login → attempts to add a product/design to ca
 - Product/category images are uploaded to the public `product-images` bucket by Admin/Management only.
 - Catalogue orders are stock-checked and deducted atomically on the server.
 - Custom/team artwork is uploaded by the server when the order is placed.
+
+## Updating an existing v39 database to v40
+If the original `schema.sql` has already been run, do **not** recreate the database. Run only `supabase/migrations/v40_customer_accounts.sql` once. It adds persistent business/role profile fields and the live customer cart table without deleting existing customers, orders or catalogue data.
+
+Then deploy/redeploy:
+
+```bash
+supabase functions deploy otp-session --no-verify-jwt
+supabase functions deploy customer-event --no-verify-jwt
+supabase functions deploy customer-account --no-verify-jwt
+supabase functions deploy place-order --no-verify-jwt
+```
+
+`admin-user` does not need redeployment unless its code changed separately.

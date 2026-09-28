@@ -2,6 +2,8 @@
 verify_jwt = false
 [functions.customer-event]
 verify_jwt = false
+[functions.customer-account]
+verify_jwt = false
 [functions.place-order]
 verify_jwt = false
 [functions.admin-user]

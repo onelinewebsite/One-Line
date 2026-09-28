@@ -106,7 +106,10 @@ create table if not exists public.customers (
   id uuid primary key default gen_random_uuid(),
   phone text not null unique,
   name text not null default '',
+  business_name text not null default '',
+  job_title text not null default '',
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now()
 );
 
@@ -124,6 +127,14 @@ create table if not exists public.customer_activity (
   event_type text not null,
   payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
+);
+
+create table if not exists public.customer_carts (
+  customer_id uuid primary key references public.customers(id) on delete cascade,
+  items jsonb not null default '[]'::jsonb,
+  piece_count integer not null default 0 check(piece_count >= 0),
+  total numeric(12,2) not null default 0,
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.orders (
@@ -265,6 +276,7 @@ alter table public.delivery_methods enable row level security;
 alter table public.customers enable row level security;
 alter table public.customer_sessions enable row level security;
 alter table public.customer_activity enable row level security;
+alter table public.customer_carts enable row level security;
 
 -- Public catalogue reads. Empty categories are hidden by the frontend unless they contain a live product.
 create policy "public categories read" on public.categories for select using(active);
@@ -285,6 +297,7 @@ create policy "staff order items read" on public.order_items for select using(pu
 create policy "staff stock movements read" on public.stock_movements for select using(public.has_role(array['admin','management','staff']));
 create policy "activity admin management read" on public.customer_activity for select using(public.has_role(array['admin','management']));
 create policy "customers admin management read" on public.customers for select using(public.has_role(array['admin','management']));
+create policy "customer carts admin management read" on public.customer_carts for select using(public.has_role(array['admin','management']));
 
 -- Admin / management catalogue writes.
 create policy "catalogue products insert" on public.products for insert with check(public.has_role(array['admin','management']));

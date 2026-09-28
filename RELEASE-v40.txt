@@ -1,0 +1,23 @@
+One-Line v40 — persistent customer accounts + admin customer/cart tracking
+
+Customer account
+- Verified phone number remains the permanent account key.
+- Returning customers with a saved name skip the name step after OTP.
+- Existing order history is loaded from Supabase after login, including on another device.
+- Profile edit now supports Name, Business/Institution and Post/Role.
+- Profile mobile number is fixed/read-only; the Change mobile control was removed.
+
+Admin / management
+- Customers page with account, business/role, last seen, order count and current cart pieces.
+- Live carts page shows which verified customer added which items and quantities.
+- Overview adds customer/live-cart metrics and quick actions.
+- Data refresh button plus 30-second refresh for Admin/Management.
+- Existing Products, Categories, Subitems, Stock, Orders and Accounts remain connected to Supabase.
+
+Database / Edge Functions
+- Run supabase/migrations/v40_customer_accounts.sql on an existing project.
+- Deploy otp-session, customer-event, customer-account and place-order from this build.
+- Keep Verify JWT OFF for those four customer-facing functions.
+
+Customizer
+- No customizer garment layout/style changes in this release. The v39 old-model garment positioning is preserved.

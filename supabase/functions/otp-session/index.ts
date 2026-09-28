@@ -24,13 +24,14 @@ Deno.serve(async(req)=>{
     if(verifiedIdentifier){const verifiedPhone=cleanPhone(verifiedIdentifier);if(/^91\d{10}$/.test(verifiedPhone)&&verifiedPhone!==mobile)return json({error:'Verified mobile number does not match the requested number.'},401)}
 
     const db=admin(),now=new Date().toISOString();let {data:customer,error:lookupError}=await db.from('customers').select('*').eq('phone',mobile).maybeSingle();if(lookupError)throw lookupError;
-    if(!customer){const q=await db.from('customers').insert({phone:mobile,name:String(name||'').trim().slice(0,120),last_seen_at:now}).select().single();if(q.error)throw q.error;customer=q.data}
-    else{const nextName=String(name||customer.name||'').trim().slice(0,120);const q=await db.from('customers').update({name:nextName,last_seen_at:now}).eq('id',customer.id).select().single();if(q.error)throw q.error;customer=q.data}
+    const newCustomer=!customer;
+    if(!customer){const q=await db.from('customers').insert({phone:mobile,name:String(name||'').trim().slice(0,120),business_name:'',job_title:'',last_seen_at:now,updated_at:now}).select().single();if(q.error)throw q.error;customer=q.data}
+    else{const nextName=String(customer.name||name||'').trim().slice(0,120);const q=await db.from('customers').update({name:nextName,last_seen_at:now,updated_at:now}).eq('id',customer.id).select().single();if(q.error)throw q.error;customer=q.data}
 
     const sessionToken=crypto.randomUUID()+crypto.randomUUID(),token_hash=await hashToken(sessionToken),expires=new Date(Date.now()+1000*60*60*24*30).toISOString();
     await db.from('customer_sessions').delete().eq('customer_id',customer.id).lt('expires_at',now);
     const ins=await db.from('customer_sessions').insert({customer_id:customer.id,token_hash,expires_at:expires});if(ins.error)throw ins.error;
     await db.from('customer_activity').insert({customer_id:customer.id,event_type:'phone_verified',payload:{provider:'MSG91 Widget'}});
-    return json({ok:true,session:{token:sessionToken,customerId:customer.id,phone:customer.phone,name:customer.name,expiresAt:expires}});
+    return json({ok:true,newCustomer,session:{token:sessionToken,customerId:customer.id,phone:customer.phone,name:customer.name,businessName:customer.business_name||'',jobTitle:customer.job_title||'',expiresAt:expires}});
   }catch(e){return json({error:e instanceof Error?e.message:'OTP verification failed.'},500)}
 })
