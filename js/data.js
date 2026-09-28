@@ -71,6 +71,8 @@
   function getOrders(){ return []; }
   function getCart(){ return []; }
   function getCategories(){ return migrateKnownAssets(load("custom-store-categories-v3",[])); }
+  function getCustomCatalogCategories(){ return migrateKnownAssets(load("one-line-custom-catalog-categories-v1",[])); }
+  function getCustomCatalogItems(){ return migrateKnownAssets(load("one-line-custom-catalog-items-v1",[])); }
   function getDelivery(){ return load("custom-store-delivery-v3",deliveryDefaults); }
   function getPrints(){ return load("custom-store-print-types-v3",printDefaults); }
   function getSettings(){ return load("custom-store-settings-v3",{whatsapp:"",b2bId:"",b2bPassword:""}); }
@@ -125,5 +127,5 @@
     return '<div class="real-garment-preview preview-'+surface+' '+esc(className||'')+'"><div class="garment-depth"></div><img class="garment-photo '+(sleeve?'sleeve-preview ':'')+(surface==='rightSleeve'?'show-rightSleeve':'')+'" src="'+esc(garment)+'" alt="" style="transform:'+mirror+'"><span class="garment-tint '+(sleeve?'sleeve-preview ':'')+(surface==='rightSleeve'?'show-rightSleeve':'')+'" style="background:'+esc(palette[design.garmentColor]||design.garmentColor||palette.Navy)+';mask-image:url('+esc(garment)+');-webkit-mask-image:url('+esc(garment)+');transform:'+mirror+'"></span><div class="garment-print-zone '+zone+'">'+content+'</div></div>';
   }
 
-  window.OneLineStore={palette,onlineImages,seedCategories,seedProducts,seedOrders,deliveryDefaults,printDefaults,icon,money,esc,load,save,getProducts,getOrders,getCart,getCategories,getDelivery,getPrints,getSettings,isDarkColor,productOptions,productImageForColor,surfaceDesign,designedSurfaces,designPreview};
+  window.OneLineStore={palette,onlineImages,seedCategories,seedProducts,seedOrders,deliveryDefaults,printDefaults,icon,money,esc,load,save,getProducts,getOrders,getCart,getCategories,getCustomCatalogCategories,getCustomCatalogItems,getDelivery,getPrints,getSettings,isDarkColor,productOptions,productImageForColor,surfaceDesign,designedSurfaces,designPreview};
 })();

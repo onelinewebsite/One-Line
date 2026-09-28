@@ -101,7 +101,14 @@
     if(mapped.settings&&Object.keys(mapped.settings).length){const prev=S?.getSettings?.()||{};local('custom-store-settings-v3',{...prev,whatsapp:mapped.settings.whatsapp||prev.whatsapp||''});}
     if(mapped.prints?.length)local('custom-store-print-types-v3',mapped.prints.map(x=>({name:x.name,price:Number(x.price||0),note:x.note||'',lightOnly:!!x.light_only,active:x.active!==false})));
     if(mapped.delivery?.length)local('custom-store-delivery-v3',mapped.delivery.map(x=>({name:x.name,note:x.note||'',active:x.active!==false})));
-    return{configured:true,...mapped};
+    // v45 Customization Catalogue is optional until RUN-NEXT-v45.sql is applied.
+    // Never let a missing new table break the existing storefront.
+    let customCategories=[],customItems=[];
+    try{
+      const cq=await Promise.all([sb.from('custom_catalog_categories').select('*').order('sort_order'),sb.from('custom_catalog_items').select('*').order('sort_order')]);
+      if(!cq[0].error&&!cq[1].error){customCategories=cq[0].data||[];customItems=cq[1].data||[];local('one-line-custom-catalog-categories-v1',customCategories);local('one-line-custom-catalog-items-v1',customItems);}
+    }catch(_){}
+    return{configured:true,...mapped,customCategories,customItems};
   }
   function ready(){if(!readyPromise)readyPromise=hydrate().catch(error=>({configured:true,error}));return readyPromise;}
   async function createCustomerSession(phone,accessToken,name){
@@ -126,6 +133,7 @@
     return createCustomerSession(phone,verified.accessToken,name);
   }
   async function customerEvent(event_type,payload){const s=session();if(!s?.token)return null;return invoke('customer-event',{token:s.token,event_type,payload},false).catch(()=>null);}
+  async function customerEnquiry(payload){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');return invoke('customer-event',{token:s.token,event_type:'custom_catalog_enquiry',payload:payload||{}},false);}
   async function customerAccount(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'get'},false);}
   async function customerSync(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'sync'},false);}
   async function updateCustomerProfile(profile){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');const data=await invoke('customer-account',{token:s.token,action:'update',profile:profile||{}},false);return data?.customer||null;}
@@ -156,5 +164,5 @@
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate();}
   async function listSubitems(){const sb=supa();const [{data:items,error},{data:vars,error:ve}]=await Promise.all([sb.from('subitems').select('*').order('name'),sb.from('subitem_variants').select('*')]);if(error)throw error;if(ve)throw ve;return(items||[]).map(si=>({...si,variants:(vars||[]).filter(v=>v.subitem_id===si.id)}));}
   async function upsertSubitem(si){const sb=supa();const payload={id:si.id||undefined,code:si.code||'',barcode:si.barcode||null,name:si.name||'',price:Number(si.price||0),option_title:si.optionTitle||'Size',images:si.images||[],active:si.active!==false};const {data,error}=await sb.from('subitems').upsert(payload).select().single();if(error)throw error;await sb.from('subitem_variants').delete().eq('subitem_id',data.id);if(si.variants?.length){const r=await sb.from('subitem_variants').insert(si.variants.map(v=>({subitem_id:data.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??si.price??0),barcode:v.barcode||null,image_url:v.image||'',active:v.active!==false})));if(r.error)throw r.error;}await hydrate();return data;}
-  window.OneLineBackend={configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerAccount,customerSync,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,listProfiles,uploadImage,upsertCategory,upsertProduct,deleteProduct,listSubitems,upsertSubitem,cleanPhone};
+  window.OneLineBackend={configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerAccount,customerSync,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,listProfiles,uploadImage,upsertCategory,upsertProduct,deleteProduct,listSubitems,upsertSubitem,cleanPhone};
 })();
