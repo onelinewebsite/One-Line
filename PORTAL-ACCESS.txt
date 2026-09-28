@@ -1,4 +1,4 @@
-One-Line v42 Portal Access
+One-Line v43 Portal Access
 
 Admin
 URL: /admin.html
@@ -9,18 +9,21 @@ Management
 URL: /management.html
 Username: managementhere
 Password: manage22
+Scope: Add and edit products only.
 
 Staff
 URL: /staff.html
 Username: staffhere
 Password: staff220
+Scope: Search exact product/variant and mark sold quantity only.
 
 Order Receiving
 URL: /receiver.html
 Username: receiverhere
 Password: receiver22
+Scope: Orders and order status only.
 
 IMPORTANT
-These are default shared credentials requested for setup. After confirming all portals work, change the passwords from Admin > Accounts.
+These are default setup credentials. After confirming all portals work, change the passwords from Admin > Accounts.
 
-To create/reset these accounts, deploy the updated admin-user Edge Function, sign in to the Admin portal with your existing admin account, open Accounts, and click “Create / reset access”.
+To create/reset these accounts, deploy the current admin-user Edge Function if needed, sign in to Admin, open Accounts, and click “Create / reset access”.

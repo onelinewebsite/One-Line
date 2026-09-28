@@ -1,13 +1,14 @@
-Supabase Dashboard manual deploy copies for One-Line v41.
+Supabase Dashboard manual deploy copies for One-Line v43.
 
-Run RUN-NEXT-v41.sql first. Then in Edge Functions create/update these exact names and paste the matching file:
+For an existing v41/v42 live project, run RUN-NEXT-v43.sql from the project root first.
+The v43 portal-role update does not require redeploying OTP/customer functions unless your existing deployment is outdated.
+
+If you do need to redeploy customer functions from the Dashboard, use these matching files:
 - customer-account -> customer-account-index.ts
 - place-order -> place-order-index.ts
 - customer-event -> customer-event-index.ts
 
-Set Verify JWT with legacy secret = OFF for all three. otp-session stays OFF too.
-The existing MSG91_AUTH_KEY secret remains unchanged.
+Keep Verify JWT with legacy secret = OFF for those three and for otp-session.
+Keep the existing MSG91_AUTH_KEY secret unchanged.
 
-V42 NOTE
-For default portal access, update/redeploy admin-user using admin-user-index.ts.
-Then sign in with the existing Admin account -> Accounts -> Create / reset access.
+For default portal access, admin-user-index.ts remains the Dashboard copy for the admin-user function.

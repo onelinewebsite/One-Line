@@ -292,26 +292,26 @@ create policy "public delivery methods read" on public.delivery_methods for sele
 
 -- Portal reads.
 create policy "staff profiles own or admin" on public.profiles for select using(id=auth.uid() or public.has_role(array['admin']));
-create policy "staff orders read" on public.orders for select using(public.has_role(array['admin','management','staff','receiver']));
-create policy "staff order items read" on public.order_items for select using(public.has_role(array['admin','management','staff','receiver']));
-create policy "staff stock movements read" on public.stock_movements for select using(public.has_role(array['admin','management','staff']));
-create policy "activity admin management read" on public.customer_activity for select using(public.has_role(array['admin','management']));
-create policy "customers admin management read" on public.customers for select using(public.has_role(array['admin','management']));
-create policy "customer carts admin management read" on public.customer_carts for select using(public.has_role(array['admin','management']));
+create policy "staff orders read" on public.orders for select using(public.has_role(array['admin','receiver']));
+create policy "staff order items read" on public.order_items for select using(public.has_role(array['admin','receiver']));
+create policy "staff stock movements read" on public.stock_movements for select using(public.has_role(array['admin','staff']));
+create policy "activity admin management read" on public.customer_activity for select using(public.has_role(array['admin']));
+create policy "customers admin management read" on public.customers for select using(public.has_role(array['admin']));
+create policy "customer carts admin management read" on public.customer_carts for select using(public.has_role(array['admin']));
 
 -- Admin / management catalogue writes.
 create policy "catalogue products insert" on public.products for insert with check(public.has_role(array['admin','management']));
 create policy "catalogue products update" on public.products for update using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
-create policy "catalogue products delete" on public.products for delete using(public.has_role(array['admin','management']));
+create policy "catalogue products delete" on public.products for delete using(public.has_role(array['admin']));
 create policy "catalogue variants insert" on public.product_variants for insert with check(public.has_role(array['admin','management']));
 create policy "catalogue variants update" on public.product_variants for update using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
-create policy "catalogue variants delete" on public.product_variants for delete using(public.has_role(array['admin','management']));
-create policy "catalogue subitems insert" on public.subitems for insert with check(public.has_role(array['admin','management']));
-create policy "catalogue subitems update" on public.subitems for update using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
-create policy "catalogue subitems delete" on public.subitems for delete using(public.has_role(array['admin','management']));
-create policy "catalogue subvariants insert" on public.subitem_variants for insert with check(public.has_role(array['admin','management']));
-create policy "catalogue subvariants update" on public.subitem_variants for update using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
-create policy "catalogue subvariants delete" on public.subitem_variants for delete using(public.has_role(array['admin','management']));
+create policy "catalogue variants delete" on public.product_variants for delete using(public.has_role(array['admin']));
+create policy "catalogue subitems insert" on public.subitems for insert with check(public.has_role(array['admin']));
+create policy "catalogue subitems update" on public.subitems for update using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
+create policy "catalogue subitems delete" on public.subitems for delete using(public.has_role(array['admin']));
+create policy "catalogue subvariants insert" on public.subitem_variants for insert with check(public.has_role(array['admin']));
+create policy "catalogue subvariants update" on public.subitem_variants for update using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
+create policy "catalogue subvariants delete" on public.subitem_variants for delete using(public.has_role(array['admin']));
 create policy "product subitems write" on public.product_subitems for all using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
 
 -- Admin-only store structure/settings.
@@ -321,8 +321,8 @@ create policy "settings admin write" on public.store_settings for all using(publ
 create policy "prints admin write" on public.print_types for all using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
 create policy "delivery admin write" on public.delivery_methods for all using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
 
--- Receiver / management order status updates.
-create policy "order status update" on public.orders for update using(public.has_role(array['admin','management','receiver'])) with check(public.has_role(array['admin','management','receiver']));
+-- Receiver order status updates.
+create policy "order status update" on public.orders for update using(public.has_role(array['admin','receiver'])) with check(public.has_role(array['admin','receiver']));
 
 -- Storage bucket for catalogue/team-design artwork.
 insert into storage.buckets(id,name,public) values('product-images','product-images',true) on conflict(id) do update set public=true;
@@ -336,7 +336,8 @@ create or replace function public.adjust_stock(p_variant uuid, p_delta integer, 
 language plpgsql security definer set search_path=public as $$
 declare r public.product_variants%rowtype;
 begin
-  if not public.has_role(array['admin','management','staff']) then raise exception 'Not authorized'; end if;
+  if not public.has_role(array['admin','staff']) then raise exception 'Not authorized'; end if;
+  if public.has_role(array['staff']) and p_delta >= 0 then raise exception 'Staff may only mark stock as sold'; end if;
   select * into r from public.product_variants where id=p_variant for update;
   if not found then raise exception 'Variant not found'; end if;
   if r.stock + p_delta < 0 then raise exception 'Stock cannot be negative'; end if;
@@ -440,7 +441,8 @@ create or replace function public.adjust_product_stock(p_product uuid, p_delta i
 language plpgsql security definer set search_path=public as $$
 declare current_stock integer;
 begin
-  if not public.has_role(array['admin','management','staff']) then raise exception 'Not authorized'; end if;
+  if not public.has_role(array['admin','staff']) then raise exception 'Not authorized'; end if;
+  if public.has_role(array['staff']) and p_delta >= 0 then raise exception 'Staff may only mark stock as sold'; end if;
   select stock into current_stock from public.products where id=p_product for update;
   if not found then raise exception 'Product not found'; end if;
   if current_stock + p_delta < 0 then raise exception 'Stock cannot be negative'; end if;
@@ -452,7 +454,8 @@ create or replace function public.adjust_subitem_stock(p_variant uuid, p_delta i
 language plpgsql security definer set search_path=public as $$
 declare r public.subitem_variants%rowtype;
 begin
-  if not public.has_role(array['admin','management','staff']) then raise exception 'Not authorized'; end if;
+  if not public.has_role(array['admin','staff']) then raise exception 'Not authorized'; end if;
+  if public.has_role(array['staff']) and p_delta >= 0 then raise exception 'Staff may only mark stock as sold'; end if;
   select * into r from public.subitem_variants where id=p_variant for update;
   if not found then raise exception 'Subitem variant not found'; end if;
   if r.stock + p_delta < 0 then raise exception 'Stock cannot be negative'; end if;
@@ -488,7 +491,7 @@ begin
   ) then
     create policy "customer carts admin management read"
       on public.customer_carts for select
-      using(public.has_role(array['admin','management']));
+      using(public.has_role(array['admin']));
   end if;
 end $$;
 

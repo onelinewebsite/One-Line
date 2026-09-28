@@ -4,9 +4,9 @@
   const S=window.OneLineStore;
   let client=null,readyPromise=null;
   try{
-    if(localStorage.getItem('one-line-production-reset-v33')!=='1'){
+    if(localStorage.getItem('one-line-production-reset-v43')!=='1'){
       ['custom-store-products-v3','custom-store-categories-v3','custom-store-orders-v3','custom-store-cart-v3','one-line-v21-products-migrated','one-line-v24-uniforms-migrated','one-line-v21-categories-migrated'].forEach(k=>localStorage.removeItem(k));
-      localStorage.setItem('one-line-production-reset-v33','1');
+      localStorage.setItem('one-line-production-reset-v43','1');
     }
     // v41: cart, order history and customer profile are server-authoritative.
     // Remove old device snapshots so they can never overwrite another device.
