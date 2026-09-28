@@ -1,29 +1,23 @@
-# One-Line v45
+# One-Line v46
 
-Current production bundle. It includes the v43 role separation, v44 responsive cart fixes, and the new v45 Customization Catalogue + Enquiries workflow.
+This build keeps the v43 role cleanup, v44 responsive cart fixes and v45 shareable Customize Catalogue/enquiry flow, then upgrades Admin + Management product handling using the uploaded Wellone management workflow as the reference.
 
-## Updating the current live project
-1. Upload/replace the full website with this bundle.
-2. In Supabase SQL Editor, run `RUN-NEXT-v45.sql` once.
-3. Refresh the site/admin once after deployment. The v45 service worker replaces the older cache automatically.
+## Deploy
 
-No new Edge Function is required for v45: customization enquiries use the existing verified `customer-event` function.
+1. Upload the full project.
+2. In Supabase SQL Editor run `RUN-NEXT-v46.sql` once.
+3. Wait for GitHub Pages/hosting deployment and refresh the site once. The v46 service worker removes older caches automatically.
 
-## Fresh Supabase project
-Run `supabase/schema.sql`, then follow `supabase/SETUP.md` for Auth users, Edge Functions and secrets. Do not run incremental migration files after a fresh full schema install unless specifically needed later.
+No new Edge Function is required.
 
-## v45 Customization Catalogue
-- Added `Custom Catalogue` to the customer header, mobile drawer, footer and home page.
-- Full catalogue, each category, and each individual catalogue item have shareable URLs.
-- Admin can create/edit/delete catalogue categories with cover images and descriptions.
-- Admin can create catalogue items with a category, full description, multiple uploaded images, sort order and visibility.
-- Catalogue items are customization references only and do not affect ready-made stock.
-- `Enquire for customization` requires a verified customer account. A signed-out customer goes through phone → OTP → name before the enquiry is submitted.
-- Admin → Enquiries shows the exact catalogue item plus verified customer name, mobile, business/institution, post/role, customer-since and last-seen details.
-- Catalogue images use lazy loading and the existing optimized multi-image slider behavior.
+## v46 portal split
 
-## Existing portal roles retained
-- Admin: full access, including Custom Catalogue and Enquiries.
-- Management: add/edit products + Settings only.
-- Staff: search exact product/variant and mark sold quantity + Settings only.
-- Order Receiving: order status workflow + Settings only.
+- **Ready Made**: normal stock products only. They use the existing store Categories / Ready Made navigation and never appear as Customize Catalogue ideas.
+- **Customize Catalogue**: separate enquiry-only categories/items with multiple images and descriptions. They remain in the separate Customize Catalogue customer section and keep the v45 share/enquiry flow.
+- **Admin**: full access and destructive controls.
+- **Management**: can add/edit Ready Made products, Customize Catalogue categories/items and reusable Subitems. Product/category destructive deletes stay Admin-only.
+- **Staff**: stock/sold desk only, unchanged.
+
+## Wellone-style product/subitem upgrades
+
+Ready Made products and Subitems now support a faster option workflow: Simple / One Option / Colour + Option product modes, bulk quick-add option values, exact quantity and rate per option, exact barcodes, hide/show per option, and separate option images uploaded to Supabase Storage.

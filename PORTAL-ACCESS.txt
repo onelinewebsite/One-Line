@@ -1,21 +1,22 @@
-One-Line v43 Portal Access
+One-Line v46 Portal Access
 
 Admin
 URL: /admin.html
 Username: adminhere
 Password: admin22
+Scope: Full access. Ready Made, normal categories, Customize Catalogue, Enquiries, Subitems, stock, orders, customers and accounts.
 
 Management
 URL: /management.html
 Username: managementhere
 Password: manage22
-Scope: Add and edit products only.
+Scope: Add/edit Ready Made products, Customize Catalogue categories/items and reusable Subitems. No destructive product/category deletes, stock desk, orders, customers or accounts.
 
 Staff
 URL: /staff.html
 Username: staffhere
 Password: staff220
-Scope: Search exact product/variant and mark sold quantity only.
+Scope: Search exact product/variant/subitem and mark sold quantity only.
 
 Order Receiving
 URL: /receiver.html

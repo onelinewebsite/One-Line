@@ -305,13 +305,13 @@ create policy "catalogue products update" on public.products for update using(pu
 create policy "catalogue products delete" on public.products for delete using(public.has_role(array['admin']));
 create policy "catalogue variants insert" on public.product_variants for insert with check(public.has_role(array['admin','management']));
 create policy "catalogue variants update" on public.product_variants for update using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
-create policy "catalogue variants delete" on public.product_variants for delete using(public.has_role(array['admin']));
-create policy "catalogue subitems insert" on public.subitems for insert with check(public.has_role(array['admin']));
-create policy "catalogue subitems update" on public.subitems for update using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
+create policy "catalogue variants delete" on public.product_variants for delete using(public.has_role(array['admin','management']));
+create policy "catalogue subitems insert" on public.subitems for insert with check(public.has_role(array['admin','management']));
+create policy "catalogue subitems update" on public.subitems for update using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
 create policy "catalogue subitems delete" on public.subitems for delete using(public.has_role(array['admin']));
-create policy "catalogue subvariants insert" on public.subitem_variants for insert with check(public.has_role(array['admin']));
-create policy "catalogue subvariants update" on public.subitem_variants for update using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
-create policy "catalogue subvariants delete" on public.subitem_variants for delete using(public.has_role(array['admin']));
+create policy "catalogue subvariants insert" on public.subitem_variants for insert with check(public.has_role(array['admin','management']));
+create policy "catalogue subvariants update" on public.subitem_variants for update using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
+create policy "catalogue subvariants delete" on public.subitem_variants for delete using(public.has_role(array['admin','management']));
 create policy "product subitems write" on public.product_subitems for all using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
 
 -- Admin-only store structure/settings.
@@ -676,8 +676,8 @@ revoke all on function public.customer_cart_mutate(uuid,text,text,jsonb) from au
 grant execute on function public.customer_cart_mutate(uuid,text,text,jsonb) to service_role;
 
 
--- ===== v45 Customization Catalogue =====
--- One-Line v45 — Customization Catalogue + enquiry support
+-- ===== v46 Customize Catalogue =====
+-- One-Line v46 — Customize Catalogue + management permissions
 -- Included for fresh project installs.
 
 create table if not exists public.custom_catalog_categories (
@@ -711,31 +711,31 @@ alter table public.custom_catalog_items enable row level security;
 
 drop policy if exists "public custom catalogue categories read" on public.custom_catalog_categories;
 create policy "public custom catalogue categories read" on public.custom_catalog_categories
-for select using(active or public.has_role(array['admin']));
+for select using(active or public.has_role(array['admin','management']));
 
 drop policy if exists "public custom catalogue items read" on public.custom_catalog_items;
 create policy "public custom catalogue items read" on public.custom_catalog_items
 for select using(
-  public.has_role(array['admin'])
+  public.has_role(array['admin','management'])
   or (active and exists(select 1 from public.custom_catalog_categories c where c.id=category_id and c.active))
 );
 
 drop policy if exists "custom catalogue categories admin insert" on public.custom_catalog_categories;
 create policy "custom catalogue categories admin insert" on public.custom_catalog_categories for insert
-with check(public.has_role(array['admin']));
+with check(public.has_role(array['admin','management']));
 drop policy if exists "custom catalogue categories admin update" on public.custom_catalog_categories;
 create policy "custom catalogue categories admin update" on public.custom_catalog_categories for update
-using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
+using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
 drop policy if exists "custom catalogue categories admin delete" on public.custom_catalog_categories;
 create policy "custom catalogue categories admin delete" on public.custom_catalog_categories for delete
 using(public.has_role(array['admin']));
 
 drop policy if exists "custom catalogue items admin insert" on public.custom_catalog_items;
 create policy "custom catalogue items admin insert" on public.custom_catalog_items for insert
-with check(public.has_role(array['admin']));
+with check(public.has_role(array['admin','management']));
 drop policy if exists "custom catalogue items admin update" on public.custom_catalog_items;
 create policy "custom catalogue items admin update" on public.custom_catalog_items for update
-using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
+using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
 drop policy if exists "custom catalogue items admin delete" on public.custom_catalog_items;
 create policy "custom catalogue items admin delete" on public.custom_catalog_items for delete
 using(public.has_role(array['admin']));

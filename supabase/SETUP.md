@@ -1,4 +1,4 @@
-# One-Line v45 — Supabase setup
+# One-Line v46 — Supabase setup
 
 This build keeps customer profile, cart and order history on Supabase. Device storage is used only for the login/session token, static/catalogue cache and unfinished designer drafts.
 
@@ -6,10 +6,10 @@ This build keeps customer profile, cart and order history on Supabase. Device st
 If the v43/v44 build is already working, do **not** recreate the database.
 
 1. Supabase → SQL Editor → New query.
-2. Run the root file `RUN-NEXT-v45.sql` once.
-3. No new Edge Function is required for v45. Keep the currently deployed `otp-session`, `customer-event`, `customer-account`, `place-order`, and `admin-user` functions.
+2. Run the root file `RUN-NEXT-v46.sql` once.
+3. No new Edge Function is required for v46. Keep the currently deployed `otp-session`, `customer-event`, `customer-account`, `place-order`, and `admin-user` functions.
 
-If the database is older than v43, apply the relevant older migration first. `RUN-NEXT-v43.sql` is included for that upgrade path. If it never received the v41 server-account sync, run `supabase/migrations/v41_server_account_sync.sql` before the later role/catalogue migrations.
+This v46 bundle is intended for the current v45 database. For a much older database, use the full `supabase/schema.sql` on a fresh project or reconcile the older migrations before applying v46. If it never received the v41 server-account sync, `supabase/migrations/v41_server_account_sync.sql` remains available as a reference migration.
 
 ## Fresh project
 Run the complete `supabase/schema.sql`, set the existing `MSG91_AUTH_KEY` Edge Function secret, then deploy:
@@ -26,7 +26,7 @@ A fresh full-schema install already contains the Customization Catalogue tables 
 
 ## Portal roles
 - **Admin:** full catalogue, categories/subcategories, Custom Catalogue, Enquiries, reusable subitems, stock, orders, customers/activity/carts, and staff account control.
-- **Management:** add and edit normal products only. It can upload product images and edit product variants/linked subitems, but cannot manage categories, Custom Catalogue, enquiries, reusable subitems, stock, customers, orders, or accounts.
+- **Management:** add/edit Ready Made products, Customize Catalogue categories/items and reusable Subitems. It can upload product/option images and manage exact variants, but it cannot use destructive product/category deletes, Enquiries, stock desk, customers, orders, activity or accounts.
 - **Staff:** stock sales desk only. Search by name/code/barcode/category/colour/size, choose the exact variant, enter quantity, and mark it sold. Staff cannot add stock.
 - **Order Receiving:** read orders and update order status only.
 
