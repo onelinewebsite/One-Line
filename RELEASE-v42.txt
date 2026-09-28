@@ -1,0 +1,14 @@
+One-Line v42 — Responsive Polish + Portal Access
+
+Customer site
+- Profile icon is now present in the header on desktop, tablet and mobile.
+- Desktop/laptop product and category cards use wider spacing and fewer cramped columns.
+- Cart, checkout and general content spacing is improved without changing customizer garment positioning.
+- v41 server account/cart/order sync remains unchanged.
+
+Admin portals
+- Desktop and laptop portal spacing/navigation improved.
+- Admin Accounts page includes one-click creation/reset of standard portal access accounts.
+- Updated admin-user Edge Function supports the requested admin22 password and default account bootstrap.
+
+Portal access is listed in PORTAL-ACCESS.txt.

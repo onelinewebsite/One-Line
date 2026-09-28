@@ -1,19 +1,90 @@
 import { cors,json,admin,requirePortalUser } from '../_shared.ts'
-const emailFor=(username:string)=>username.trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@staff.oneline.local'
+
+const cleanUsername=(username:string)=>String(username||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')
+const emailFor=(username:string)=>cleanUsername(username)+'@staff.oneline.local'
+const allowedRoles=['admin','management','staff','receiver']
+
+async function upsertPortalAccount(db:any,spec:{name:string;username:string;password:string;role:string}){
+  const username=cleanUsername(spec.username),email=emailFor(username)
+  let {data:profile,error:profileError}=await db.from('profiles').select('*').eq('username',username).maybeSingle()
+  if(profileError)throw profileError
+
+  if(profile?.id){
+    const u=await db.auth.admin.updateUserById(profile.id,{email,password:spec.password,email_confirm:true,user_metadata:{username,name:spec.name,role:spec.role}})
+    if(u.error)throw u.error
+    const q=await db.from('profiles').update({name:spec.name,role:spec.role,active:true,updated_at:new Date().toISOString()}).eq('id',profile.id).select().single()
+    if(q.error)throw q.error
+    return q.data
+  }
+
+  const listed=await db.auth.admin.listUsers({page:1,perPage:1000})
+  if(listed.error)throw listed.error
+  const existing=(listed.data?.users||[]).find((u:any)=>String(u.email||'').toLowerCase()===email)
+  let userId=''
+  if(existing){
+    userId=existing.id
+    const u=await db.auth.admin.updateUserById(existing.id,{password:spec.password,email_confirm:true,user_metadata:{username,name:spec.name,role:spec.role}})
+    if(u.error)throw u.error
+  }else{
+    const created=await db.auth.admin.createUser({email,password:spec.password,email_confirm:true,user_metadata:{username,name:spec.name,role:spec.role}})
+    if(created.error)throw created.error
+    userId=created.data.user.id
+  }
+  const q=await db.from('profiles').upsert({id:userId,username,name:spec.name,role:spec.role,active:true,updated_at:new Date().toISOString()}).select().single()
+  if(q.error)throw q.error
+  return q.data
+}
+
 Deno.serve(async(req)=>{
-  if(req.method==='OPTIONS')return new Response('ok',{headers:cors});
+  if(req.method==='OPTIONS')return new Response('ok',{headers:cors})
   try{
-    const portal=await requirePortalUser(req,['admin']);if(!portal)return json({error:'Admin authorization required.'},403);const body=await req.json(),db=admin();
+    const portal=await requirePortalUser(req,['admin'])
+    if(!portal)return json({error:'Admin authorization required.'},403)
+    const body=await req.json(),db=admin()
+
+    if(body.action==='bootstrap_defaults'){
+      const defaults=[
+        {name:'Admin',username:'adminhere',password:'admin22',role:'admin'},
+        {name:'Management',username:'managementhere',password:'manage22',role:'management'},
+        {name:'Staff',username:'staffhere',password:'staff220',role:'staff'},
+        {name:'Order Receiving',username:'receiverhere',password:'receiver22',role:'receiver'},
+      ]
+      const profiles=[]
+      for(const spec of defaults)profiles.push(await upsertPortalAccount(db,spec))
+      return json({ok:true,profiles})
+    }
+
     if(body.action==='create'){
-      const username=String(body.username||'').trim(),password=String(body.password||''),name=String(body.name||'').trim(),role=String(body.role||'staff');
-      if(!username||password.length<8||!name||!['admin','management','staff','receiver'].includes(role))return json({error:'Name, username, role and an 8+ character password are required.'},400);
-      const created=await db.auth.admin.createUser({email:emailFor(username),password,email_confirm:true,user_metadata:{username,name,role}});if(created.error)throw created.error;
-      const q=await db.from('profiles').insert({id:created.data.user.id,username,name,role,active:true}).select().single();if(q.error){await db.auth.admin.deleteUser(created.data.user.id);throw q.error}return json({ok:true,profile:q.data});
+      const username=cleanUsername(body.username),password=String(body.password||''),name=String(body.name||'').trim(),role=String(body.role||'staff')
+      if(!username||password.length<6||!name||!allowedRoles.includes(role))return json({error:'Name, username, role and a 6+ character password are required.'},400)
+      const created=await db.auth.admin.createUser({email:emailFor(username),password,email_confirm:true,user_metadata:{username,name,role}})
+      if(created.error)throw created.error
+      const q=await db.from('profiles').insert({id:created.data.user.id,username,name,role,active:true}).select().single()
+      if(q.error){await db.auth.admin.deleteUser(created.data.user.id);throw q.error}
+      return json({ok:true,profile:q.data})
     }
+
     if(body.action==='update'){
-      const id=String(body.id||''),patch:any={};for(const k of ['name','role','active'])if(body[k]!==undefined)patch[k]=body[k];patch.updated_at=new Date().toISOString();if(patch.role&&!['admin','management','staff','receiver'].includes(patch.role))return json({error:'Invalid role.'},400);
-      const q=await db.from('profiles').update(patch).eq('id',id).select().single();if(q.error)throw q.error;if(body.password){const u=await db.auth.admin.updateUserById(id,{password:String(body.password)});if(u.error)throw u.error}return json({ok:true,profile:q.data});
+      const id=String(body.id||''),patch:any={}
+      for(const k of ['name','role','active'])if(body[k]!==undefined)patch[k]=body[k]
+      if(body.username!==undefined){
+        const username=cleanUsername(body.username)
+        if(!username)return json({error:'Invalid username.'},400)
+        patch.username=username
+        const u=await db.auth.admin.updateUserById(id,{email:emailFor(username),email_confirm:true,user_metadata:{username}})
+        if(u.error)throw u.error
+      }
+      patch.updated_at=new Date().toISOString()
+      if(patch.role&&!allowedRoles.includes(patch.role))return json({error:'Invalid role.'},400)
+      const q=await db.from('profiles').update(patch).eq('id',id).select().single()
+      if(q.error)throw q.error
+      if(body.password){
+        if(String(body.password).length<6)return json({error:'Password must be at least 6 characters.'},400)
+        const u=await db.auth.admin.updateUserById(id,{password:String(body.password)})
+        if(u.error)throw u.error
+      }
+      return json({ok:true,profile:q.data})
     }
-    return json({error:'Unsupported action.'},400);
+    return json({error:'Unsupported action.'},400)
   }catch(e){return json({error:e instanceof Error?e.message:'Account action failed.'},400)}
 })
