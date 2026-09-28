@@ -1,15 +1,28 @@
-# OneLine v32 — Supabase + MSG91 go-live
+# One-Line v41 — server-synced customer accounts
 
-The frontend is already configured for the client Supabase project and MSG91 OTP Widget. No demo catalogue is shipped.
+This build keeps customer profile, cart and order history on Supabase. Device storage is used only for the login session token, static/catalogue cache and unfinished designer drafts.
 
-## 1. Run the database schema
-Open the client Supabase project → SQL Editor → New query. Paste the complete contents of `supabase/schema.sql` and Run it once. The file is idempotent for the intended fresh project.
+## Existing project (recommended)
+You already ran the original `schema.sql`, so do **not** recreate the database.
 
-## 2. Deploy the Edge Functions
-From a machine with the Supabase CLI installed and logged in, link this project and deploy:
+1. Supabase → SQL Editor → New query.
+2. Run `RUN-NEXT-v41.sql` once. It is safe whether or not the v40 migration was previously run.
+3. Redeploy these Edge Functions from this build:
 
 ```bash
-supabase link --project-ref eiozlrnrvlfyflddemla
+supabase functions deploy customer-event --no-verify-jwt
+supabase functions deploy customer-account --no-verify-jwt
+supabase functions deploy place-order --no-verify-jwt
+```
+
+`otp-session` does not need a code change for v41, but it must remain deployed with Verify JWT OFF. Keep the existing `MSG91_AUTH_KEY` Edge Function secret.
+
+If you deploy manually from the Supabase Dashboard, use the self-contained files in `supabase/dashboard-deploy/` and keep **Verify JWT with legacy secret = OFF** for `customer-event`, `customer-account`, `place-order`, and `otp-session`.
+
+## Fresh project
+Run the complete `supabase/schema.sql`, set `MSG91_AUTH_KEY`, then deploy:
+
+```bash
 supabase functions deploy otp-session --no-verify-jwt
 supabase functions deploy customer-event --no-verify-jwt
 supabase functions deploy customer-account --no-verify-jwt
@@ -17,48 +30,30 @@ supabase functions deploy place-order --no-verify-jwt
 supabase functions deploy admin-user
 ```
 
-## 3. Add the MSG91 account AuthKey as a SERVER secret
-The Widget ID/token are already in `js/config.js` because MSG91 provides those for client-side Widget use. The separate account-level AuthKey must stay server-side.
+## What is server-authoritative in v41
+- Customer name, business/institution and post/role.
+- Cart items, quantities, piece count and total.
+- Order history and order status.
+- One phone number remains connected to the same customer record on every device.
+- Multiple active devices can use the same account. Cart mutations are atomic so two devices do not overwrite unrelated cart changes.
 
-```bash
-supabase secrets set MSG91_AUTH_KEY='PASTE_THE_ACCOUNT_AUTHKEY_HERE'
-```
+The browser does **not** restore cart/order/profile data from localStorage. The site polls a lightweight account sync endpoint about every 2.5 seconds while visible, and same-browser tabs also signal each other immediately.
 
-Do not put that AuthKey in HTML, JavaScript, GitHub, Netlify variables exposed to the browser, or screenshots. `otp-session` uses it only to call MSG91 `verifyAccessToken` after the browser Widget verifies the OTP.
+## What may still use device cache
+- Static website/PWA files.
+- Catalogue/settings cache used for fast loading.
+- Unfinished customizer/design drafts before they are added to cart.
+- The customer session token needed to stay signed in on that device.
 
-## 4. Create the first Admin account
-In Supabase → Authentication → Users → Add user. Use an internal email matching the portal username convention, for example `owner@staff.oneline.local`, and set a strong password. Copy the new user's UUID. Then run:
+As soon as a design/product is added to cart, the complete cart item is saved to Supabase and becomes available on the customer's other logged-in devices.
 
-```sql
-insert into public.profiles(id,username,name,role,active)
-values ('PASTE_AUTH_USER_UUID','owner','OneLine Owner','admin',true);
-```
+## Two-device test
+1. Log in with the same phone number on a laptop and phone.
+2. Change the profile name/business/role on one device. The other device should update within a few seconds.
+3. Add an item on the laptop. The phone cart should show it within a few seconds.
+4. Change quantity/remove an item on one device. The other device should follow.
+5. Place an order. Both devices should show an empty cart and the new order in My Orders.
+6. Change the order status in Admin. The customer order history should update automatically within a few seconds.
 
-After this first admin logs in at `admin.html`, the Accounts section can create Admin, Management, Staff and Order Receiving logins.
-
-## 5. Upload the site
-Upload the contents of this folder to the existing static host. The service worker uses cache `one-line-v40-persistent-account-admin-20260928`, so the browser replaces the older cached build after activation.
-
-## Live OTP flow
-Customer opens the site without login → attempts to add a product/design to cart → mobile number → MSG91 Widget sends OTP → customer enters OTP → Widget returns a short-lived access token → `otp-session` verifies that token with MSG91 using the secret AuthKey → OneLine creates a 30-day customer session → returning customers with a saved name continue immediately; only a new/nameless customer is asked for a name → continues the original cart action.
-
-## Important checks
-- MSG91 Widget: India allowed, demo credentials blank, user-existence validation disabled, deprecated webhook skipped.
-- The account-level MSG91 AuthKey rule must permit the Widget/access-token verification call.
-- Product/category images are uploaded to the public `product-images` bucket by Admin/Management only.
-- Catalogue orders are stock-checked and deducted atomically on the server.
-- Custom/team artwork is uploaded by the server when the order is placed.
-
-## Updating an existing v39 database to v40
-If the original `schema.sql` has already been run, do **not** recreate the database. Run only `supabase/migrations/v40_customer_accounts.sql` once. It adds persistent business/role profile fields and the live customer cart table without deleting existing customers, orders or catalogue data.
-
-Then deploy/redeploy:
-
-```bash
-supabase functions deploy otp-session --no-verify-jwt
-supabase functions deploy customer-event --no-verify-jwt
-supabase functions deploy customer-account --no-verify-jwt
-supabase functions deploy place-order --no-verify-jwt
-```
-
-`admin-user` does not need redeployment unless its code changed separately.
+## Admin / Management
+Customers, Live Carts, Orders, Activity and Dashboard refresh automatically every 5 seconds while those pages are open. Live Cart uses a small server-generated admin summary so uploaded design images are not repeatedly downloaded into the admin portal.

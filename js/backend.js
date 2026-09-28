@@ -8,13 +8,28 @@
       ['custom-store-products-v3','custom-store-categories-v3','custom-store-orders-v3','custom-store-cart-v3','one-line-v21-products-migrated','one-line-v24-uniforms-migrated','one-line-v21-categories-migrated'].forEach(k=>localStorage.removeItem(k));
       localStorage.setItem('one-line-production-reset-v33','1');
     }
+    // v41: cart, order history and customer profile are server-authoritative.
+    // Remove old device snapshots so they can never overwrite another device.
+    localStorage.removeItem('custom-store-cart-v3');
+    localStorage.removeItem('custom-store-orders-v3');
   }catch(_){}
   function local(key,value){const writing=arguments.length===2;try{if(writing){localStorage.setItem(key,JSON.stringify(value));window.dispatchEvent(new CustomEvent('one-line-change',{detail:{key}}));return value;}return JSON.parse(localStorage.getItem(key)||'null');}catch(_){return writing?value:null;}}
   const configured=()=>!!(C.SUPABASE_URL&&C.SUPABASE_PUBLISHABLE_KEY&&window.supabase?.createClient);
   const supa=()=>{if(!configured())return null;if(!client)client=window.supabase.createClient(C.SUPABASE_URL,C.SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return client;};
   const cleanPhone=v=>{let n=String(v||'').replace(/\D/g,'');if(n.length===10)n='91'+n;return n;};
-  const session=()=>local(C.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1')||null;
-  const setSession=v=>local(C.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1',v);
+  const session=()=>{
+    const key=C.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1',v=local(key);if(!v?.token)return null;
+    const safe={token:String(v.token),customerId:v.customerId||null,phone:v.phone||'',expiresAt:v.expiresAt||''};
+    try{if(Object.keys(v).some(k=>!['token','customerId','phone','expiresAt'].includes(k)))localStorage.setItem(key,JSON.stringify(safe));}catch(_){}
+    return safe;
+  };
+  const setSession=v=>{
+    if(!v?.token)return null;
+    // Persist only the credential / stable identifiers. Profile, cart and orders
+    // always come from Supabase so a second device never sees stale account data.
+    const safe={token:String(v.token),customerId:v.customerId||null,phone:v.phone||'',expiresAt:v.expiresAt||''};
+    return local(C.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1',safe);
+  };
   const clearSession=()=>localStorage.removeItem(C.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1');
   async function invokePublicDirect(name,body){
     const base=String(C.SUPABASE_URL||'').replace(/\/$/,'');
@@ -112,8 +127,12 @@
   }
   async function customerEvent(event_type,payload){const s=session();if(!s?.token)return null;return invoke('customer-event',{token:s.token,event_type,payload},false).catch(()=>null);}
   async function customerAccount(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'get'},false);}
-  async function updateCustomerProfile(profile){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');const data=await invoke('customer-account',{token:s.token,action:'update',profile:profile||{}},false);if(data?.customer){const next={...s,name:data.customer.name||'',businessName:data.customer.businessName||'',jobTitle:data.customer.jobTitle||'',phone:data.customer.phone||s.phone};setSession(next);}return data?.customer||null;}
-  async function syncCustomerCart(items,pieceCount,total){const s=session();if(!s?.token)return null;return customerEvent('cart_sync',{items:Array.isArray(items)?items:[],pieceCount:Number(pieceCount||0),total:Number(total||0)});}
+  async function customerSync(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'sync'},false);}
+  async function updateCustomerProfile(profile){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');const data=await invoke('customer-account',{token:s.token,action:'update',profile:profile||{}},false);return data?.customer||null;}
+  async function mutateCustomerCart(operation,itemKey,item){
+    const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');
+    return invoke('customer-account',{token:s.token,action:'cart_mutate',operation:String(operation||''),itemKey:String(itemKey||item?.key||''),item:item||null},false);
+  }
   async function placeOrder(payload){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');const data=await invoke('place-order',{token:s.token,...payload},false);return data?.order||data;}
   async function staffSignIn(username,password){const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');const clean=String(username||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'');if(!clean)throw new Error('Enter username.');const email=clean+'@staff.oneline.local';const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',data.user.id).single();if(pe)throw pe;if(!profile.active){await sb.auth.signOut();throw new Error('This account is suspended.');}return profile;}
   async function staffProfile(){const sb=supa();if(!sb)return null;const {data:{user}}=await sb.auth.getUser();if(!user)return null;const {data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();return data||null;}
@@ -136,5 +155,5 @@
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate();}
   async function listSubitems(){const sb=supa();const [{data:items,error},{data:vars,error:ve}]=await Promise.all([sb.from('subitems').select('*').order('name'),sb.from('subitem_variants').select('*')]);if(error)throw error;if(ve)throw ve;return(items||[]).map(si=>({...si,variants:(vars||[]).filter(v=>v.subitem_id===si.id)}));}
   async function upsertSubitem(si){const sb=supa();const payload={id:si.id||undefined,code:si.code||'',barcode:si.barcode||null,name:si.name||'',price:Number(si.price||0),option_title:si.optionTitle||'Size',images:si.images||[],active:si.active!==false};const {data,error}=await sb.from('subitems').upsert(payload).select().single();if(error)throw error;await sb.from('subitem_variants').delete().eq('subitem_id',data.id);if(si.variants?.length){const r=await sb.from('subitem_variants').insert(si.variants.map(v=>({subitem_id:data.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??si.price??0),barcode:v.barcode||null,image_url:v.image||'',active:v.active!==false})));if(r.error)throw r.error;}await hydrate();return data;}
-  window.OneLineBackend={configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerAccount,updateCustomerProfile,syncCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,listProfiles,uploadImage,upsertCategory,upsertProduct,deleteProduct,listSubitems,upsertSubitem,cleanPhone};
+  window.OneLineBackend={configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerAccount,customerSync,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,listProfiles,uploadImage,upsertCategory,upsertProduct,deleteProduct,listSubitems,upsertSubitem,cleanPhone};
 })();

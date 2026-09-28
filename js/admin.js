@@ -88,8 +88,8 @@
       if(base[0].error)throw base[0].error;if(base[1].error)throw base[1].error;if(base[3].error)throw base[3].error;if(base[4].error)throw base[4].error;
       state.categories=base[0].data||[];state.subcategories=base[1].data||[];state.subitems=base[2]||[];state.orders=base[3].data||[];state.orderItems=base[4].data||[];
       if(requested==='admin'||requested==='management'){
-        const [a,c,cart]=await Promise.all([client.from('customer_activity').select('*,customers(name,phone)').order('created_at',{ascending:false}).limit(500),client.from('customers').select('*').order('last_seen_at',{ascending:false}).limit(1000),client.from('customer_carts').select('*,customers(id,name,phone,business_name,job_title)').order('updated_at',{ascending:false}).limit(1000)]);
-        if(!a.error)state.activity=a.data||[];if(!c.error)state.customers=c.data||[];if(!cart.error)state.carts=cart.data||[];
+        const [a,c,cart]=await Promise.all([client.from('customer_activity').select('*,customers(name,phone)').order('created_at',{ascending:false}).limit(500),client.from('customers').select('*').order('last_seen_at',{ascending:false}).limit(1000),client.from('customer_carts').select('customer_id,admin_items,piece_count,total,version,updated_at,customers(id,name,phone,business_name,job_title)').order('updated_at',{ascending:false}).limit(1000)]);
+        if(!a.error)state.activity=a.data||[];if(!c.error)state.customers=c.data||[];if(!cart.error)state.carts=(cart.data||[]).map(x=>({...x,items:Array.isArray(x.admin_items)?x.admin_items:[]}));
       }
       if(requested==='admin'){state.profiles=await B.listProfiles();}
     }catch(e){state.error=e.message||String(e);}finally{state.loading=false;render();}
@@ -163,5 +163,5 @@
     state.loading=false;if(state.profile&&roleOkay())await loadAll();else render();
   }
   init();
-  setInterval(()=>{if(state.profile&&roleOkay()&&!state.loading&&(requested==='admin'||requested==='management'))loadAll(true);},30000);
+  setInterval(()=>{const live=['dashboard','orders','customers','carts','activity'].includes(state.view);if(state.profile&&roleOkay()&&!state.loading&&!state.editor&&!state.subEditor&&!state.categoryEditor&&live&&(requested==='admin'||requested==='management'))loadAll(true);},5000);
 })();

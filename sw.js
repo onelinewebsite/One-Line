@@ -1,4 +1,4 @@
-const CACHE='one-line-v40-persistent-account-admin-20260928';
+const CACHE='one-line-v41-server-account-sync-20260928';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./receiver.html','./b2b.html',
   './css/styles-1.css','./css/styles-2.css','./css/styles-3.css','./css/v32.css','./css/v34.css','./css/v35.css','./css/v36.css','./css/v37.css','./css/v38.css','./css/v39.css','./css/v40.css','./css/admin.css',

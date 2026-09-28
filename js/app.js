@@ -3,12 +3,12 @@
   const S=window.OneLineStore,B=window.OneLineBackend,I=S.icon,root=document.getElementById('app');
   const clone=v=>typeof structuredClone==="function"?structuredClone(v):JSON.parse(JSON.stringify(v));
   const state={
-    screen:'home',products:S.getProducts(),categories:S.getCategories(),cart:S.getCart(),orders:S.getOrders(),settings:S.getSettings(),
+    screen:'home',products:S.getProducts(),categories:S.getCategories(),cart:[],orders:[],settings:S.getSettings(),
     filterCategories:[],filterSubs:[],filterOptions:[],filterOpen:false,filterDraft:null,selected:null,previewImage:'',color:'',size:'',subItem:false,subColor:'',subSize:'',menu:false,
     bulkQty:{},subBulkQty:{},selectedSubitems:{},
     teamType:'Sportswear',teamArtwork:'',teamFileName:'',teamRows:[{name:'',number:'',size:'M'}],pendingCustomItem:null,
     authModal:false,authStep:'phone',authPhone:'',authOtp:'',authName:'',authBusy:false,authError:'',pendingAction:'',customer:B?.customerSession?.()||null,
-    backendReady:false,backendError:'',catalogQuery:'',profileEditing:false,accountLoaded:false,
+    backendReady:false,backendError:'',catalogQuery:'',profileEditing:false,accountLoaded:false,accountSyncing:false,cartVersion:0,cartUpdatedAt:'',ordersStamp:'',profileUpdatedAt:'',
     toast:'',legal:'',checkoutStep:1,details:{name:'',phone:'',address:'',business:''},delivery:'Courier',payment:'Cash on delivery',paymentDemo:false,
     orderPlaced:false,orderReference:'',installPrompt:null,zoomImage:'',zoomAlt:'',zoomImages:[],zoomIndex:0,zoomScale:1,zoomX:0,zoomY:0,b2bAuthed:sessionStorage.getItem('one-line-b2b-auth')==='1',b2bError:''
   };
@@ -70,26 +70,58 @@
     if(history.state?.oneLine){history.back();return;}
     go(fallback||'home');
   }
-  function cartAdminSnapshot(){return state.cart.slice(0,80).map(item=>({productId:item.productId||null,itemType:item.itemType||'product',name:String(item.name||'').slice(0,160),code:String(item.code||'').slice(0,80),qty:Number(item.qty||1),detail:String(item.detail||'').slice(0,220),color:String(item.color||''),size:String(item.size||''),total:Number(item.total??Number(item.price||0)*Number(item.qty||1)),bulkLines:Array.isArray(item.bulkLines)?item.bulkLines.map(l=>({color:l.color||'',size:l.size||'',qty:Number(l.qty||0)})).filter(l=>l.qty>0).slice(0,80):[],subitems:Array.isArray(item.subitems)?item.subitems.map(si=>({name:si.name||'',lines:Array.isArray(si.lines)?si.lines.map(l=>({color:l.color||'',size:l.size||'',qty:Number(l.qty||0)})).filter(l=>l.qty>0).slice(0,80):[]})).slice(0,30):[],sizeQuantities:item.sizeQuantities||null}));}
-  function syncCartToAccount(){if(!(B?.customerSession?.()?.token))return;B?.syncCustomerCart?.(cartAdminSnapshot(),totalQty(),subtotal());}
-  function saveCart(){if(state.cart.length)S.save('custom-store-cart-v3',state.cart);else localStorage.removeItem('custom-store-cart-v3');syncCartToAccount();}
+  let cartMutationQueue=Promise.resolve(),cartMutationsPending=0,cartSyncError='',accountPollBusy=false,accountChannel=null;
+  try{if('BroadcastChannel' in window){accountChannel=new BroadcastChannel('one-line-account-v41');accountChannel.onmessage=()=>pollCustomerAccount(true);}}catch(_){}
+  function broadcastAccountSync(reason){try{accountChannel?.postMessage({reason:reason||'update',at:Date.now()});}catch(_){}}
+  function ensureCartKey(item){if(!item.key)item.key=(item.itemType||'item')+'-'+(crypto.randomUUID?.()||Date.now()+'-'+Math.random().toString(16).slice(2));return String(item.key);}
+  function applyServerCart(cart){
+    const items=Array.isArray(cart?.items)?cart.items:[];
+    state.cart=items.map(raw=>{const item=clone(raw);ensureCartKey(item);return item;});
+    state.cartVersion=Number(cart?.version||0);state.cartUpdatedAt=String(cart?.updatedAt||'');
+  }
   function mapServerOrders(rows){return (rows||[]).map(o=>({id:o.order_code||o.id,customer:o.customer_name||'',phone:o.phone||'',total:Number(o.total||0),items:(o.order_items||[]).reduce((n,x)=>n+Number(x.qty||0),0),delivery:o.delivery||'',payment:o.payment||'',status:o.status||'Confirmed',time:o.created_at?new Date(o.created_at).toLocaleString():'',address:o.address||'',orderItems:(o.order_items||[]).map(x=>({name:x.item_name||'Item',code:x.item_code||'',color:x.color||'',size:x.size||'',qty:Number(x.qty||0),price:Number(x.unit_price||0),itemType:x.item_type||'product',custom:x.item_type!=='product'&&x.item_type!=='subitem',customDesign:x.item_type==='custom_design'?(x.design_json||null):null,image:x.design_json?.artworkUrl||''}))}));}
+  const orderMetaStamp=meta=>String(meta?.count||0)+'|'+String(meta?.updatedAt||'');
+  function applyServerCustomer(customer){
+    if(!customer)return false;const before=JSON.stringify([state.customer?.name||'',state.customer?.businessName||'',state.customer?.jobTitle||'',state.customer?.phone||'',state.profileUpdatedAt||'']);
+    const sess=B?.customerSession?.()||{},next={...(state.customer||{}),...sess,customerId:customer.id||state.customer?.customerId||sess.customerId,phone:customer.phone||state.customer?.phone||sess.phone||'',name:customer.name||'',businessName:customer.businessName||'',jobTitle:customer.jobTitle||''};
+    state.customer=next;state.profileUpdatedAt=String(customer.updatedAt||'');
+    state.details.name=next.name||'';state.details.business=next.businessName||'';state.details.phone=next.phone||'';
+    return before!==JSON.stringify([next.name||'',next.businessName||'',next.jobTitle||'',next.phone||'',state.profileUpdatedAt||'']);
+  }
   async function refreshCustomerAccount(renderAfter=false){
-    const current=B?.customerSession?.()||state.customer;if(!current?.token)return null;
+    const current={...(state.customer||{}),...(B?.customerSession?.()||{})};if(!current?.token)return null;
     try{
       const data=await B.customerAccount();if(!data?.customer)return null;
-      const next={...current,customerId:data.customer.id||current.customerId,phone:data.customer.phone||current.phone,name:data.customer.name||'',businessName:data.customer.businessName||'',jobTitle:data.customer.jobTitle||''};
-      B.setCustomerSession(next);state.customer=next;state.accountLoaded=true;
-      state.details.name=state.details.name||next.name||'';state.details.business=state.details.business||next.businessName||'';state.details.phone=next.phone||'';
-      const serverOrders=mapServerOrders(data.orders||[]);state.orders=serverOrders;S.save('custom-store-orders-v3',serverOrders);
-      syncCartToAccount();if(renderAfter)render();return data;
-    }catch(err){if(/session expired/i.test(String(err?.message||''))){B?.clearCustomerSession?.();state.customer=null;}return null;}
+      applyServerCustomer(data.customer);applyServerCart(data.cart||null);state.orders=mapServerOrders(data.orders||[]);state.ordersStamp=orderMetaStamp(data.ordersMeta||{count:(data.orders||[]).length,updatedAt:(data.orders||[]).reduce((m,o)=>String(o.updated_at||'')>m?String(o.updated_at||''):m,'')});state.accountLoaded=true;
+      if(renderAfter)render();return data;
+    }catch(err){if(/session expired/i.test(String(err?.message||''))){B?.clearCustomerSession?.();state.customer=null;state.cart=[];state.orders=[];state.accountLoaded=false;}return null;}
   }
-  function addCart(item,navigate){state.cart.push(item);saveCart();B?.customerEvent?.('cart_add',{item:{productId:item.productId||null,name:item.name,code:item.code||'',qty:item.qty||1,itemType:item.itemType||'product'}});if(navigate)go('cart');else showToast('Added to your cart');}
+  function queueCartMutation(operation,itemKey,item){
+    const key=String(itemKey||item?.key||'');cartMutationsPending++;
+    cartMutationQueue=cartMutationQueue.then(async()=>{
+      const result=await B.mutateCustomerCart(operation,key,item?clone(item):null);cartSyncError='';if(result?.cart)applyServerCart(result.cart);broadcastAccountSync('cart');
+      if(state.screen==='cart'||state.screen==='profile')render();return result;
+    }).catch(async err=>{cartSyncError=err?.message||'Could not sync cart';showToast(cartSyncError);await refreshCustomerAccount(true);return null;}).finally(()=>{cartMutationsPending=Math.max(0,cartMutationsPending-1);});
+    return cartMutationQueue;
+  }
+  async function pollCustomerAccount(force=false){
+    if(accountPollBusy||cartMutationsPending>0||document.hidden)return;const sess=B?.customerSession?.();if(!sess?.token)return;accountPollBusy=true;
+    try{
+      const data=await B.customerSync();if(!data?.customer)return;const profileChanged=applyServerCustomer(data.customer);
+      const remoteCartVersion=Number(data.cart?.version||0),remoteOrderStamp=orderMetaStamp(data.ordersMeta);
+      const needFull=remoteCartVersion!==Number(state.cartVersion||0)||remoteOrderStamp!==String(state.ordersStamp||'');
+      if(needFull)await refreshCustomerAccount(false);else state.accountLoaded=true;
+      if((force||profileChanged||needFull)&&state.screen!=='customize'&&!state.profileEditing&&!state.authBusy){if(state.screen==='checkout'&&state.checkoutStep===1){const form=root.querySelector('[data-checkout-form]');if(form){const fd=new FormData(form);state.details={...state.details,...Object.fromEntries(fd.entries())};}}render();}
+    }catch(err){if(/session expired/i.test(String(err?.message||''))){B?.clearCustomerSession?.();state.customer=null;state.cart=[];state.orders=[];state.accountLoaded=false;render();}}finally{accountPollBusy=false;}
+  }
+  function addCart(item,navigate){
+    ensureCartKey(item);state.cart.push(item);queueCartMutation('upsert',item.key,item);B?.customerEvent?.('cart_add',{item:{productId:item.productId||null,name:item.name,code:item.code||'',qty:item.qty||1,itemType:item.itemType||'product'}});if(navigate)go('cart');else showToast('Added to your cart');
+  }
   function requireCustomer(action){
-    state.customer=B?.customerSession?.()||state.customer;
+    const sess=B?.customerSession?.();if(sess?.token)state.customer={...(state.customer||{}),...sess};
     const verified=!!state.customer?.token,name=String(state.customer?.name||'').trim();
-    if(verified&&name.length>=2)return true;
+    if(verified&&state.accountLoaded&&name.length>=2)return true;
+    if(verified&&!state.accountLoaded&&!state.accountSyncing){state.pendingAction=action||'';state.accountSyncing=true;refreshCustomerAccount(false).then(()=>{state.accountSyncing=false;const n=String(state.customer?.name||'').trim();if(n.length>=2)continuePendingAction();else{state.authModal=true;state.authStep='name';state.authName=n;render();}});return false;}
     state.pendingAction=action||'';state.authModal=true;state.authError='';
     if(verified){state.authStep='name';state.authName=name;}else{state.authStep='phone';state.authPhone='';state.authOtp='';state.authName='';}
     render();return false;
@@ -228,7 +260,7 @@
   }
   const isStandalone=()=>window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true;
   function header(){
-    const customer=B?.customerSession?.()||state.customer||null,verified=!!customer?.token;
+    const customer=state.customer||B?.customerSession?.()||null,verified=!!customer?.token;
     const activeScreen=(...screens)=>screens.includes(state.screen)?' active-menu':'';
     const item=(screen,label,icon,screens)=>'<button class="drawer-item'+activeScreen(...(screens||[screen]))+'" data-go="'+screen+'"><span class="drawer-icon">'+I(icon)+'</span><span>'+label+'</span>'+I('chevron')+'</button>';
     const installNav=isStandalone()?'':'<button class="drawer-item nav-install" data-action="install"><span class="drawer-icon">'+I('download')+'</span><span>Install app</span>'+I('chevron')+'</button>';
@@ -313,9 +345,9 @@
   }
   function success(){return '<main class="success-page section-wrap screen screen-enter"><div class="success-card">'+I('check')+'<span class="eyebrow">ORDER CONFIRMED</span><h1>Thank you.</h1><p>Your order and exact custom design data were saved.</p><div class="success-order"><span>Order reference</span><b>#'+S.esc(state.orderReference)+'</b></div><div><button class="primary" data-action="view-order">View my order</button><button class="secondary" data-go="home">Back to home</button></div></div></main>';}
   function orderItem(item){const faces=item.customDesign?S.designedSurfaces(item.customDesign):[];const previews=item.customDesign?'<div class="design-surface-gallery">'+(faces.length?faces:['front']).map(face=>'<figure>'+S.designPreview(item.customDesign,face)+'<figcaption>'+face.replace('Sleeve',' sleeve')+'</figcaption></figure>').join('')+'</div>':'<div class="cart-ready-preview">'+img(item.image,item.name,'','assets/crew-tee.webp')+'</div>';return '<div class="ordered-item">'+previews+'<div><span>'+(item.custom?'CUSTOMIZED ITEM':'READY-MADE ITEM')+'</span><h3>'+S.esc(item.name)+'</h3><p>'+[item.color,item.size,'Qty '+item.qty].filter(Boolean).map(S.esc).join(' · ')+'</p>'+(item.customDesign?'<dl><div><dt>Print</dt><dd>'+S.esc(item.customDesign.printType)+'</dd></div><div><dt>Print areas</dt><dd>'+faces.length+'</dd></div></dl>':'')+'</div><strong>'+S.money(item.price*item.qty)+'</strong></div>';}
-  function orders(){state.orders=S.getOrders();return '<main class="customer-orders-page section-wrap screen screen-enter"><div class="catalog-title"><div><span class="eyebrow">CUSTOMER ORDER HISTORY</span><h1>My orders</h1></div><button class="back-button" data-action="nav-back" data-fallback="home">'+I('back')+' Back</button></div><div class="customer-order-list">'+(state.orders.length?state.orders.map(o=>'<article class="customer-order-card"><div class="customer-order-head"><div><span>ORDER #'+S.esc(o.id)+'</span><h2>'+S.esc(o.status)+'</h2></div><div><small>'+S.esc(o.time)+'</small><strong>'+S.money(o.total)+'</strong></div></div><div class="customer-order-items">'+(o.orderItems?.length?o.orderItems.map(orderItem).join(''):'<div class="legacy-order-note">'+I('package')+'<span><b>'+o.items+' ordered items</b><small>Older demo order</small></span></div>')+'</div><div class="customer-order-foot"><span>'+I('truck')+' '+S.esc(o.delivery)+'</span><span>'+I('card')+' '+S.esc(o.payment)+'</span><span>'+I('map')+' '+S.esc(o.address)+'</span></div></article>').join(''):'<div class="empty-state"><h2>No orders yet</h2><p>Your confirmed orders appear here.</p></div>')+'</div></main>';}
+  function orders(){return '<main class="customer-orders-page section-wrap screen screen-enter"><div class="catalog-title"><div><span class="eyebrow">CUSTOMER ORDER HISTORY</span><h1>My orders</h1></div><button class="back-button" data-action="nav-back" data-fallback="home">'+I('back')+' Back</button></div><div class="customer-order-list">'+(state.orders.length?state.orders.map(o=>'<article class="customer-order-card"><div class="customer-order-head"><div><span>ORDER #'+S.esc(o.id)+'</span><h2>'+S.esc(o.status)+'</h2></div><div><small>'+S.esc(o.time)+'</small><strong>'+S.money(o.total)+'</strong></div></div><div class="customer-order-items">'+(o.orderItems?.length?o.orderItems.map(orderItem).join(''):'<div class="legacy-order-note">'+I('package')+'<span><b>'+o.items+' ordered items</b><small>Older demo order</small></span></div>')+'</div><div class="customer-order-foot"><span>'+I('truck')+' '+S.esc(o.delivery)+'</span><span>'+I('card')+' '+S.esc(o.payment)+'</span><span>'+I('map')+' '+S.esc(o.address)+'</span></div></article>').join(''):'<div class="empty-state"><h2>No orders yet</h2><p>Your confirmed orders appear here.</p></div>')+'</div></main>';}
   function profile(){
-    const customer=B?.customerSession?.()||state.customer||null,verified=!!customer?.token,name=String(customer?.name||'').trim(),businessName=String(customer?.businessName||'').trim(),jobTitle=String(customer?.jobTitle||'').trim();
+    const customer=state.customer||B?.customerSession?.()||null,verified=!!customer?.token,name=String(customer?.name||'').trim(),businessName=String(customer?.businessName||'').trim(),jobTitle=String(customer?.jobTitle||'').trim();
     const rawPhone=String(customer?.phone||'').trim();
     const phone=rawPhone.replace(/^91(?=\d{10}$)/,'+91 ');
     let profileCard='';
@@ -377,7 +409,7 @@
   function page(){return({home,categories:categoriesPage,catalog,product,cart,checkout,orders,profile,teamUpload,b2b,b2bProduct})[state.screen]?.()||home();}
 
   function render(){
-    state.products=S.getProducts();state.categories=S.getCategories();state.settings=S.getSettings();state.customer=B?.customerSession?.()||state.customer;
+    state.products=S.getProducts();state.categories=S.getCategories();state.settings=S.getSettings();const sess=B?.customerSession?.();if(sess?.token)state.customer={...(state.customer||{}),...sess};
     if(state.screen==='customize'){root.innerHTML='<div class="customizer-screen-wrap"><div id="designer-root"></div>'+footer()+'</div>'+authModal()+toast();window.OneLineDesigner.mount(document.getElementById('designer-root'),{onBack:()=>navigateBack('home'),onAdd:item=>{item.itemType='custom_design';if(!(B?.customerSession?.()?.token)){state.pendingCustomItem=item;state.pendingAction='custom-add';state.authModal=true;state.authStep='phone';state.authError='';render();return;}addCart(item,false);go('cart');}});syncModalScrollLock();bind();return;}
     const audience=state.screen.startsWith('b2b')?'b2b':'retail';
     root.innerHTML='<div class="view-root">'+header()+page()+footer()+bottom()+filterModal(audience)+(state.legal?legal():'')+(state.paymentDemo?paymentModal():'')+authModal()+imageZoomModal()+toast()+whatsappFloat()+'</div>';syncModalScrollLock();bind();bindZoomViewer();positionWhatsapp();
@@ -385,7 +417,7 @@
   async function completeOrder(){
     if(!state.cart.length)return;const orderCart=clone(state.cart),orderTotal=subtotal();state.authBusy=true;render();
     const payload={customerName:state.details.name||state.customer?.name||'',phone:state.customer?.phone||state.details.phone||'',address:state.details.address||'',business:state.details.business||'',delivery:state.delivery,payment:state.payment,items:orderCart.map(item=>item.itemType==='team_design'||item.itemType==='custom_design'?{itemType:item.itemType,name:item.name,code:item.code||'CUSTOM',qty:item.qty||1,unitPrice:Number(item.price||0),design:item.design||item.customDesign||{}}:{itemType:'product',productId:item.productId,name:item.name,code:item.code||'',lines:item.bulkLines||[],subitems:item.subitems||[]})};
-    try{B?.customerEvent?.('order_submit_attempt',{delivery:state.delivery,payment:state.payment,items:orderCart.map(i=>({name:i.name,code:i.code||'',itemType:i.itemType||'product',qty:i.qty||1}))});const r=await B.placeOrder(payload);state.orderReference=r.orderCode||r.id||'ORDER';const localOrder={id:state.orderReference,customer:payload.customerName,phone:payload.phone,total:Number(r.total??orderTotal),items:orderCart.reduce((n,x)=>n+Number(x.qty||0),0),delivery:state.delivery,payment:state.payment,status:r.status||'Confirmed',time:new Date().toLocaleString(),address:payload.address,orderItems:orderCart};S.save('custom-store-orders-v3',[localOrder,...S.getOrders()].slice(0,80));state.orderPlaced=true;state.paymentDemo=false;state.cart=[];saveCart();await B.hydrate();await refreshCustomerAccount(false);state.orders=S.getOrders();}
+    try{await cartMutationQueue;if(cartSyncError){state.authBusy=false;showToast('Cart is not fully synced yet. '+cartSyncError);return;}B?.customerEvent?.('order_submit_attempt',{delivery:state.delivery,payment:state.payment,items:orderCart.map(i=>({name:i.name,code:i.code||'',itemType:i.itemType||'product',qty:i.qty||1}))});const r=await B.placeOrder(payload);state.orderReference=r.orderCode||r.id||'ORDER';state.orderPlaced=true;state.paymentDemo=false;state.cart=[];state.cartVersion=Number(state.cartVersion||0)+1;broadcastAccountSync('order');await B.hydrate();await refreshCustomerAccount(false);}
     catch(e){state.authBusy=false;showToast(e.message||'Could not place order');return;}
     state.authBusy=false;render();
   }
@@ -476,8 +508,8 @@
     root.querySelectorAll('[data-bulk-key]').forEach(x=>x.addEventListener('change',()=>{state.bulkQty[x.dataset.bulkKey]=Math.max(0,Number(x.value||0));render();}));
     root.querySelectorAll('[data-subitem-id]').forEach(x=>x.addEventListener('change',()=>{state.selectedSubitems[x.dataset.subitemId]=x.checked;if(!state.subBulkQty[x.dataset.subitemId])state.subBulkQty[x.dataset.subitemId]={};render();}));
     root.querySelectorAll('[data-sub-bulk-id]').forEach(x=>x.addEventListener('change',()=>{const id=x.dataset.subBulkId;if(!state.subBulkQty[id])state.subBulkQty[id]={};state.subBulkQty[id][x.dataset.subBulkKey]=Math.max(0,Number(x.value||0));render();}));
-    root.querySelectorAll('[data-qty]').forEach(x=>x.addEventListener('click',()=>{const item=state.cart.find(i=>i.key===x.dataset.key);if(item)item.qty=Math.max(1,item.qty+Number(x.dataset.qty));saveCart();render();}));
-    root.querySelectorAll('[data-remove-key]').forEach(x=>x.addEventListener('click',()=>{const item=state.cart.find(i=>i.key===x.dataset.removeKey);state.cart=state.cart.filter(i=>i.key!==x.dataset.removeKey);saveCart();B?.customerEvent?.('cart_remove',{item:{name:item?.name||'',code:item?.code||''}});render();}));
+    root.querySelectorAll('[data-qty]').forEach(x=>x.addEventListener('click',()=>{const item=state.cart.find(i=>i.key===x.dataset.key);if(item){item.qty=Math.max(1,item.qty+Number(x.dataset.qty));queueCartMutation('upsert',item.key,item);}render();}));
+    root.querySelectorAll('[data-remove-key]').forEach(x=>x.addEventListener('click',()=>{const item=state.cart.find(i=>i.key===x.dataset.removeKey);state.cart=state.cart.filter(i=>i.key!==x.dataset.removeKey);queueCartMutation('remove',x.dataset.removeKey,null);B?.customerEvent?.('cart_remove',{item:{name:item?.name||'',code:item?.code||''}});render();}));
     root.querySelectorAll('[data-delivery]').forEach(x=>x.addEventListener('click',()=>{state.delivery=x.dataset.delivery;render();}));
     root.querySelectorAll('[data-payment]').forEach(x=>x.addEventListener('click',()=>{state.payment=x.dataset.payment;render();}));
     root.querySelectorAll('[data-remove-filter]').forEach(x=>x.addEventListener('click',()=>removeFilter(x.dataset.removeFilter,x.dataset.value)));
@@ -493,10 +525,10 @@
     root.querySelectorAll('[data-filter-choice]').forEach(x=>x.addEventListener('click',()=>{const d=state.filterDraft,k=x.dataset.filterChoice,v=x.dataset.value;const arr=d[k];const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);if(k==='categories'){const allowedSubs=filterPool(state.screen.startsWith('b2b')?'b2b':'retail').filter(p=>!d.categories.length||d.categories.includes(p.category)).map(p=>p.subcategory);d.subs=d.subs.filter(s=>allowedSubs.includes(s));}render();}));
 
     const phoneForm=root.querySelector('[data-auth-phone]');if(phoneForm)phoneForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(phoneForm);state.authPhone=String(fd.get('phone')||'').trim();state.authError='';state.authBusy=true;render();try{await B.requestOtp(state.authPhone);state.authStep='otp';state.authOtp='';}catch(err){state.authError=err.message||'Could not send OTP';}finally{state.authBusy=false;render();}});
-    const otpForm=root.querySelector('[data-auth-otp]');if(otpForm)otpForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(otpForm);state.authOtp=String(fd.get('otp')||'').trim();state.authError='';state.authBusy=true;render();try{const r=await B.verifyOtp(state.authPhone,state.authOtp,'');state.customer=r.session||B.customerSession();state.authName=state.customer?.name||'';if(String(state.customer?.name||'').trim().length>=2){state.authModal=false;await refreshCustomerAccount(false);state.authBusy=false;await continuePendingAction();return;}state.authStep='name';}catch(err){state.authError=err.message||'Invalid OTP';}finally{state.authBusy=false;render();}});
-    const nameForm=root.querySelector('[data-auth-name]');if(nameForm)nameForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(nameForm);state.authName=String(fd.get('name')||'').trim();if(!state.authName)return;state.authBusy=true;state.authError='';render();try{const saved=await B.updateCustomerProfile({name:state.authName,businessName:'',jobTitle:''});state.customer={...(B.customerSession()||state.customer||{}),name:saved?.name||state.authName,businessName:saved?.businessName||'',jobTitle:saved?.jobTitle||''};B.setCustomerSession(state.customer);state.authModal=false;await refreshCustomerAccount(false);state.authBusy=false;await continuePendingAction();}catch(err){state.authBusy=false;state.authError=err.message||'Could not save name';render();}});
+    const otpForm=root.querySelector('[data-auth-otp]');if(otpForm)otpForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(otpForm);state.authOtp=String(fd.get('otp')||'').trim();state.authError='';state.authBusy=true;render();try{const r=await B.verifyOtp(state.authPhone,state.authOtp,'');state.customer=r.session||B.customerSession();state.accountLoaded=false;state.authName=state.customer?.name||'';if(String(state.customer?.name||'').trim().length>=2){state.authModal=false;await refreshCustomerAccount(false);state.authBusy=false;broadcastAccountSync('login');await continuePendingAction();return;}state.accountLoaded=true;state.authStep='name';}catch(err){state.authError=err.message||'Invalid OTP';}finally{state.authBusy=false;render();}});
+    const nameForm=root.querySelector('[data-auth-name]');if(nameForm)nameForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(nameForm);state.authName=String(fd.get('name')||'').trim();if(!state.authName)return;state.authBusy=true;state.authError='';render();try{const saved=await B.updateCustomerProfile({name:state.authName,businessName:'',jobTitle:''});state.customer={...(B.customerSession()||state.customer||{}),name:saved?.name||state.authName,businessName:saved?.businessName||'',jobTitle:saved?.jobTitle||''};B.setCustomerSession(state.customer);state.accountLoaded=true;state.authModal=false;broadcastAccountSync('profile');await refreshCustomerAccount(false);state.authBusy=false;await continuePendingAction();}catch(err){state.authBusy=false;state.authError=err.message||'Could not save name';render();}});
 
-    const profileNameForm=root.querySelector('[data-profile-name]');if(profileNameForm)profileNameForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(profileNameForm),profile={name:String(fd.get('name')||'').trim(),businessName:String(fd.get('businessName')||'').trim(),jobTitle:String(fd.get('jobTitle')||'').trim()};if(profile.name.length<2)return;try{const saved=await B.updateCustomerProfile(profile);state.customer={...(B?.customerSession?.()||state.customer||{}),name:saved?.name||profile.name,businessName:saved?.businessName||profile.businessName,jobTitle:saved?.jobTitle||profile.jobTitle};B?.setCustomerSession?.(state.customer);state.details.name=state.customer.name;state.details.business=state.customer.businessName||state.details.business;state.profileEditing=false;render();showToast('Profile saved');}catch(err){showToast(err.message||'Could not save profile');}});
+    const profileNameForm=root.querySelector('[data-profile-name]');if(profileNameForm)profileNameForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(profileNameForm),profile={name:String(fd.get('name')||'').trim(),businessName:String(fd.get('businessName')||'').trim(),jobTitle:String(fd.get('jobTitle')||'').trim()};if(profile.name.length<2)return;try{const saved=await B.updateCustomerProfile(profile);state.customer={...(B?.customerSession?.()||state.customer||{}),name:saved?.name||profile.name,businessName:saved?.businessName||profile.businessName,jobTitle:saved?.jobTitle||profile.jobTitle};B?.setCustomerSession?.(state.customer);state.details.name=state.customer.name;state.details.business=state.customer.businessName||'';state.profileEditing=false;broadcastAccountSync('profile');render();showToast('Profile saved');}catch(err){showToast(err.message||'Could not save profile');}});
 
     root.querySelectorAll('[data-action]').forEach(x=>x.addEventListener('click',async()=>{
       const a=x.dataset.action,fromDrawer=!!x.closest('.site-header nav');
@@ -519,7 +551,7 @@
       else if(a==='profile-login'){requireCustomer('profile-login');}
       else if(a==='profile-edit'){state.profileEditing=true;render();}
       else if(a==='profile-cancel-edit'){state.profileEditing=false;render();}
-      else if(a==='profile-logout'){B?.clearCustomerSession?.();state.customer=null;state.accountLoaded=false;state.profileEditing=false;window.OneLineOTP?.reset?.();render();}
+      else if(a==='profile-logout'){B?.clearCustomerSession?.();state.customer=null;state.cart=[];state.orders=[];state.cartVersion=0;state.ordersStamp='';state.accountLoaded=false;state.profileEditing=false;window.OneLineOTP?.reset?.();broadcastAccountSync('logout');render();}
       else if(a==='checkout'){if(!state.customer?.token){requireCustomer('checkout');return;}B?.customerEvent?.('checkout_started',{cartItems:state.cart.length,pieces:totalQty(),items:state.cart.map(i=>({name:i.name,code:i.code||'',itemType:i.itemType||'product',qty:i.qty||1}))});state.checkoutStep=1;state.orderPlaced=false;go('checkout');}
       else if(a==='delivery-step'){const form=root.querySelector('[data-checkout-form]');if(form?.reportValidity()){const fd=new FormData(form);state.details=Object.fromEntries(fd.entries());state.checkoutStep=2;render();}}
       else if(a==='submit-order')await completeOrder();
@@ -580,8 +612,9 @@
   async function install(){if(state.installPrompt){await state.installPrompt.prompt();state.installPrompt=null;}else showToast('Use your browser menu and choose “Install app”');}
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();state.installPrompt=e;render();});
   window.addEventListener('appinstalled',()=>{state.installPrompt=null;render();});
-  window.addEventListener('storage',()=>{state.products=S.getProducts();state.categories=S.getCategories();state.orders=S.getOrders();state.settings=S.getSettings();render();});
-  window.addEventListener('one-line-change',()=>{state.products=S.getProducts();state.categories=S.getCategories();state.orders=S.getOrders();state.settings=S.getSettings();});
+  window.addEventListener('storage',e=>{state.products=S.getProducts();state.categories=S.getCategories();state.settings=S.getSettings();if(e.key===(window.ONE_LINE_CONFIG?.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1')){const sess=B?.customerSession?.();if(sess?.token){state.customer={...(state.customer||{}),...sess};state.accountLoaded=false;refreshCustomerAccount(true);}else{state.customer=null;state.cart=[];state.orders=[];state.accountLoaded=false;render();}}else render();});
+  window.addEventListener('one-line-change',()=>{state.products=S.getProducts();state.categories=S.getCategories();state.settings=S.getSettings();});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollCustomerAccount(true);});
   document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('dragstart',e=>{if(!e.target.closest('input[type=file]'))e.preventDefault();});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.zoomImage){closeZoom();}else if(e.key==='Escape'&&state.filterOpen){closeFilter(false);}else if(e.key==='Escape'&&state.menu){closeMenu(false);}if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))e.preventDefault();});document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
   try{
     const valid=['home','categories','catalog','product','cart','checkout','orders','profile','customize','teamUpload','b2b','b2bProduct'];const hash=location.hash.replace('#','');const params=new URLSearchParams(location.search);let initial=valid.includes(hash)?hash:'home';
@@ -600,5 +633,5 @@
     if(e.state?.oneLineZoom){state.screen=next||state.screen;const gallery=state.selected?productGallery(state.selected):[];state.zoomImages=gallery.length?gallery:[e.state.zoomSrc].filter(Boolean);state.zoomIndex=Math.max(0,Math.min(state.zoomImages.length-1,Number(e.state.zoomIndex||0)));state.zoomImage=e.state.zoomSrc||state.zoomImages[state.zoomIndex]||'';state.zoomAlt=e.state.zoomAlt||'Product image';state.zoomScale=1;state.zoomX=0;state.zoomY=0;render();return;}
     resetZoomState();state.legal='';state.screen=next||'home';state.menu=false;state.filterOpen=false;state.filterDraft=null;render();requestAnimationFrame(()=>window.scrollTo(0,Number(e.state?.scrollY||0)));
   });
-  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=40').catch(()=>{});render();B?.ready?.().then(async r=>{state.backendReady=true;if(r?.error)state.backendError=r.error.message||String(r.error);state.products=S.getProducts();state.categories=S.getCategories();state.settings=S.getSettings();if(B?.customerSession?.()?.token)await refreshCustomerAccount(false);const qp=new URLSearchParams(location.search).get('product');if(qp&&!state.selected){const p=state.products.find(x=>String(x.id)===String(qp));if(p){state.selected=p;state.color=p.colors?.[0]||'';state.screen=p.audience==='b2b'?'b2bProduct':'product';}}render();}).catch(e=>{state.backendReady=true;state.backendError=e.message||String(e);render();});if(state.sharedSection==='shirt-colour'){setTimeout(()=>document.querySelector('[data-fast-uniform]')?.scrollIntoView({behavior:'auto',block:'start'}),120);}
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=41').catch(()=>{});render();B?.ready?.().then(async r=>{state.backendReady=true;if(r?.error)state.backendError=r.error.message||String(r.error);state.products=S.getProducts();state.categories=S.getCategories();state.settings=S.getSettings();if(B?.customerSession?.()?.token)await refreshCustomerAccount(false);const qp=new URLSearchParams(location.search).get('product');if(qp&&!state.selected){const p=state.products.find(x=>String(x.id)===String(qp));if(p){state.selected=p;state.color=p.colors?.[0]||'';state.screen=p.audience==='b2b'?'b2bProduct':'product';}}render();setInterval(()=>pollCustomerAccount(false),2500);}).catch(e=>{state.backendReady=true;state.backendError=e.message||String(e);render();});if(state.sharedSection==='shirt-colour'){setTimeout(()=>document.querySelector('[data-fast-uniform]')?.scrollIntoView({behavior:'auto',block:'start'}),120);}
 })();

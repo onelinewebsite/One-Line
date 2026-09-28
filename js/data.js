@@ -67,8 +67,9 @@
   }
   function save(key,value){ localStorage.setItem(key,JSON.stringify(value)); window.dispatchEvent(new CustomEvent("one-line-change",{detail:{key}})); }
   function getProducts(){ return migrateKnownAssets(load("custom-store-products-v3",[])); }
-  function getOrders(){ return load("custom-store-orders-v3",[]); }
-  function getCart(){ return load("custom-store-cart-v3",[]); }
+  // v41: authenticated cart and order history are never read from device cache.
+  function getOrders(){ return []; }
+  function getCart(){ return []; }
   function getCategories(){ return migrateKnownAssets(load("custom-store-categories-v3",[])); }
   function getDelivery(){ return load("custom-store-delivery-v3",deliveryDefaults); }
   function getPrints(){ return load("custom-store-print-types-v3",printDefaults); }
