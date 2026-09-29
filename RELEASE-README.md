@@ -1,23 +1,21 @@
-# One-Line v49
+# One-Line v50 — Stable customer rebuild
 
-This build polishes the customer catalogue and simplifies Admin / Management workflows.
+This build restores the proven v48 customer navigation/rendering model and keeps the useful v49 Admin/Management category + B2B features.
 
-## Customer updates
-- The homepage **View catalogue** action has compact, balanced padding and spacing.
-- Category images use a consistent **3:4 portrait** frame.
-- Custom Catalogue item detail images use their real uploaded ratio, fill the available width, and are never cropped.
-- Item detail share actions sit beside the item name.
-- Full site navigation is shown only on main browsing pages. Inner pages use a simple top-left Back button.
-- Customer and portal images load progressively in **20-image batches**. Cards show a subtle skeleton glow until their image loads.
-- Initial/live data loading uses a simple three-dot animation.
+## Stability fixes
+- Home, menu, footer navigation and customer action buttons use the v48 event/render flow again.
+- Removed the v49 artificial 20-image queue / IntersectionObserver loader from customer and portal pages. Native browser lazy-loading is used instead.
+- Restored the v48 startup loader and removed the extra blocking loading layer.
+- Inner-page Back control is a small floating button with no full-width background bar.
 
-## Admin / Management updates
-- Categories have their own manager. When creating one, choose **Ready Made** or **Customizable** and it is saved to the matching catalogue.
-- Ready Made and Custom Catalogue item editors remain separate.
-- B2B is intentionally simple: choose a category, add a name, description and one or more images. The customer sees an enquiry-only item page.
-- Controls and forms are larger and cleaner on phones.
+## UI polish
+- Custom Catalogue homepage View catalogue CTA has compact, balanced padding.
+- Custom Catalogue category covers are 3:4.
+- Custom Catalogue and B2B detail images display full-width at their original ratio without cropping.
+- Ready Made, Custom Catalogue and B2B detail Share actions sit beside the item name.
+- Detail zoom icon is smaller.
+- Full site header is shown on main browsing pages; inner pages use the floating Back control.
 
-## Database
-No new SQL migration is required for v49. Keep the existing v47/v46 schema already installed.
-
-Upload the complete v49 build. The service worker cache name has changed, so old v48 assets are discarded after the new deployment is loaded.
+## Cache
+- Service-worker/cache version is v50.
+- No new Supabase SQL migration is required beyond the schema already used by v49.

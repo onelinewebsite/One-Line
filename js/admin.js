@@ -5,23 +5,18 @@
   const esc=S.esc,money=S.money;
   const state={profile:null,view:requested==='receiver'?'orders':requested==='staff'?'stock':'products',loading:true,error:'',toast:'',menu:false,products:[],categories:[],subcategories:[],subitems:[],orders:[],orderItems:[],activity:[],customers:[],carts:[],profiles:[],customCatalogCategories:[],customCatalogItems:[],enquiries:[],customSchemaReady:true,editor:null,b2bEditor:null,editSections:{},subEditor:null,categoryEditor:null,categoryType:'ready',customCategoryEditor:null,customItemEditor:null,query:'',orderQuery:'',orderFilter:'All',customerQuery:'',enquiryQuery:'',productCategoryFilter:'',b2bCategoryFilter:''};
   const sb=()=>B?.supa?.();
-  let renderImageBudget=20;
-  const TRANSPARENT_PIXEL='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-  function beginImageBatch(){renderImageBudget=20;}
-  const img=(src,alt='')=>{const source=esc(src||'assets/product-placeholder.svg'),eager=renderImageBudget-->0;return '<img '+(eager?'src="'+source+'"':'src="'+TRANSPARENT_PIXEL+'" data-src="'+source+'"')+' alt="'+esc(alt)+'" class="progressive-img '+(eager?'':'is-deferred')+'" loading="'+(eager?'eager':'lazy')+'" decoding="async" onload="if(!this.dataset.src){this.classList.add(\'is-loaded\');this.parentElement&&this.parentElement.classList.add(\'image-loaded\')}" onerror="this.onerror=null;this.src=\'assets/product-placeholder.svg\';this.classList.add(\'is-loaded\');this.parentElement&&this.parentElement.classList.add(\'image-loaded\')">';};
-  function initProgressiveImages(){const pending=[...root.querySelectorAll('img[data-src]')];if(!pending.length)return;let observer=null;const loadNext=()=>{pending.splice(0,20).forEach(image=>{const src=image.dataset.src;if(src){delete image.dataset.src;image.src=src;image.classList.remove('is-deferred');}});observer?.disconnect();if(pending.length){observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))loadNext();},{rootMargin:'650px 0px'});observer.observe(pending[0]);}};const r=pending[0].getBoundingClientRect();if(r.top<window.innerHeight+650)loadNext();else{observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))loadNext();},{rootMargin:'650px 0px'});observer.observe(pending[0]);}}
-  const adminLoader=(label='Loading')=>'<div class="admin-dot-loader" role="status" aria-label="'+esc(label)+'"><i></i><i></i><i></i><span>'+esc(label)+'</span></div>';
+  const img=(src,alt='')=>'<img src="'+esc(src||'assets/product-placeholder.svg')+'" alt="'+esc(alt)+'" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src=\'assets/product-placeholder.svg\'">';
+  const adminLoader=(label='Loading')=>'<div class="admin-loading">'+esc(label)+'…</div>';
   const roles=['admin','management','staff','receiver'];
   const labels={admin:'Admin',management:'Management',staff:'Staff',receiver:'Order Receiving'};
   function notify(msg){state.toast=msg;render();clearTimeout(notify.t);notify.t=setTimeout(()=>{state.toast='';renderToast();},2400);}
   function render(){
-    beginImageBatch();
-    if(!B?.configured?.()){root.innerHTML=setupScreen();initProgressiveImages();return;}
+    if(!B?.configured?.()){root.innerHTML=setupScreen();return;}
     if(state.loading&&!state.profile){root.innerHTML=adminLoader('Loading portal');return;}
-    if(!state.profile){root.innerHTML=loginScreen();bind();initProgressiveImages();return;}
-    if(!roleOkay()){root.innerHTML=wrongPortal();bind();initProgressiveImages();return;}
+    if(!state.profile){root.innerHTML=loginScreen();bind();return;}
+    if(!roleOkay()){root.innerHTML=wrongPortal();bind();return;}
     if(state.loading){root.innerHTML=adminLoader('Loading live data');return;}
-    root.innerHTML=shell();bind();initProgressiveImages();renderToast();
+    root.innerHTML=shell();bind();renderToast();
   }
   function allowed(v){
     const r=requested;
