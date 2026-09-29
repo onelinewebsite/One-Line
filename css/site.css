@@ -4084,3 +4084,85 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
   .custom-item-page .detail-slider-frame{aspect-ratio:1/1!important;border-radius:0!important}
   .custom-item-page .product-full-info{padding:22px 14px 28px!important}
 }
+
+/* ===== v49 polish: media, loading, navigation ===== */
+/* Homepage catalogue CTA: compact premium control with clean breathing room. */
+.custom-catalog-home .custom-home-heading{align-items:flex-end!important;gap:28px!important}
+.custom-catalog-home .custom-home-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;width:auto!important;min-width:max-content!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.custom-catalog-home .custom-catalog-view-button{width:auto!important;min-width:148px!important;min-height:44px!important;height:44px!important;padding:0 18px!important;margin:0!important;border-radius:13px!important;gap:9px!important;font-size:12px!important;line-height:1!important;box-sizing:border-box!important}
+.custom-catalog-home .inline-share-button{width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;border-radius:13px!important;box-sizing:border-box!important}
+
+/* Category artwork is consistently portrait 3:4. */
+.custom-category-image,.home-custom-category .custom-category-image,.full-custom-category-grid .custom-category-image{width:100%!important;height:auto!important;aspect-ratio:3/4!important;overflow:hidden!important;background:#f3eff4!important}
+.custom-category-image img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
+.category-photo{aspect-ratio:3/4!important;height:auto!important}
+
+/* Custom catalogue cards keep the complete source artwork visible. */
+.custom-idea-card .product-image-wrap.ratio-3x4{aspect-ratio:3/4!important;height:auto!important;background:#f5f2f5!important}
+.custom-idea-card .product-slide,.custom-idea-card .product-slide-track{height:100%!important}
+.custom-idea-card .product-image{width:100%!important;height:100%!important;object-fit:contain!important;background:#f5f2f5!important}
+
+/* Detail media uses the actual image ratio set by JS: full width, never cropped. */
+.custom-item-page .product-full-media{overflow:hidden!important;background:#fff!important}
+.custom-item-page .detail-slider-frame{width:100%!important;height:auto!important;max-height:none!important;aspect-ratio:1/1!important;background:#f6f3f6!important;border-radius:0!important;transition:aspect-ratio .18s ease!important}
+.custom-item-page .detail-slide-track,.custom-item-page .detail-slide,.custom-item-page .detail-zoom-target{height:100%!important;min-height:0!important}
+.custom-item-page .detail-slide img{position:relative!important;inset:auto!important;width:100%!important;height:100%!important;display:block!important;object-fit:contain!important;background:#fff!important}
+.custom-item-page .detail-slider-frame[style*="aspect-ratio"] .detail-slide img{object-fit:contain!important}
+
+/* Share sits with the item name on all item detail screens. */
+.item-detail-title-row,.custom-item-title-row{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:14px!important;margin:5px 0 8px!important}
+.item-detail-title-row h1,.custom-item-title-row h1{min-width:0!important;flex:1!important;margin:0!important}
+.item-title-share,.custom-item-title-share{flex:0 0 auto!important;min-height:40px!important;height:40px!important;padding:0 12px!important;border-radius:12px!important;gap:7px!important}
+
+/* Full header is reserved for main browsing screens. Inner screens use one back control. */
+.minimal-page-nav{position:sticky;top:0;z-index:70;width:100%;height:58px;display:flex;align-items:center;padding:8px max(12px,env(safe-area-inset-left));background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-bottom:1px solid #eee7ef}
+.minimal-back-button{min-width:44px;height:42px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 13px;border:1px solid #e4dbe6;border-radius:12px;background:#fff;color:#302634;font:inherit;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 15px rgba(47,25,51,.05)}
+.minimal-back-button svg{width:17px;height:17px}
+.no-site-header .product-full-back{display:none!important}
+.no-site-header .catalog-title .back-button,.no-site-header .checkout-head>.back-button{display:none!important}
+.no-site-header .screen{scroll-margin-top:58px}
+
+/* Progressive image loading: 20 image batches + lightweight skeleton shimmer. */
+.image-loading-shell,.product-slide{position:relative;isolation:isolate;background:#f3eff4!important;overflow:hidden}
+.image-loading-shell::before,.product-slide::before{content:"";position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(100deg,rgba(243,239,244,.9) 16%,rgba(255,255,255,.95) 34%,rgba(243,239,244,.9) 52%);background-size:220% 100%;animation:oneLineSkeleton 1.15s linear infinite;opacity:1;transition:opacity .2s ease}
+.image-loading-shell.image-loaded::before,.product-slide.image-loaded::before{opacity:0;animation:none}
+.progressive-img{position:relative;z-index:2;opacity:0;transition:opacity .24s ease}
+.progressive-img.is-loaded{opacity:1}
+.progressive-img.is-deferred{opacity:0}
+@keyframes oneLineSkeleton{from{background-position:180% 0}to{background-position:-40% 0}}
+
+/* Simple three-dot page loading indicator. */
+.three-dot-loader{min-height:78px;display:flex;align-items:center;justify-content:center;gap:7px;padding:18px;position:relative;z-index:4}
+.three-dot-loader i{width:8px;height:8px;border-radius:50%;background:#64116f;animation:oneLineDot 1s ease-in-out infinite}
+.three-dot-loader i:nth-child(2){animation-delay:.13s}.three-dot-loader i:nth-child(3){animation-delay:.26s}
+@keyframes oneLineDot{0%,60%,100%{transform:translateY(0);opacity:.35}30%{transform:translateY(-5px);opacity:1}}
+.three-dot-app-loader{min-height:100svh;display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;background:#fff!important}
+.three-dot-app-loader i{width:8px;height:8px;border-radius:50%;background:#64116f;animation:oneLineDot 1s ease-in-out infinite}
+.three-dot-app-loader i:nth-child(2){animation-delay:.13s}.three-dot-app-loader i:nth-child(3){animation-delay:.26s}
+
+/* Inner pages stay visually full-width and uncluttered. */
+.no-site-header .product-fullscreen{padding-top:0!important}
+.no-site-header .custom-item-page .product-full-inner{margin-top:0!important}
+.no-site-header .section-wrap{padding-top:28px}
+
+@media(max-width:760px){
+  .custom-catalog-home .custom-home-heading{align-items:flex-start!important;gap:16px!important}
+  .custom-catalog-home .custom-home-actions{display:flex!important;justify-content:flex-start!important;width:auto!important;min-width:0!important;gap:9px!important}
+  .custom-catalog-home .custom-catalog-view-button{width:auto!important;min-width:146px!important;min-height:44px!important;height:44px!important;padding:0 17px!important}
+  .custom-catalog-home .inline-share-button{width:44px!important;min-width:44px!important;height:44px!important}
+  .minimal-page-nav{height:56px;padding-top:7px;padding-bottom:7px}
+  .minimal-back-button{height:42px;padding:0 11px}
+  .item-detail-title-row,.custom-item-title-row{gap:10px!important;align-items:center!important}
+  .item-title-share,.custom-item-title-share{height:38px!important;min-height:38px!important;padding:0 10px!important}
+  .item-title-share span,.custom-item-title-share span{display:none!important}
+  .custom-item-page .product-full-inner{width:100%!important;max-width:100%!important;padding:0 0 84px!important;gap:0!important}
+  .custom-item-page .product-full-media{width:100vw!important;max-width:100vw!important;margin-left:calc(50% - 50vw)!important;padding:0!important;border-radius:0!important}
+  .custom-item-page .detail-slider,.custom-item-page .detail-slider-frame{width:100%!important;max-width:none!important;border-radius:0!important}
+  .custom-item-page .product-full-info{padding:20px 14px 28px!important}
+  .no-site-header .section-wrap{padding-top:20px}
+}
+
+/* B2B catalogue uses the same full-image treatment as customization items. */
+.b2b-product .detail-slider-frame{width:100%!important;height:auto!important;max-height:none!important;aspect-ratio:1/1!important;background:#f6f3f6!important}
+.b2b-product .detail-slide img{width:100%!important;height:100%!important;object-fit:contain!important;background:#fff!important}
+@media(max-width:760px){.b2b-product .product-full-media{width:100vw!important;max-width:100vw!important;margin-left:calc(50% - 50vw)!important;padding:0!important}.b2b-product .detail-slider-frame{border-radius:0!important}}

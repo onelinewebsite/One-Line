@@ -1,18 +1,23 @@
-# One-Line v48
+# One-Line v49
 
-## Changes in this build
+This build polishes the customer catalogue and simplifies Admin / Management workflows.
 
-- Custom Catalogue item cards now use a clean 1:1 image frame.
-- Custom Catalogue item detail images are edge-to-edge inside the media area, 100% width and 1:1 on mobile and larger screens. Any uploaded source image ratio is accepted and displayed with a cover crop.
-- The home “View catalogue” action now has a dedicated premium button style.
-- Customer-side routing now stores the selected product/category/custom-category/custom-item in the URL/history state. Refresh keeps the current page instead of falling back to the parent catalogue.
-- Browser Back continues through the actual in-site navigation history.
-- Cache/service-worker build bumped to v48.
+## Customer updates
+- The homepage **View catalogue** action has compact, balanced padding and spacing.
+- Category images use a consistent **3:4 portrait** frame.
+- Custom Catalogue item detail images use their real uploaded ratio, fill the available width, and are never cropped.
+- Item detail share actions sit beside the item name.
+- Full site navigation is shown only on main browsing pages. Inner pages use a simple top-left Back button.
+- Customer and portal images load progressively in **20-image batches**. Cards show a subtle skeleton glow until their image loads.
+- Initial/live data loading uses a simple three-dot animation.
+
+## Admin / Management updates
+- Categories have their own manager. When creating one, choose **Ready Made** or **Customizable** and it is saved to the matching catalogue.
+- Ready Made and Custom Catalogue item editors remain separate.
+- B2B is intentionally simple: choose a category, add a name, description and one or more images. The customer sees an enquiry-only item page.
+- Controls and forms are larger and cleaner on phones.
 
 ## Database
+No new SQL migration is required for v49. Keep the existing v47/v46 schema already installed.
 
-There is **no new SQL migration for v48**. If `RUN-NEXT-v47.sql` was already applied, do not run it again. A fresh project that has never received the Custom Catalogue schema still needs `RUN-NEXT-v47.sql` once.
-
-## Deploy
-
-Upload the complete v48 build and wait for the hosting deployment to finish. Refresh the site once; the v48 service worker removes the older application cache.
+Upload the complete v49 build. The service worker cache name has changed, so old v48 assets are discarded after the new deployment is loaded.
