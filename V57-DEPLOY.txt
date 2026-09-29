@@ -1,0 +1,12 @@
+ONE-LINE v57 DEPLOY NOTES
+
+1. Upload/replace the full website with this v57 build.
+2. If v56 pricing SQL was already run, NO new SQL is required for v57.
+3. If you have NOT run the v56 pricing migration yet, run RUN-NEXT-v56.sql once in Supabase SQL Editor.
+4. Team is now enquiry-only: Front + Back upload -> Front edit -> Back edit -> Player rows -> Enquire. It does not use cart.
+5. Team enquiries are stored through the existing customer-event/customer_activity flow, so the already-deployed customer-event function must remain available.
+6. Admin Settings controls all live customization pricing values.
+7. Admin/Order Receiving shows exact stored custom-design information and designed surfaces for customer customizer orders.
+8. Admin Enquiries can copy Team roster, download a PDF, download front/back designs, or download all Team enquiry files as a ZIP.
+
+BUILD: one-line-v57-team-enquiry-20260929
