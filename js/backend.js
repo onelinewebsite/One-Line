@@ -98,11 +98,11 @@
     const firstError=queries.find(q=>q.error)?.error;if(firstError)throw firstError;
     const mapped=mapData({categories:queries[0].data,subcategories:queries[1].data,products:queries[2].data,product_variants:queries[3].data,subitems:queries[4].data,subitem_variants:queries[5].data,product_subitems:queries[6].data,settings:queries[7].data||{},print_types:queries[8].data,delivery_methods:queries[9].data});
     local('custom-store-products-v3',mapped.products);local('custom-store-categories-v3',mapped.categories);
-    if(mapped.settings&&Object.keys(mapped.settings).length){const prev=S?.getSettings?.()||{};local('custom-store-settings-v3',{...prev,whatsapp:mapped.settings.whatsapp||prev.whatsapp||''});}
-    if(mapped.prints?.length)local('custom-store-print-types-v3',mapped.prints.map(x=>({name:x.name,price:Number(x.price||0),note:x.note||'',lightOnly:!!x.light_only,active:x.active!==false})));
+    if(mapped.settings&&Object.keys(mapped.settings).length){const prev=S?.getSettings?.()||{};local('custom-store-settings-v3',{...prev,...mapped.settings,whatsapp:mapped.settings.whatsapp||prev.whatsapp||''});}
+    if(mapped.prints?.length)local('custom-store-print-types-v3',mapped.prints.map(x=>({name:x.name,price:Number(x.price||0),largePrice:Number(x.large_price??x.price??0),note:x.note||'',lightOnly:!!x.light_only,active:x.active!==false})));
     if(mapped.delivery?.length)local('custom-store-delivery-v3',mapped.delivery.map(x=>({name:x.name,note:x.note||'',active:x.active!==false})));
-    // v47 keeps Custom Catalogue separate from Ready Made. Tables are optional until RUN-NEXT-v47.sql is applied.
-    // Never let a missing new table break the existing storefront.
+    // Custom Catalogue stays separate from Ready Made. Keep older databases from breaking if those tables are unavailable.
+    // Never let an optional catalogue table break the existing storefront.
     let customCategories=[],customItems=[];
     try{
       const cq=await Promise.all([sb.from('custom_catalog_categories').select('*').order('sort_order'),sb.from('custom_catalog_items').select('*').order('sort_order')]);

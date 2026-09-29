@@ -1,16 +1,16 @@
-One-Line v52 Portal Access
+One-Line v55 Portal Access
 
 Admin
 URL: /admin.html
 Username: adminhere
 Password: admin22
-Scope: Ready Made, Custom Catalogue, B2B, Categories, Enquiries, Subitems, Accounts and Settings. Existing editable sections use Edit -> Done.
+Scope: Ready Made, Custom Catalogue, B2B, Categories, Enquiries, Subitems, Accounts and Settings. Customizer prices are managed from Settings > Customizer Pricing.
 
 Management
 URL: /management.html
 Username: managementhere
 Password: manage22
-Scope: Add/edit Ready Made products, Ready Made/Customizable categories, Custom Catalogue items, B2B items and reusable Subitems. No destructive product/category deletes or account management.
+Scope: Add/edit Ready Made products, Ready Made/Customizable categories, Custom Catalogue items, B2B items and reusable Subitems. No destructive product/category deletes, account management or customizer-pricing changes.
 
 Staff
 URL: /staff.html
@@ -25,6 +25,6 @@ Password: receiver22
 Scope: Orders and order status only.
 
 IMPORTANT
-Run RUN-NEXT-v51.sql once on an existing Supabase installation after deploying this build. It aligns Management category add/edit permission and Storage delete permission.
+For an existing v54 Supabase project, run RUN-NEXT-v55.sql once before using the new pricing controls.
 
 Default setup credentials should be changed from Admin > Accounts after confirming access.

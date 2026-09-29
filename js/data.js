@@ -23,11 +23,28 @@
     {name:"Bus parcel",note:"Collect from your selected bus stand",active:true}
   ];
   const printDefaults = [
-    {name:"DTF Print",price:180,note:"Vivid colour · works on light and dark garments"},
-    {name:"Screen Print",price:120,note:"Durable and efficient for quantity orders"},
-    {name:"Embroidery",price:260,note:"Premium stitched thread finish"},
-    {name:"Sublimation",price:150,note:"Light colours only · ink is not visible correctly on dark garments",lightOnly:true}
+    {name:"DTF Print",price:10,largePrice:20,note:"Vivid colour · works on light and dark garments"},
+    {name:"Screen Print",price:10,largePrice:20,note:"Durable and efficient for quantity orders"},
+    {name:"Embroidery",price:50,largePrice:100,note:"Premium stitched thread finish"},
+    {name:"Sublimation",price:10,largePrice:20,note:"Light colours only · ink is not visible correctly on dark garments",lightOnly:true}
   ];
+  const designerPricingDefaults = {
+    custom_tshirt_base_price:350,
+    custom_polo_base_price:400,
+    custom_standard_extra:50,
+    custom_premium_extra:100,
+    custom_qty_tier2_min:11,
+    custom_qty_tier3_min:51,
+    custom_qty_tier4_min:101,
+    custom_qty_11_50_discount:30,
+    custom_qty_51_100_discount:60,
+    custom_qty_101_plus_discount:100,
+    custom_large_print_threshold_pct:50,
+    custom_dtf_small:10,custom_dtf_large:20,
+    custom_screen_small:10,custom_screen_large:20,
+    custom_embroidery_small:50,custom_embroidery_large:100,
+    custom_sublimation_small:10,custom_sublimation_large:20
+  };
 
   const iconPaths = {
     menu:'<path d="M4 7h16M4 12h16M4 17h16"/>', bag:'<path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8a3 3 0 0 1 6 0"/>', cart:'<circle cx="9" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/><path d="M3 5h2l2.3 9.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 .98-.78L20 8H7"/>',
@@ -75,7 +92,19 @@
   function getCustomCatalogItems(){ return migrateKnownAssets(load("one-line-custom-catalog-items-v1",[])); }
   function getDelivery(){ return load("custom-store-delivery-v3",deliveryDefaults); }
   function getPrints(){ return load("custom-store-print-types-v3",printDefaults); }
-  function getSettings(){ return load("custom-store-settings-v3",{whatsapp:"",b2bId:"",b2bPassword:""}); }
+  function getSettings(){ return Object.assign({whatsapp:"",b2bId:"",b2bPassword:""},designerPricingDefaults,load("custom-store-settings-v3",{})); }
+  function customDesignPrice(design,qty,settings){
+    const cfg=Object.assign({},designerPricingDefaults,settings||getSettings()),num=(k,f=0)=>{const v=Number(cfg[k]);return Number.isFinite(v)?v:Number(f||0);};
+    const type=String(design?.garmentType||'T-Shirt'),material=String(design?.materialQuality||'Budget').toLowerCase(),print=String(design?.printType||'DTF Print').toLowerCase();
+    const base=type==='Polo'?num('custom_polo_base_price',400):num('custom_tshirt_base_price',350);
+    const extra=material==='premium'?num('custom_premium_extra',100):material==='standard'?num('custom_standard_extra',50):0;
+    const q=Math.max(1,Number(qty||design?.totalQty||1)),t2=Math.max(1,num('custom_qty_tier2_min',11)),t3=Math.max(t2+1,num('custom_qty_tier3_min',51)),t4=Math.max(t3+1,num('custom_qty_tier4_min',101));
+    const discount=q>=t4?num('custom_qty_101_plus_discount',100):q>=t3?num('custom_qty_51_100_discount',60):q>=t2?num('custom_qty_11_50_discount',30):0;
+    const key=print.includes('embroid')?'embroidery':print.includes('screen')?'screen':print.includes('sublim')?'sublimation':'dtf',threshold=Math.max(1,num('custom_large_print_threshold_pct',50));
+    let printCost=0,printCount=0;Object.values(design?.surfaceDesigns||{}).forEach(surface=>(surface?.layers||[]).forEach(layer=>{const width=Number(layer?.pricingWidthPct??layer?.scale??0);printCost+=num('custom_'+key+'_'+(width>threshold?'large':'small'),key==='embroidery'?(width>threshold?100:50):(width>threshold?20:10));printCount++;}));
+    if(!printCount&&(design?.text||design?.uploadedImage)){const width=Math.max(Number(design?.textScale||0),Number(design?.imageScale||0));printCost=num('custom_'+key+'_'+(width>threshold?'large':'small'),key==='embroidery'?(width>threshold?100:50):(width>threshold?20:10));}
+    return Math.max(0,base+extra+printCost-discount);
+  }
   function isDarkColor(name){ const value=String(name||'').trim().toLowerCase(); if(/^#[0-9a-f]{6}$/i.test(value)){const n=parseInt(value.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255; return (r*.2126+g*.7152+b*.0722)<155;} return ["black","navy","maroon","olive","green","blue","charcoal","brown","purple"].some(x=>value.includes(x)); }
   function productOptions(product){
     if(product?.type==="Simple") return [];
@@ -127,5 +156,5 @@
     return '<div class="real-garment-preview preview-'+surface+' '+esc(className||'')+'"><div class="garment-depth"></div><img class="garment-photo '+(sleeve?'sleeve-preview ':'')+(surface==='rightSleeve'?'show-rightSleeve':'')+'" src="'+esc(garment)+'" alt="" style="transform:'+mirror+'"><span class="garment-tint '+(sleeve?'sleeve-preview ':'')+(surface==='rightSleeve'?'show-rightSleeve':'')+'" style="background:'+esc(palette[design.garmentColor]||design.garmentColor||palette.Navy)+';mask-image:url('+esc(garment)+');-webkit-mask-image:url('+esc(garment)+');transform:'+mirror+'"></span><div class="garment-print-zone '+zone+'">'+content+'</div></div>';
   }
 
-  window.OneLineStore={palette,onlineImages,seedCategories,seedProducts,seedOrders,deliveryDefaults,printDefaults,icon,money,esc,load,save,getProducts,getOrders,getCart,getCategories,getCustomCatalogCategories,getCustomCatalogItems,getDelivery,getPrints,getSettings,isDarkColor,productOptions,productImageForColor,surfaceDesign,designedSurfaces,designPreview};
+  window.OneLineStore={palette,onlineImages,seedCategories,seedProducts,seedOrders,deliveryDefaults,printDefaults,designerPricingDefaults,icon,money,esc,load,save,getProducts,getOrders,getCart,getCategories,getCustomCatalogCategories,getCustomCatalogItems,getDelivery,getPrints,getSettings,customDesignPrice,isDarkColor,productOptions,productImageForColor,surfaceDesign,designedSurfaces,designPreview};
 })();

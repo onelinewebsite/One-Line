@@ -1,15 +1,16 @@
-# One-Line v46 — Supabase setup
+# One-Line v55 — Supabase setup
 
-This build keeps customer profile, cart and order history on Supabase. Device storage is used only for the login/session token, static/catalogue cache and unfinished designer drafts.
+This build keeps customer profile, cart and order history on Supabase. Device storage is used only for the login/session token, catalogue/settings snapshots and unfinished designer drafts.
 
 ## Existing current live project
-If the v43/v44 build is already working, do **not** recreate the database.
+If the current v54 website/database is already working, do **not** recreate the database.
 
 1. Supabase → SQL Editor → New query.
-2. Run the root file `RUN-NEXT-v47.sql` once.
-3. No new Edge Function is required for v46. Keep the currently deployed `otp-session`, `customer-event`, `customer-account`, `place-order`, and `admin-user` functions.
+2. Open the root file `RUN-NEXT-v55.sql` and run it once.
+3. Deploy the updated website files.
+4. No Edge Function redeploy is required only for this pricing update; `RUN-NEXT-v55.sql` updates the server-side order-pricing RPC used by the existing `place-order` function.
 
-This v46 bundle is intended for the current v45 database. For a much older database, use the full `supabase/schema.sql` on a fresh project or reconcile the older migrations before applying v46. If it never received the v41 server-account sync, `supabase/migrations/v41_server_account_sync.sql` remains available as a reference migration.
+The v55 migration adds live customizer pricing settings, T-Shirt/Polo base rates, cloth additions, bulk tiers, print-size pricing and server-side custom-design totals.
 
 ## Fresh project
 Run the complete `supabase/schema.sql`, set the existing `MSG91_AUTH_KEY` Edge Function secret, then deploy:
@@ -22,24 +23,20 @@ supabase functions deploy place-order --no-verify-jwt
 supabase functions deploy admin-user
 ```
 
-A fresh full-schema install already contains the Customization Catalogue tables and policies, so incremental `RUN-NEXT-*.sql` files are not needed immediately afterward.
+A fresh full-schema install already contains the v55 customizer pricing columns and server-side pricing function, so `RUN-NEXT-v55.sql` is only for an existing database.
 
 ## Portal roles
-- **Admin:** full catalogue, categories/subcategories, Custom Catalogue, Enquiries, reusable subitems, stock, orders, customers/activity/carts, and staff account control.
-- **Management:** add/edit Ready Made products, Customize Catalogue categories/items and reusable Subitems. It can upload product/option images and manage exact variants, but it cannot use destructive product/category deletes, Enquiries, stock desk, customers, orders, activity or accounts.
-- **Staff:** stock sales desk only. Search by name/code/barcode/category/colour/size, choose the exact variant, enter quantity, and mark it sold. Staff cannot add stock.
-- **Order Receiving:** read orders and update order status only.
+- **Admin:** full catalogue, Custom Catalogue, B2B, categories, enquiries, subitems, accounts and customizer pricing settings.
+- **Management:** add/edit Ready Made products, categories, Custom Catalogue items, B2B items and reusable Subitems. It cannot change customizer pricing or manage accounts.
+- **Staff:** stock/sold desk only.
+- **Order Receiving:** orders and order status only.
 
-## Customization Catalogue enquiries
-Catalogue browsing is public, but an enquiry is written only after the existing OTP session has been verified. The `customer-event` Edge Function validates that customer token and saves the request as a `customer_activity` row with event type `custom_catalog_enquiry`. Admin reads those rows together with the linked customer profile.
+## Customizer pricing
+Admin → Settings → **Customizer Pricing** controls:
+- T-Shirt and Polo base rates.
+- Standard and Premium cloth additions. Budget always equals the selected garment base rate.
+- Quantity-tier starting points and per-piece discounts.
+- Large-print threshold percentage.
+- Small/large charges for DTF, Screen Print, Embroidery and Sublimation.
 
-## Server-authoritative customer data
-- Customer name, business/institution and post/role.
-- Cart items, quantities, piece count and total.
-- Order history and order status.
-- Customization catalogue enquiries linked to the verified customer.
-- One phone number stays connected to the same customer record on every device.
-- Multiple active devices can use the same customer account.
-
-## Device cache
-Static website/PWA files, catalogue/settings snapshots for fast loading, unfinished customizer drafts, and the login session token may use device storage. Cart/order/profile data remain server-authoritative.
+The customer designer calculates these prices immediately, and the database recalculates custom-design pricing again when the order is placed.

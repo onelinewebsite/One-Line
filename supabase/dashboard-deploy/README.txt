@@ -1,9 +1,8 @@
-Supabase Dashboard manual deploy copies for One-Line v46.
+Supabase Dashboard manual deploy copies for One-Line v55.
 
-For the current live project, run RUN-NEXT-v47.sql from the project root once.
-The v46 Ready Made / Customize Catalogue management update does not require redeploying OTP/customer functions.
+For the current live v54 project, first run RUN-NEXT-v55.sql from the project root once. The v55 customizer-pricing update changes the database pricing RPC, so an Edge Function redeploy is not required only for this update.
 
-If you do need to redeploy customer functions from the Dashboard for another reason, use these matching files:
+If you need to redeploy customer functions from the Dashboard for another reason, use these matching files:
 - customer-account -> customer-account-index.ts
 - place-order -> place-order-index.ts
 - customer-event -> customer-event-index.ts

@@ -4529,3 +4529,7 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
   .custom-idea-grid .custom-idea-card .product-info h3{font-size:13.5px!important}
   .custom-idea-grid .custom-idea-card .custom-idea-info>span{font-size:10.5px!important}
 }
+
+/* ===== v55 customizer price breakdown ===== */
+.print-size-rule{margin:10px 0 0;font-size:11px;line-height:1.45;color:#777}.designer-price-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.designer-price-breakdown>span{border:1px solid #e8e8e8;border-radius:12px;padding:10px;background:#fafafa;display:grid;gap:4px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#777}.designer-price-breakdown b{font-size:12px;text-transform:none;letter-spacing:0;color:#111;line-height:1.35}.material-quality-cards button strong{white-space:nowrap}.print-options button strong{font-size:11px;line-height:1.35;text-align:right}
+@media(max-width:620px){.designer-price-breakdown{grid-template-columns:1fr}.designer-price-breakdown>span{grid-template-columns:90px 1fr;align-items:center}.designer-price-breakdown b{text-align:right}}

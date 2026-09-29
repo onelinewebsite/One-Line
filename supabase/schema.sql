@@ -187,6 +187,25 @@ create table if not exists public.stock_movements (
 create table if not exists public.store_settings (
   id integer primary key default 1 check(id=1),
   whatsapp text not null default '',
+  custom_tshirt_base_price numeric(12,2) not null default 350,
+  custom_polo_base_price numeric(12,2) not null default 400,
+  custom_standard_extra numeric(12,2) not null default 50,
+  custom_premium_extra numeric(12,2) not null default 100,
+  custom_qty_tier2_min integer not null default 11,
+  custom_qty_tier3_min integer not null default 51,
+  custom_qty_tier4_min integer not null default 101,
+  custom_qty_11_50_discount numeric(12,2) not null default 30,
+  custom_qty_51_100_discount numeric(12,2) not null default 60,
+  custom_qty_101_plus_discount numeric(12,2) not null default 100,
+  custom_large_print_threshold_pct numeric(6,2) not null default 50,
+  custom_dtf_small numeric(12,2) not null default 10,
+  custom_dtf_large numeric(12,2) not null default 20,
+  custom_screen_small numeric(12,2) not null default 10,
+  custom_screen_large numeric(12,2) not null default 20,
+  custom_embroidery_small numeric(12,2) not null default 50,
+  custom_embroidery_large numeric(12,2) not null default 100,
+  custom_sublimation_small numeric(12,2) not null default 10,
+  custom_sublimation_large numeric(12,2) not null default 20,
   updated_at timestamptz not null default now()
 );
 insert into public.store_settings(id) values(1) on conflict(id) do nothing;
@@ -210,10 +229,10 @@ create table if not exists public.delivery_methods (
 );
 
 insert into public.print_types(name,price,note,light_only,sort_order) values
- ('DTF Print',180,'Vivid colour · works on light and dark garments',false,1),
- ('Screen Print',120,'Durable and efficient for quantity orders',false,2),
- ('Embroidery',260,'Premium stitched thread finish',false,3),
- ('Sublimation',150,'Light colours only',true,4)
+ ('DTF Print',10,'Vivid colour · works on light and dark garments',false,1),
+ ('Screen Print',10,'Durable and efficient for quantity orders',false,2),
+ ('Embroidery',50,'Premium stitched thread finish',false,3),
+ ('Sublimation',10,'Light colours only',true,4)
 on conflict(name) do nothing;
 
 insert into public.delivery_methods(name,note,sort_order) values
@@ -350,6 +369,67 @@ begin
   insert into public.stock_movements(product_id,product_variant_id,qty_delta,actor_id,reason) values(r.product_id,p_variant,p_delta,auth.uid(),p_reason);
 end $$;
 
+-- Server-side customizer pricing. The browser sends the design geometry; the database applies the live admin pricing rules.
+create or replace function public.custom_design_unit_price(p_design jsonb,p_qty integer)
+returns numeric language plpgsql stable security definer set search_path=public as $$
+declare
+  s public.store_settings%rowtype;
+  v_type text := coalesce(p_design->>'garmentType','');
+  v_material text := coalesce(p_design->>'materialQuality','Budget');
+  v_print text := lower(coalesce(p_design->>'printType','DTF Print'));
+  v_base numeric := 0;
+  v_extra numeric := 0;
+  v_discount numeric := 0;
+  v_small numeric := 10;
+  v_large numeric := 20;
+  v_print_cost numeric := 0;
+  v_surface jsonb;
+  v_layer jsonb;
+  v_width numeric := 0;
+  v_threshold numeric := 50;
+  v_print_count integer := 0;
+begin
+  select * into s from public.store_settings where id=1;
+  if not found then raise exception 'Store pricing settings are missing'; end if;
+  if v_type='T-Shirt' then v_base:=s.custom_tshirt_base_price;
+  elsif v_type='Polo' then v_base:=s.custom_polo_base_price;
+  else raise exception 'This saved custom garment type is no longer available. Please redesign it as T-Shirt or Polo.';
+  end if;
+
+  if lower(v_material)='standard' then v_extra:=s.custom_standard_extra;
+  elsif lower(v_material)='premium' then v_extra:=s.custom_premium_extra;
+  else v_extra:=0;
+  end if;
+
+  if greatest(1,coalesce(p_qty,1))>=s.custom_qty_tier4_min then v_discount:=s.custom_qty_101_plus_discount;
+  elsif greatest(1,coalesce(p_qty,1))>=s.custom_qty_tier3_min then v_discount:=s.custom_qty_51_100_discount;
+  elsif greatest(1,coalesce(p_qty,1))>=s.custom_qty_tier2_min then v_discount:=s.custom_qty_11_50_discount;
+  end if;
+
+  if v_print like '%embroid%' then v_small:=s.custom_embroidery_small;v_large:=s.custom_embroidery_large;
+  elsif v_print like '%screen%' then v_small:=s.custom_screen_small;v_large:=s.custom_screen_large;
+  elsif v_print like '%sublim%' then v_small:=s.custom_sublimation_small;v_large:=s.custom_sublimation_large;
+  else v_small:=s.custom_dtf_small;v_large:=s.custom_dtf_large;
+  end if;
+  v_threshold:=greatest(1,coalesce(s.custom_large_print_threshold_pct,50));
+
+  for v_surface in select value from jsonb_each(coalesce(p_design->'surfaceDesigns','{}'::jsonb)) loop
+    for v_layer in select value from jsonb_array_elements(coalesce(v_surface->'layers','[]'::jsonb)) loop
+      v_width:=greatest(0,coalesce(nullif(v_layer->>'pricingWidthPct','')::numeric,nullif(v_layer->>'scale','')::numeric,0));
+      v_print_cost:=v_print_cost + case when v_width>v_threshold then v_large else v_small end;
+      v_print_count:=v_print_count+1;
+    end loop;
+  end loop;
+
+  -- Compatibility with a legacy front-only design that predates surfaceDesigns/layers.
+  if v_print_count=0 and (coalesce(p_design->>'text','')<>'' or coalesce(p_design->>'uploadedImage','')<>'') then
+    v_width:=greatest(coalesce(nullif(p_design->>'textScale','')::numeric,0),coalesce(nullif(p_design->>'imageScale','')::numeric,0));
+    v_print_cost:=case when v_width>v_threshold then v_large else v_small end;
+  end if;
+
+  return greatest(0,v_base+v_extra+v_print_cost-v_discount);
+end $$;
+
 -- Atomic order creation + stock validation/decrement. Called only from the place-order Edge Function using a server secret.
 create or replace function public.place_bulk_order(
   p_customer_id uuid,
@@ -371,11 +451,18 @@ begin
   values(v_order_id,v_order_code,p_customer_id,coalesce(p_customer_name,''),coalesce(p_phone,''),coalesce(p_address,''),coalesce(p_business,''),coalesce(p_delivery,''),coalesce(p_payment,''),'Confirmed',0,'{}');
 
   for v_item in select * from jsonb_array_elements(p_items) loop
-    if coalesce(v_item->>'itemType','product') in ('team_design','custom_design') then
-      -- Custom/team designs are quote items until server-side pricing rules are configured.
+    if coalesce(v_item->>'itemType','product')='custom_design' then
+      v_qty := greatest(1,coalesce((v_item->>'qty')::int,1));
+      v_price := public.custom_design_unit_price(coalesce(v_item->'design','{}'::jsonb),v_qty);
+      insert into public.order_items(order_id,item_type,item_name,item_code,qty,unit_price,design_json,group_key)
+      values(v_order_id,'custom_design',coalesce(v_item->>'name','Custom design'),coalesce(v_item->>'code',''),v_qty,v_price,v_item->'design',coalesce(v_item->>'groupKey',''));
+      v_total := v_total + v_qty*v_price;
+      continue;
+    elsif coalesce(v_item->>'itemType','product')='team_design' then
+      -- Team-upload designs remain enquiry/quote items.
       v_qty := greatest(1,coalesce((v_item->>'qty')::int,1)); v_price := 0;
       insert into public.order_items(order_id,item_type,item_name,item_code,qty,unit_price,design_json,group_key)
-      values(v_order_id,coalesce(v_item->>'itemType','team_design'),coalesce(v_item->>'name','Custom design'),coalesce(v_item->>'code',''),v_qty,v_price,v_item->'design',coalesce(v_item->>'groupKey',''));
+      values(v_order_id,'team_design',coalesce(v_item->>'name','Team design'),coalesce(v_item->>'code',''),v_qty,v_price,v_item->'design',coalesce(v_item->>'groupKey',''));
       continue;
     end if;
 
@@ -438,6 +525,8 @@ end $$;
 
 -- Only the server-side Edge Function may execute the stock-deducting order RPC.
 revoke all on function public.place_bulk_order(uuid,text,text,text,text,text,text,jsonb) from public, anon, authenticated;
+revoke all on function public.custom_design_unit_price(jsonb,integer) from public, anon, authenticated;
+grant execute on function public.custom_design_unit_price(jsonb,integer) to service_role;
 grant execute on function public.place_bulk_order(uuid,text,text,text,text,text,text,jsonb) to service_role;
 
 -- Simple-product and subitem stock adjustments for staff stock tracking.
