@@ -1,29 +1,18 @@
-# One-Line v51 — Stable refresh, fixed header, Edit/Done workflow
+# One-Line v52 — Navigation + premium catalogue polish
 
-This build keeps the stable v50/v48 customer interaction model and focuses on reliability, server cleanup and simpler portal editing.
+Customer-side polish built on the stable v51 server/admin workflow.
 
-## Customer site
-- Removed the repeated refresh transition/fade and reduced unnecessary second renders after Supabase hydration.
-- The shared site header is persistent on every customer screen.
-- Home keeps the menu button. Every other customer screen uses a simple Back icon in the header and no menu button in that position.
-- Browser Back/history still returns to the actual previous One-Line screen; direct/shared links use a logical fallback.
-- Existing in-page Back buttons are hidden when the shared header is present.
+## Changes
+- Mobile bottom navigation now uses **Custom Catalogue** instead of Categories.
+- Header Profile icon is hidden only on viewports where the mobile bottom navigation already provides Profile; it remains available on larger devices.
+- Ready-made Home/navigation links are automatically hidden when there are no active customer-visible ready-made items.
+- Home Ready-made category section is omitted when it has no active items.
+- Home Ready-made and Custom Catalogue headings now use a full-width text flow with their action buttons on a separate row.
+- Ready-made category cards are uniform and cleaner.
+- Product cards inside category/catalog grids are compact, premium and no longer keep unnecessary empty information height.
+- Custom Catalogue idea cards receive the same tighter premium spacing.
 
-## Admin / Management
-- Existing Ready Made products, Custom Catalogue items, B2B items, categories, subitems and Admin-managed portal accounts are locked by default.
-- Tap the pencil Edit icon for one section, change it, then tap Done. That section is written to Supabase immediately.
-- New records still use a single Create action because a server row must exist before section-by-section editing can begin.
-- Management can add/edit catalogue structure, Ready Made products, Custom Catalogue, B2B and subitems. Destructive category/product deletion remains Admin-only where intended.
+## Database
+No new SQL is required when upgrading from v51. Keep the v51 database/storage permissions already applied.
 
-## Supabase image cleanup
-- Removing an owned uploaded image with its close/remove control first removes the database reference, then deletes the corresponding file from the `product-images` Supabase Storage bucket.
-- Product, Custom Catalogue and category deletion also cleans up their owned image files where applicable.
-
-## Staff / Receiver
-- Staff remains limited to searching exact products/variants/subitems and marking a sold quantity. Server RPC rules reject positive Staff stock changes.
-- Order Receiving loads only order data instead of hydrating the whole catalogue, reducing unnecessary refresh work.
-
-## Existing installation
-After deploying v51, run `RUN-NEXT-v51.sql` once in Supabase SQL Editor. It aligns Ready Made category/subcategory Management permissions and confirms Admin/Management Storage delete permission.
-
-No Edge Function redeploy is required for this v51 update.
+No Edge Function redeploy is required.

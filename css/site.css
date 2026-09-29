@@ -4183,3 +4183,251 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
   .inner-site-header .header-back-button{width:40px!important;height:40px!important;min-width:40px!important}
   .inner-site-header nav{display:none!important}
 }
+
+/* ===== v52 customer navigation + premium catalogue polish ===== */
+/* Home section copy gets the full row; actions no longer squeeze/break the heading text. */
+.home-flow-heading{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  align-items:start!important;
+  gap:16px!important;
+}
+.home-flow-heading .section-heading-copy{
+  width:100%!important;
+  max-width:900px!important;
+  min-width:0!important;
+}
+.home-flow-heading .section-heading-copy h2{
+  max-width:900px!important;
+  margin-bottom:8px!important;
+}
+.home-flow-heading .section-heading-copy p{
+  max-width:720px!important;
+  margin:0!important;
+  line-height:1.6!important;
+}
+.home-flow-heading .section-heading-actions{
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:9px!important;
+}
+.category-section .catalog-view-button{
+  min-height:44px!important;
+  padding:0 16px!important;
+  border-radius:13px!important;
+  border:1px solid #ded4e1!important;
+  background:#fff!important;
+  box-shadow:0 8px 20px rgba(53,31,59,.06)!important;
+}
+.custom-catalog-home .custom-catalog-view-button{
+  min-width:150px!important;
+  height:44px!important;
+  min-height:44px!important;
+  padding:0 17px!important;
+  border-radius:13px!important;
+}
+
+/* Uniform premium Ready Made category tiles — no oversized first tile. */
+.borderless-categories .real-category-grid{
+  align-items:stretch!important;
+}
+.borderless-categories .real-category-card.category-block,
+.borderless-categories .real-category-card:first-child{
+  transform:none!important;
+  z-index:auto!important;
+  border:1px solid rgba(92,60,97,.11)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:0 8px 24px rgba(50,29,55,.07)!important;
+  overflow:hidden!important;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease!important;
+}
+.borderless-categories .real-category-card.category-block:hover,
+.borderless-categories .real-category-card:first-child:hover{
+  transform:translateY(-3px)!important;
+  border-color:rgba(100,17,111,.18)!important;
+  box-shadow:0 15px 34px rgba(50,29,55,.11)!important;
+}
+.borderless-categories .real-category-card>div:last-of-type,
+.borderless-categories .real-category-card:first-child>div:last-of-type{
+  min-height:0!important;
+  padding:12px 13px 14px!important;
+}
+.borderless-categories .real-category-card h3,
+.borderless-categories .real-category-card:first-child h3{
+  margin:0!important;
+  font-size:15px!important;
+  line-height:1.25!important;
+}
+.borderless-categories .real-category-card p{
+  margin:5px 0 0!important;
+  font-size:9px!important;
+  line-height:1.4!important;
+  color:#837986!important;
+}
+
+/* Premium, compact cards inside Ready Made/B2B category sections. */
+.grouped-catalog .responsive-catalog-grid{
+  align-items:start!important;
+}
+.grouped-catalog .wellone-card.product-card{
+  height:auto!important;
+  min-height:0!important;
+  border:1px solid rgba(85,54,91,.12)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:0 8px 24px rgba(48,28,53,.07)!important;
+  overflow:hidden!important;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease!important;
+}
+.grouped-catalog .wellone-card.product-card:hover{
+  transform:translateY(-3px)!important;
+  border-color:rgba(100,17,111,.18)!important;
+  box-shadow:0 16px 34px rgba(48,28,53,.11)!important;
+}
+.grouped-catalog .wellone-card .product-info{
+  min-height:0!important;
+  height:auto!important;
+  padding:12px 13px 14px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:5px!important;
+}
+.grouped-catalog .wellone-card .product-info>p{
+  margin:0!important;
+  font-size:8px!important;
+  line-height:1.35!important;
+  letter-spacing:.08em!important;
+}
+.grouped-catalog .wellone-card .product-info h3{
+  min-height:0!important;
+  margin:0!important;
+  font-size:14px!important;
+  line-height:1.25!important;
+  -webkit-line-clamp:2!important;
+}
+.grouped-catalog .wellone-card .price-row,
+.grouped-catalog .wellone-card .ask-price-row{
+  margin-top:5px!important;
+}
+.grouped-catalog .wellone-card .price-row strong{
+  font-size:15px!important;
+}
+
+/* Custom Catalogue item cards use the same tight premium rhythm. */
+.custom-idea-grid{
+  align-items:start!important;
+}
+.custom-idea-grid .custom-idea-card{
+  height:auto!important;
+  min-height:0!important;
+  border:1px solid rgba(85,54,91,.12)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:0 8px 24px rgba(48,28,53,.07)!important;
+}
+.custom-idea-grid .custom-idea-card .product-info{
+  min-height:0!important;
+  height:auto!important;
+  padding:12px 13px 14px!important;
+  gap:5px!important;
+}
+.custom-idea-grid .custom-idea-card .product-info h3{
+  min-height:0!important;
+  font-size:14px!important;
+  line-height:1.25!important;
+}
+.custom-idea-grid .custom-idea-card .custom-idea-info>span{
+  margin-top:2px!important;
+  font-size:10px!important;
+  line-height:1.45!important;
+  -webkit-line-clamp:2!important;
+}
+.custom-idea-grid .custom-enquire-label{
+  margin-top:6px!important;
+  padding-top:9px!important;
+  font-size:11px!important;
+}
+
+/* On devices with bottom navigation, Profile already lives there: don't duplicate it in the header. */
+@media(max-width:760px){
+  .profile-head-link{display:none!important}
+  .home-flow-heading{gap:12px!important}
+  .home-flow-heading .section-heading-copy h2{margin-bottom:7px!important}
+  .home-flow-heading .section-heading-actions{
+    justify-content:flex-start!important;
+    width:100%!important;
+    gap:8px!important;
+  }
+  .category-section .catalog-view-button,
+  .custom-catalog-home .custom-catalog-view-button{
+    width:auto!important;
+    min-width:0!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:0 14px!important;
+    font-size:11px!important;
+  }
+  .custom-catalog-home .inline-share-button{
+    width:42px!important;
+    min-width:42px!important;
+    height:42px!important;
+  }
+  .borderless-categories .real-category-card.category-block,
+  .borderless-categories .real-category-card:first-child{
+    transform:none!important;
+    border-radius:15px!important;
+  }
+  .borderless-categories .real-category-card>div:last-of-type,
+  .borderless-categories .real-category-card:first-child>div:last-of-type{
+    min-height:0!important;
+    padding:10px!important;
+  }
+  .borderless-categories .real-category-card h3,
+  .borderless-categories .real-category-card:first-child h3{font-size:13px!important}
+  .grouped-catalog .wellone-card.product-card,
+  .custom-idea-grid .custom-idea-card{border-radius:14px!important}
+  .grouped-catalog .wellone-card .product-info,
+  .custom-idea-grid .custom-idea-card .product-info{
+    min-height:0!important;
+    padding:9px 9px 11px!important;
+    gap:4px!important;
+  }
+  .grouped-catalog .wellone-card .product-info h3,
+  .custom-idea-grid .custom-idea-card .product-info h3{
+    min-height:0!important;
+    font-size:12px!important;
+    line-height:1.25!important;
+  }
+  .grouped-catalog .wellone-card .product-info>p{font-size:7px!important}
+  .grouped-catalog .wellone-card .price-row strong{font-size:13px!important}
+  .custom-idea-grid .custom-idea-card .custom-idea-info>span{font-size:9px!important}
+  .custom-idea-grid .custom-enquire-label{font-size:10px!important;margin-top:5px!important;padding-top:8px!important}
+}
+
+/* v52 finishing consistency: Home ready-made cards and the standalone category screen match the same premium system. */
+.home-product-grid .wellone-card.product-card,
+.categories-only-grid .real-category-card{
+  border:1px solid rgba(85,54,91,.12)!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  box-shadow:0 8px 24px rgba(48,28,53,.07)!important;
+  overflow:hidden!important;
+}
+.home-product-grid .wellone-card .product-info{
+  min-height:0!important;
+  height:auto!important;
+  padding:12px 13px 14px!important;
+  gap:5px!important;
+}
+.home-product-grid .wellone-card .product-info h3{min-height:0!important;font-size:14px!important;line-height:1.25!important}
+.categories-only-grid .real-category-card>div:last-of-type{min-height:0!important;padding:12px 13px 14px!important}
+@media(max-width:760px){
+  .home-product-grid .wellone-card.product-card,.categories-only-grid .real-category-card{border-radius:14px!important}
+  .home-product-grid .wellone-card .product-info{min-height:0!important;padding:9px 9px 11px!important}
+  .home-product-grid .wellone-card .product-info h3{min-height:0!important;font-size:12px!important}
+  .categories-only-grid .real-category-card>div:last-of-type{min-height:0!important;padding:10px!important}
+}
