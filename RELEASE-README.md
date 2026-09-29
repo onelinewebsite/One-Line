@@ -1,31 +1,18 @@
-# One-Line v47
+# One-Line v48
 
-This release simplifies the Admin and Management portals and keeps Ready Made and Custom Catalogue as separate workflows.
+## Changes in this build
 
-## Admin
-- Ready Made
-- Categories
-- Custom Catalogue
-- Enquiries
-- Subitems
-- Accounts
-- Settings
+- Custom Catalogue item cards now use a clean 1:1 image frame.
+- Custom Catalogue item detail images are edge-to-edge inside the media area, 100% width and 1:1 on mobile and larger screens. Any uploaded source image ratio is accepted and displayed with a cover crop.
+- The home “View catalogue” action now has a dedicated premium button style.
+- Customer-side routing now stores the selected product/category/custom-category/custom-item in the URL/history state. Refresh keeps the current page instead of falling back to the parent catalogue.
+- Browser Back continues through the actual in-site navigation history.
+- Cache/service-worker build bumped to v48.
 
-## Management
-- Ready Made
-- Custom Catalogue
-- Subitems
-- Settings
+## Database
 
-Stock/Sold remains in Staff. Order handling remains in Order Receiving.
+There is **no new SQL migration for v48**. If `RUN-NEXT-v47.sql` was already applied, do not run it again. A fresh project that has never received the Custom Catalogue schema still needs `RUN-NEXT-v47.sql` once.
 
-## Custom Catalogue
-- Separate categories and items
-- Multiple images + description
-- Optional rate (leave blank to hide it)
-- Shareable catalogue/category/item pages
-- Enquiry button: logged-in customer sends immediately; signed-out customer is asked to create/sign in to an account by phone OTP and name if needed
-- Admin Enquiries records the item and verified customer details
+## Deploy
 
-## Update
-Upload the full v47 build, then run `RUN-NEXT-v47.sql` once in Supabase SQL Editor.
+Upload the complete v48 build and wait for the hosting deployment to finish. Refresh the site once; the v48 service worker removes the older application cache.
