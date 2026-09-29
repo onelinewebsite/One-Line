@@ -1,4 +1,4 @@
-One-Line v55 Portal Access
+One-Line v56 Portal Access
 
 Admin
 URL: /admin.html
@@ -25,6 +25,6 @@ Password: receiver22
 Scope: Orders and order status only.
 
 IMPORTANT
-For an existing v54 Supabase project, run RUN-NEXT-v55.sql once before using the new pricing controls.
+For an existing Supabase project, run RUN-NEXT-v56.sql once before using the new pricing controls.
 
 Default setup credentials should be changed from Admin > Accounts after confirming access.

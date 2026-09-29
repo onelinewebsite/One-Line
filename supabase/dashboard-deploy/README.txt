@@ -1,6 +1,6 @@
-Supabase Dashboard manual deploy copies for One-Line v55.
+Supabase Dashboard manual deploy copies for One-Line v56.
 
-For the current live v54 project, first run RUN-NEXT-v55.sql from the project root once. The v55 customizer-pricing update changes the database pricing RPC, so an Edge Function redeploy is not required only for this update.
+For the existing project, first run RUN-NEXT-v56.sql from the project root once. The v56 customizer-pricing update changes the database pricing RPC, so an Edge Function redeploy is not required only for this update.
 
 If you need to redeploy customer functions from the Dashboard for another reason, use these matching files:
 - customer-account -> customer-account-index.ts

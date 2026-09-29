@@ -1,4 +1,4 @@
-# One-Line v55 — Supabase setup
+# One-Line v56 — Supabase setup
 
 This build keeps customer profile, cart and order history on Supabase. Device storage is used only for the login/session token, catalogue/settings snapshots and unfinished designer drafts.
 
@@ -6,11 +6,11 @@ This build keeps customer profile, cart and order history on Supabase. Device st
 If the current v54 website/database is already working, do **not** recreate the database.
 
 1. Supabase → SQL Editor → New query.
-2. Open the root file `RUN-NEXT-v55.sql` and run it once.
+2. Open the root file `RUN-NEXT-v56.sql` and run it once.
 3. Deploy the updated website files.
-4. No Edge Function redeploy is required only for this pricing update; `RUN-NEXT-v55.sql` updates the server-side order-pricing RPC used by the existing `place-order` function.
+4. No Edge Function redeploy is required only for this pricing update; `RUN-NEXT-v56.sql` updates the server-side order-pricing RPC used by the existing `place-order` function.
 
-The v55 migration adds live customizer pricing settings, T-Shirt/Polo base rates, cloth additions, bulk tiers, print-size pricing and server-side custom-design totals.
+The v56 migration adds live customizer pricing settings, T-Shirt/Polo base rates, cloth additions, bulk tiers, print-size pricing and server-side custom-design totals.
 
 ## Fresh project
 Run the complete `supabase/schema.sql`, set the existing `MSG91_AUTH_KEY` Edge Function secret, then deploy:
@@ -23,7 +23,7 @@ supabase functions deploy place-order --no-verify-jwt
 supabase functions deploy admin-user
 ```
 
-A fresh full-schema install already contains the v55 customizer pricing columns and server-side pricing function, so `RUN-NEXT-v55.sql` is only for an existing database.
+A fresh full-schema install already contains the v56 customizer pricing columns and server-side pricing function, so `RUN-NEXT-v56.sql` is only for an existing database.
 
 ## Portal roles
 - **Admin:** full catalogue, Custom Catalogue, B2B, categories, enquiries, subitems, accounts and customizer pricing settings.

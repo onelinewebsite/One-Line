@@ -39,7 +39,7 @@
     custom_qty_11_50_discount:30,
     custom_qty_51_100_discount:60,
     custom_qty_101_plus_discount:100,
-    custom_large_print_threshold_pct:50,
+    custom_large_print_threshold_pct:20,
     custom_dtf_small:10,custom_dtf_large:20,
     custom_screen_small:10,custom_screen_large:20,
     custom_embroidery_small:50,custom_embroidery_large:100,
@@ -100,7 +100,7 @@
     const extra=material==='premium'?num('custom_premium_extra',100):material==='standard'?num('custom_standard_extra',50):0;
     const q=Math.max(1,Number(qty||design?.totalQty||1)),t2=Math.max(1,num('custom_qty_tier2_min',11)),t3=Math.max(t2+1,num('custom_qty_tier3_min',51)),t4=Math.max(t3+1,num('custom_qty_tier4_min',101));
     const discount=q>=t4?num('custom_qty_101_plus_discount',100):q>=t3?num('custom_qty_51_100_discount',60):q>=t2?num('custom_qty_11_50_discount',30):0;
-    const key=print.includes('embroid')?'embroidery':print.includes('screen')?'screen':print.includes('sublim')?'sublimation':'dtf',threshold=Math.max(1,num('custom_large_print_threshold_pct',50));
+    const key=print.includes('embroid')?'embroidery':print.includes('screen')?'screen':print.includes('sublim')?'sublimation':'dtf',threshold=Math.max(1,num('custom_large_print_threshold_pct',20));
     let printCost=0,printCount=0;Object.values(design?.surfaceDesigns||{}).forEach(surface=>(surface?.layers||[]).forEach(layer=>{const width=Number(layer?.pricingWidthPct??layer?.scale??0);printCost+=num('custom_'+key+'_'+(width>threshold?'large':'small'),key==='embroidery'?(width>threshold?100:50):(width>threshold?20:10));printCount++;}));
     if(!printCount&&(design?.text||design?.uploadedImage)){const width=Math.max(Number(design?.textScale||0),Number(design?.imageScale||0));printCost=num('custom_'+key+'_'+(width>threshold?'large':'small'),key==='embroidery'?(width>threshold?100:50):(width>threshold?20:10));}
     return Math.max(0,base+extra+printCost-discount);

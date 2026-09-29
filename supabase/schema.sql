@@ -197,7 +197,7 @@ create table if not exists public.store_settings (
   custom_qty_11_50_discount numeric(12,2) not null default 30,
   custom_qty_51_100_discount numeric(12,2) not null default 60,
   custom_qty_101_plus_discount numeric(12,2) not null default 100,
-  custom_large_print_threshold_pct numeric(6,2) not null default 50,
+  custom_large_print_threshold_pct numeric(6,2) not null default 20,
   custom_dtf_small numeric(12,2) not null default 10,
   custom_dtf_large numeric(12,2) not null default 20,
   custom_screen_small numeric(12,2) not null default 10,
@@ -386,7 +386,7 @@ declare
   v_surface jsonb;
   v_layer jsonb;
   v_width numeric := 0;
-  v_threshold numeric := 50;
+  v_threshold numeric := 20;
   v_print_count integer := 0;
 begin
   select * into s from public.store_settings where id=1;
@@ -411,7 +411,7 @@ begin
   elsif v_print like '%sublim%' then v_small:=s.custom_sublimation_small;v_large:=s.custom_sublimation_large;
   else v_small:=s.custom_dtf_small;v_large:=s.custom_dtf_large;
   end if;
-  v_threshold:=greatest(1,coalesce(s.custom_large_print_threshold_pct,50));
+  v_threshold:=greatest(1,coalesce(s.custom_large_print_threshold_pct,20));
 
   for v_surface in select value from jsonb_each(coalesce(p_design->'surfaceDesigns','{}'::jsonb)) loop
     for v_layer in select value from jsonb_array_elements(coalesce(v_surface->'layers','[]'::jsonb)) loop

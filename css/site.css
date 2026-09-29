@@ -1675,7 +1675,7 @@ img,svg,video,canvas{max-width:100%}
 .locked-garment-stage .garment-photo,.locked-garment-stage .garment-tint,.locked-garment-stage .garment-depth,.locked-garment-stage .sleeve-photo{pointer-events:none!important;touch-action:none!important}
 .locked-garment-stage .print-area{touch-action:none!important}
 .garment-type-control,.material-quality-control{background:#fbf9fc}
-.garment-type-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.garment-type-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 .garment-type-cards button{min-width:0;min-height:50px;padding:8px;border:1px solid #ddd3df;border-radius:7px;background:#fff;display:grid;align-content:center;gap:3px;text-align:left;color:#332c34;cursor:pointer}
 .garment-type-cards button b{font-size:9px;line-height:1.1}
 .garment-type-cards button small{font-size:7px;color:#807582}
@@ -1732,7 +1732,7 @@ img,svg,video,canvas{max-width:100%}
   .product-action-row .detail-add,.product-action-row .custom-enquiry-btn{width:100%}
   .menu-scrim{display:block;position:fixed;inset:0;z-index:43;background:rgba(17,12,18,.28);cursor:default}
   .site-header{z-index:50}.site-header nav.open{z-index:52}
-  .garment-type-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.garment-type-cards button{padding:7px 6px;min-height:48px}.garment-type-cards button b{font-size:8px}.garment-type-cards button small{font-size:6.5px}
+  .garment-type-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.garment-type-cards button{padding:7px 6px;min-height:48px}.garment-type-cards button b{font-size:8px}.garment-type-cards button small{font-size:6.5px}
   .material-quality-cards{grid-template-columns:1fr!important;gap:6px}.material-quality-cards button{min-height:58px;padding:8px 9px}.material-quality-cards button>span{justify-content:flex-start}.material-quality-cards button strong{margin-left:auto}.material-quality-cards button small{font-size:7px}
   .practical-size-range input[type=range]{height:28px}
   .borderless-categories .real-category-grid{gap:8px!important}.borderless-categories .real-category-card.category-block{border-radius:10px!important}.borderless-categories .real-category-card.category-block:first-child{grid-column:1/-1!important}
@@ -2001,7 +2001,7 @@ button,a{-webkit-tap-highlight-color:transparent}
   .compact-designer-layout{grid-template-columns:minmax(0,1fr) 390px!important}
   .compact-designer-bar{width:min(720px,100%)!important}
   .stage-garment-type{padding:9px 10px!important}
-  .stage-garment-type .garment-type-cards{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+  .stage-garment-type .garment-type-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
   .stage-garment-type .garment-type-cards button{height:50px!important;min-height:50px!important;padding:7px 10px!important}
   .compact-surface-tabs{height:48px!important}
   .compact-surface-tabs button{min-height:38px!important}
@@ -4530,6 +4530,13 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
   .custom-idea-grid .custom-idea-card .custom-idea-info>span{font-size:10.5px!important}
 }
 
-/* ===== v55 customizer price breakdown ===== */
+/* ===== v56 customizer price breakdown ===== */
 .print-size-rule{margin:10px 0 0;font-size:11px;line-height:1.45;color:#777}.designer-price-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.designer-price-breakdown>span{border:1px solid #e8e8e8;border-radius:12px;padding:10px;background:#fafafa;display:grid;gap:4px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#777}.designer-price-breakdown b{font-size:12px;text-transform:none;letter-spacing:0;color:#111;line-height:1.35}.material-quality-cards button strong{white-space:nowrap}.print-options button strong{font-size:11px;line-height:1.35;text-align:right}
 @media(max-width:620px){.designer-price-breakdown{grid-template-columns:1fr}.designer-price-breakdown>span{grid-template-columns:90px 1fr;align-items:center}.designer-price-breakdown b{text-align:right}}
+
+/* v56: two garment types must fit evenly on every customizer viewport. */
+.stage-garment-type{width:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}
+.stage-garment-type .garment-type-cards{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important;max-width:100%!important;gap:8px!important}
+.stage-garment-type .garment-type-cards button{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}
+.stage-garment-type .garment-type-cards button b,.stage-garment-type .garment-type-cards button small{min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+@media(max-width:390px){.stage-garment-type{padding:9px!important}.stage-garment-type .garment-type-cards{gap:6px!important}.stage-garment-type .garment-type-cards button{padding:8px 6px!important}.stage-garment-type .garment-type-cards button b{font-size:10px!important}.stage-garment-type .garment-type-cards button small{font-size:8px!important}}
