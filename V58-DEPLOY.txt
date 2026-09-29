@@ -1,0 +1,12 @@
+ONE-LINE v58 DEPLOY NOTES
+
+1. Upload/replace the full website with this v58 build.
+2. No new SQL is required if RUN-NEXT-v56.sql was already run.
+3. Team flow is now: Upload front/back -> Edit front -> Edit back -> Player rows -> Enquire.
+4. Team intro is simplified, editor pages no longer repeat the large intro, and the step guide is below the active section.
+5. Mobile artwork area supports normal page scrolling; tap a layer to select it, drag selected layer to move, use the corner handle to resize, and tap outside to deselect.
+6. Back NAME / 99 use white jersey-style text with a thin black outline and remain movable/removable but not editable.
+7. Player name, number, size and delete stay in one row; Add row is below the list.
+8. Admin PDF/download enquiry workflow remains unchanged.
+
+BUILD: one-line-v58-team-flow-20260929
