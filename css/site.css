@@ -4097,14 +4097,6 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 .custom-category-image{width:100%!important;aspect-ratio:3/4!important;height:auto!important;background:#f5f2f6!important;overflow:hidden!important}
 .custom-category-image img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
 
-/* Detail pages: use one small floating Back control instead of a full-width bar/header. */
-.no-site-header{position:relative!important}
-.minimal-page-nav{position:absolute!important;z-index:95!important;top:10px!important;left:max(10px,env(safe-area-inset-left))!important;display:block!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important;pointer-events:none!important}
-.minimal-back-button{pointer-events:auto!important;height:38px!important;min-width:38px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;padding:0 11px!important;border:1px solid rgba(70,53,73,.13)!important;border-radius:12px!important;background:rgba(255,255,255,.94)!important;backdrop-filter:blur(10px)!important;color:#2f2831!important;box-shadow:0 5px 16px rgba(40,27,43,.10)!important;font:inherit!important;font-size:11px!important;font-weight:800!important;cursor:pointer!important}
-.minimal-back-button .icon{width:16px!important;height:16px!important}
-.no-site-header .product-full-back{display:none!important}
-.no-site-header .catalog-title .back-button,.no-site-header .checkout-head>.back-button,.no-site-header .team-upload-page .back-button{display:none!important}
-
 /* Share sits beside item/product name. */
 .item-detail-title-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;margin:5px 0 9px!important}
 .item-detail-title-row h1{flex:1!important;min-width:0!important;margin:0!important}
@@ -4132,8 +4124,6 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
   .custom-catalog-home .section-heading-actions{display:inline-flex!important;width:auto!important;justify-content:flex-start!important;gap:8px!important}
   .custom-catalog-home .custom-catalog-view-button{width:auto!important;min-width:148px!important;height:44px!important;min-height:44px!important;padding:0 16px!important}
   .custom-catalog-home .inline-share-button{width:44px!important;min-width:44px!important;height:44px!important}
-  .minimal-page-nav{top:8px!important;left:max(8px,env(safe-area-inset-left))!important}
-  .minimal-back-button{height:36px!important;min-width:36px!important;padding:0 9px!important;border-radius:11px!important}
   .item-detail-title-row{align-items:center!important;gap:9px!important}
   .item-title-share{width:36px!important;min-width:36px!important;height:36px!important;padding:0!important;justify-content:center!important;border-radius:11px!important}
   .item-title-share span{display:none!important}
@@ -4144,6 +4134,52 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
   .custom-item-page .detail-slider,.custom-item-page .detail-slider-frame,.b2b-product .detail-slider,.b2b-product .detail-slider-frame{width:100%!important;max-width:100%!important;border-radius:0!important}
   .custom-item-page .product-full-info,.b2b-product .product-full-info{padding:20px 14px 28px!important}
 }
-/* Keep non-media inner pages clear of the floating back control. */
-.no-site-header .section-wrap{padding-top:68px!important}
-@media(max-width:760px){.no-site-header .section-wrap{padding-top:62px!important}}
+
+/* ===== v51 stable refresh + fixed header/back navigation ===== */
+/* No fade/translate replay during hydration or refresh. Navigation should feel instant. */
+.screen-enter{animation:none!important}
+.site-header{position:sticky!important;top:0!important;z-index:1003!important}
+.inner-site-header .header-back-button{display:none}
+/* Once the fixed site header is present, page-level back buttons are redundant. */
+.has-site-header .minimal-page-nav,
+.has-site-header .product-full-back,
+.has-site-header .catalog-title>.back-button,
+.has-site-header .checkout-head>.back-button,
+.has-site-header .team-upload-page .back-button,
+.has-site-header .customer-orders-page .back-button{display:none!important}
+.has-site-header .section-wrap{padding-top:clamp(18px,2.3vw,34px)!important}
+@media(max-width:760px){
+  .inner-site-header .header-back-button{display:grid!important;place-items:center!important;width:38px!important;height:38px!important;min-width:38px!important;padding:0!important;border:0!important;background:transparent!important;color:#342c36!important;box-shadow:none!important}
+  .inner-site-header .header-back-button .icon{width:22px!important;height:22px!important}
+  .inner-site-header nav{display:none!important}
+  .inner-site-header .logo-button{justify-self:center!important}
+  .has-site-header .section-wrap{padding-top:18px!important}
+}
+
+/* ===== v51 final header/navigation stability ===== */
+/* Inner screens keep the same persistent header, but the leading control is Back instead of Menu. */
+.inner-site-header{
+  grid-template-columns:44px minmax(180px,230px) minmax(0,1fr) auto!important;
+  gap:14px!important;
+}
+.inner-site-header .header-back-button{
+  display:grid!important;
+  place-items:center!important;
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#342c36!important;
+  box-shadow:none!important;
+}
+.inner-site-header .header-back-button:hover,
+.inner-site-header .header-back-button:focus-visible{background:transparent!important;box-shadow:none!important}
+.inner-site-header .header-back-button .icon{width:23px!important;height:23px!important}
+@media(max-width:760px){
+  .inner-site-header{grid-template-columns:42px minmax(0,1fr) auto!important;gap:8px!important}
+  .inner-site-header .header-back-button{width:40px!important;height:40px!important;min-width:40px!important}
+  .inner-site-header nav{display:none!important}
+}

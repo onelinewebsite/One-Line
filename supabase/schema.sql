@@ -314,9 +314,13 @@ create policy "catalogue subvariants update" on public.subitem_variants for upda
 create policy "catalogue subvariants delete" on public.subitem_variants for delete using(public.has_role(array['admin','management']));
 create policy "product subitems write" on public.product_subitems for all using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
 
--- Admin-only store structure/settings.
-create policy "categories admin write" on public.categories for all using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
-create policy "subcategories admin write" on public.subcategories for all using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
+-- Admin + Management can add/edit catalogue structure. Destructive structure deletes stay Admin-only.
+create policy "categories manage insert" on public.categories for insert with check(public.has_role(array['admin','management']));
+create policy "categories manage update" on public.categories for update using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
+create policy "categories admin delete" on public.categories for delete using(public.has_role(array['admin']));
+create policy "subcategories manage insert" on public.subcategories for insert with check(public.has_role(array['admin','management']));
+create policy "subcategories manage update" on public.subcategories for update using(public.has_role(array['admin','management'])) with check(public.has_role(array['admin','management']));
+create policy "subcategories admin delete" on public.subcategories for delete using(public.has_role(array['admin']));
 create policy "settings admin write" on public.store_settings for all using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
 create policy "prints admin write" on public.print_types for all using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));
 create policy "delivery admin write" on public.delivery_methods for all using(public.has_role(array['admin'])) with check(public.has_role(array['admin']));

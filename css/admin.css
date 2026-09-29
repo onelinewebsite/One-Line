@@ -201,3 +201,32 @@ html,body{background:#f6f2f7;color:#241c27}
   .upload-zone{min-height:88px}
   .image-preview-grid{gap:8px}
 }
+
+/* ===== v51 edit -> done workflow ===== */
+.portal-edit-section>header{min-height:58px}
+.section-edit-button,.account-edit-button{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-height:38px!important;padding:8px 13px!important;border:1px solid #d7cad9!important;border-radius:11px!important;background:#fff!important;color:#681474!important;font-weight:750!important;cursor:pointer!important}
+.section-edit-button .icon,.account-edit-button .icon,.row-actions button .icon{width:15px!important;height:15px!important;flex:0 0 auto!important}
+.section-edit-button.done,.account-edit-button.done{background:#681474!important;border-color:#681474!important;color:#fff!important}
+.portal-edit-section fieldset:disabled{opacity:.72!important}
+.portal-edit-section fieldset:disabled input,.portal-edit-section fieldset:disabled textarea,.portal-edit-section fieldset:disabled select{cursor:default!important;color:#665a68!important}
+.section-save-note{align-items:center!important;justify-content:space-between!important}
+.section-save-note>span{font-size:11px!important;color:#766a78!important}
+.category-editor-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;margin-bottom:12px!important;padding:12px 13px!important;border:1px solid #e8e0ea!important;border-radius:13px!important;background:#faf8fb!important}
+.category-editor-head>div{display:grid!important;gap:3px!important}.category-editor-head b{font-size:14px!important}.category-editor-head small{font-size:10px!important;color:#837686!important}
+.category-current-image{position:relative!important;width:min(150px,42vw)!important;aspect-ratio:3/4!important;margin-top:12px!important;border:1px solid #e4dbe6!important;border-radius:14px!important;overflow:hidden!important;background:#f5f1f6!important}
+.category-current-image>div,.category-current-image img{width:100%!important;height:100%!important}.category-current-image img{display:block!important;object-fit:cover!important}
+.category-current-image>button{position:absolute!important;right:7px!important;top:7px!important;width:32px!important;height:32px!important;padding:0!important;border:1px solid rgba(255,255,255,.8)!important;border-radius:50%!important;background:rgba(36,25,39,.78)!important;color:#fff!important;font-size:20px!important;line-height:1!important;cursor:pointer!important;box-shadow:0 5px 14px rgba(0,0,0,.16)!important}
+.account-list article.editing{border-color:#d9bddf!important;background:#fdf9fe!important;box-shadow:0 0 0 3px rgba(104,20,116,.045)!important}
+.account-list select:disabled,.account-list input:disabled{opacity:.72!important;background:#f5f2f5!important;color:#6f6471!important}
+.row-actions button{display:inline-flex!important;align-items:center!important;gap:6px!important}
+@media(max-width:560px){
+  .portal-edit-section>header{padding:12px!important;align-items:flex-start!important}
+  .section-edit-button,.account-edit-button{min-height:42px!important;padding:9px 13px!important;font-size:12px!important}
+  .section-save-note{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+  .section-save-note .ghost-btn{width:100%!important;min-height:44px!important}
+  .account-list article{gap:10px!important;padding:12px!important}
+  .account-list select,.account-list input[type=password]{min-height:44px!important;height:44px!important}
+  .account-edit-button{width:100%!important}
+}
+.account-identity-fields{display:grid!important;gap:7px!important}.account-identity-fields input{width:100%!important;min-height:38px!important;border:1px solid #ddd4df!important;border-radius:8px!important;padding:0 9px!important;background:#fff!important;font:inherit!important}
+@media(max-width:560px){.account-identity-fields input{min-height:44px!important}}

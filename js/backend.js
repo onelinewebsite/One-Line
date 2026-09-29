@@ -152,6 +152,23 @@
   async function uploadImage(file,folder='catalog'){
     const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');if(!file)return'';const ext=(file.name.split('.').pop()||'webp').toLowerCase();const path=folder+'/'+crypto.randomUUID()+'.'+ext;const {error}=await sb.storage.from(C.STORAGE_BUCKET||'product-images').upload(path,file,{cacheControl:'31536000',upsert:false});if(error)throw error;return sb.storage.from(C.STORAGE_BUCKET||'product-images').getPublicUrl(path).data.publicUrl;
   }
+  function storageObjectPath(url){
+    const value=String(url||'').trim();if(!value)return'';
+    const bucket=String(C.STORAGE_BUCKET||'product-images');
+    try{
+      const u=new URL(value,location.href),marker='/storage/v1/object/public/'+encodeURIComponent(bucket)+'/';
+      let i=u.pathname.indexOf(marker);if(i<0){const plain='/storage/v1/object/public/'+bucket+'/';i=u.pathname.indexOf(plain);if(i<0)return'';return decodeURIComponent(u.pathname.slice(i+plain.length));}
+      return decodeURIComponent(u.pathname.slice(i+marker.length));
+    }catch(_){return'';}
+  }
+  async function deleteImage(url){
+    const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');const path=storageObjectPath(url);if(!path)return false;
+    const {error}=await sb.storage.from(C.STORAGE_BUCKET||'product-images').remove([path]);if(error)throw error;return true;
+  }
+  async function deleteImages(urls){
+    const unique=[...new Set((urls||[]).map(String).filter(Boolean))];for(const url of unique){try{await deleteImage(url);}catch(err){console.warn('Image cleanup failed',err);}}
+    return true;
+  }
   async function upsertCategory(row){const sb=supa();const payload={id:row.id||undefined,name:row.name,image_url:row.image||'',subtitle:row.sub||'',active:row.active!==false,sort_order:Number(row.sort_order||0)};const {data,error}=await sb.from('categories').upsert(payload).select().single();if(error)throw error;await hydrate();return data;}
   async function upsertProduct(p){
     const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');
@@ -164,5 +181,5 @@
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate();}
   async function listSubitems(){const sb=supa();const [{data:items,error},{data:vars,error:ve}]=await Promise.all([sb.from('subitems').select('*').order('name'),sb.from('subitem_variants').select('*')]);if(error)throw error;if(ve)throw ve;return(items||[]).map(si=>({...si,variants:(vars||[]).filter(v=>v.subitem_id===si.id)}));}
   async function upsertSubitem(si){const sb=supa();const payload={id:si.id||undefined,code:si.code||'',barcode:si.barcode||null,name:si.name||'',price:Number(si.price||0),option_title:si.optionTitle||'Size',images:si.images||[],active:si.active!==false};const {data,error}=await sb.from('subitems').upsert(payload).select().single();if(error)throw error;await sb.from('subitem_variants').delete().eq('subitem_id',data.id);if(si.variants?.length){const r=await sb.from('subitem_variants').insert(si.variants.map(v=>({subitem_id:data.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??si.price??0),barcode:v.barcode||null,image_url:v.image||'',active:v.active!==false})));if(r.error)throw r.error;}await hydrate();return data;}
-  window.OneLineBackend={configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerAccount,customerSync,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,listProfiles,uploadImage,upsertCategory,upsertProduct,deleteProduct,listSubitems,upsertSubitem,cleanPhone};
+  window.OneLineBackend={configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerAccount,customerSync,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,listSubitems,upsertSubitem,cleanPhone};
 })();
