@@ -1,0 +1,11 @@
+ONE-LINE v65 DEPLOY — T-SHIRTS FABRIC + QUALITY CATALOGUE
+
+1. Upload/replace the full v65 website files in the same GitHub repository/branch used by the live site.
+2. In Supabase -> SQL Editor, run RUN-NEXT-v65.sql once.
+   This creates the T Shirts custom category, the fabric pricing table, item fabric selections, and the default rates.
+3. No Edge Function redeploy is required for this v65 change if your v64 functions are already deployed.
+4. Open Admin -> Custom Catalogue and confirm the Fabric & quality pricing section shows:
+   Mars, NJS, NJ, Boxknit, Dotknit, Salena, Honeycomb, Polycotton.
+5. Open/add a T Shirts custom item. All active fabrics/qualities are selected by default; Polycotton has Premium + Standard only.
+6. Test the customer flow: Custom Catalogue -> T Shirts -> item -> choose Fabric -> choose Quality -> Enquire.
+7. Admin -> Enquiries must show the selected fabric, quality and exact rate.

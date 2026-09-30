@@ -103,12 +103,13 @@
     if(mapped.delivery?.length)local('custom-store-delivery-v3',mapped.delivery.map(x=>({name:x.name,note:x.note||'',active:x.active!==false})));
     // Custom Catalogue stays separate from Ready Made. Keep older databases from breaking if those tables are unavailable.
     // Never let an optional catalogue table break the existing storefront.
-    let customCategories=[],customItems=[];
+    let customCategories=[],customItems=[],customFabrics=[];
     try{
-      const cq=await Promise.all([sb.from('custom_catalog_categories').select('*').order('sort_order'),sb.from('custom_catalog_items').select('*').order('sort_order')]);
+      const cq=await Promise.all([sb.from('custom_catalog_categories').select('*').order('sort_order'),sb.from('custom_catalog_items').select('*').order('sort_order'),sb.from('custom_catalog_fabrics').select('*').order('sort_order')]);
       if(!cq[0].error&&!cq[1].error){customCategories=cq[0].data||[];customItems=cq[1].data||[];local('one-line-custom-catalog-categories-v1',customCategories);local('one-line-custom-catalog-items-v1',customItems);}
+      if(!cq[2].error){customFabrics=cq[2].data||[];local('one-line-custom-catalog-fabrics-v1',customFabrics);}
     }catch(_){}
-    return{configured:true,...mapped,customCategories,customItems};
+    return{configured:true,...mapped,customCategories,customItems,customFabrics};
   }
   function ready(){if(!readyPromise)readyPromise=hydrate().catch(error=>({configured:true,error}));return readyPromise;}
   async function createCustomerSession(phone,accessToken,name){

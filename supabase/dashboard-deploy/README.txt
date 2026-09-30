@@ -1,7 +1,7 @@
-Supabase Dashboard manual deploy copies for One-Line v64.
+Supabase Dashboard manual deploy copies for One-Line v65 (Edge Function code unchanged from v64).
 
 Database:
-- No new SQL is required beyond RUN-NEXT-v56.sql if that migration was already run.
+- For v65, run RUN-NEXT-v65.sql once after the earlier migrations.
 
 IMPORTANT FOR v64:
 - Redeploy the existing place-order Edge Function.

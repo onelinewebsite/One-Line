@@ -440,3 +440,63 @@ html,body{background:#f6f2f7;color:#241c27}
 .team-admin-logo-copy>button svg{width:12px;height:12px}
 .team-order-design>.team-admin-logo-assets{margin:12px 0 0}
 @media(max-width:760px){.team-admin-logo-assets{margin:0 11px 11px;padding:10px}.team-admin-logo-grid{grid-template-columns:1fr}.team-admin-logo-card{grid-template-columns:56px minmax(0,1fr)}.team-admin-logo-preview{width:56px;height:56px}}
+
+/* ===== v65 T-Shirt Custom Catalogue fabrics + quality pricing ===== */
+.fabric-pricing-admin{
+  margin:18px 0 24px;
+  padding:18px;
+  border:1px solid #e5dce8;
+  border-radius:16px;
+  background:#fbf9fc;
+}
+.fabric-pricing-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+.fabric-pricing-head h2{margin:7px 0 5px;font-size:20px}
+.fabric-pricing-head p{margin:0;color:#766b79;font-size:12px;line-height:1.55}
+.fabric-admin-list{display:grid;gap:9px}
+.fabric-admin-card{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:end;
+  padding:12px;
+  border:1px solid #e1d8e4;
+  border-radius:13px;
+  background:#fff;
+}
+.fabric-admin-card.inactive{opacity:.68}
+.fabric-admin-main{display:grid;grid-template-columns:minmax(130px,1.3fr) repeat(2,minmax(94px,.7fr)) minmax(140px,.9fr) minmax(82px,.55fr);gap:9px;align-items:end}
+.fabric-admin-main label{display:grid;gap:5px;color:#756878;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.fabric-admin-main input[type="text"],.fabric-admin-main input:not([type]) ,.fabric-admin-main input[type="number"]{width:100%;min-width:0;height:40px;border:1px solid #dcd2df;border-radius:9px;padding:0 9px;background:#fff;font:inherit;color:#302734}
+.fabric-admin-main input:disabled{opacity:1;background:#f6f3f7;color:#6d626f;-webkit-text-fill-color:#6d626f}
+.fabric-budget-control{display:grid;grid-template-columns:auto minmax(82px,1fr);gap:7px;align-items:end}
+.fabric-check{display:flex!important;grid-template-columns:none!important;flex-direction:row!important;align-items:center!important;gap:7px!important;min-height:40px;padding:0 8px;border:1px solid #e1d7e3;border-radius:9px;background:#faf8fb;color:#4e4252!important;text-transform:none!important;letter-spacing:0!important;font-size:11px!important}
+.fabric-check input{width:17px;height:17px;accent-color:#681474;flex:0 0 auto}
+.fabric-check span{display:grid;gap:1px;min-width:0}.fabric-check span b{font-size:12px}.fabric-check span small{font-size:9px;color:#877b89;font-weight:600}
+.fabric-admin-card>.field-edit-button{align-self:end;height:40px}
+.new-fabric-form{margin-top:13px;padding-top:13px;border-top:1px solid #e5dce8;display:grid;grid-template-columns:minmax(170px,1.2fr) repeat(4,minmax(105px,.75fr));gap:9px;align-items:end}
+.new-fabric-form>div{display:grid;gap:3px}.new-fabric-form>div b{font-size:13px}.new-fabric-form>div small{font-size:10px;color:#7a6e7d}
+.new-fabric-form input{height:40px;min-width:0;border:1px solid #dcd2df;border-radius:9px;padding:0 9px;background:#fff;font:inherit}
+.new-fabric-form .submit-small{height:40px;white-space:nowrap}
+.custom-fabric-selection-section fieldset{padding:14px!important}
+.item-fabric-selection-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.item-fabric-card{padding:12px;border:1px solid #e1d8e4;border-radius:13px;background:#fff;transition:border-color .15s ease,box-shadow .15s ease}
+.item-fabric-card.selected{border-color:#cbb7d0;box-shadow:0 5px 18px rgba(83,31,92,.06)}
+.item-fabric-card.inactive{opacity:.62}
+.item-fabric-top{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:10px}
+.item-fabric-top .fabric-check{flex:1;border:0;background:transparent;padding:0;min-height:34px}
+.item-fabric-top .field-edit-button{min-height:36px;height:36px;min-width:72px}
+.item-fabric-qualities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.item-fabric-qualities label{position:relative;display:block;min-width:0}
+.item-fabric-qualities input{position:absolute;opacity:0;pointer-events:none}
+.item-fabric-qualities span{display:grid;gap:2px;padding:9px;border:1px solid #e3dbe5;border-radius:10px;background:#faf8fb;cursor:pointer}
+.item-fabric-qualities span b{font-size:11px}.item-fabric-qualities span small{font-size:10px;color:#776a79}
+.item-fabric-qualities input:checked+span{border-color:#681474;background:#f7eef9;color:#681474}
+.item-fabric-qualities input:disabled+span{cursor:default;opacity:.58}
+.enquiry-selected-option{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin:9px 0;padding:9px 10px;border:1px solid #e3d9e5;border-radius:10px;background:#faf7fb}
+.enquiry-selected-option span{font-size:9px;color:#817384;text-transform:uppercase;font-weight:800;letter-spacing:.05em}.enquiry-selected-option b{font-size:12px}.enquiry-selected-option strong{font-size:13px;color:#681474}
+@media(max-width:980px){
+  .fabric-admin-main{grid-template-columns:repeat(2,minmax(0,1fr))}.fabric-budget-control{grid-template-columns:auto 1fr}.new-fabric-form{grid-template-columns:repeat(2,minmax(0,1fr))}.new-fabric-form>div{grid-column:1/-1}.item-fabric-selection-grid{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .fabric-pricing-admin{margin:14px -4px 20px;padding:13px;border-radius:14px}.fabric-admin-card{grid-template-columns:1fr}.fabric-admin-main{grid-template-columns:1fr 1fr}.fabric-admin-main>label:first-child{grid-column:1/-1}.fabric-budget-control{grid-column:1/-1}.fabric-admin-card>.field-edit-button{width:100%}.new-fabric-form{grid-template-columns:1fr 1fr}.new-fabric-form input[name="name"]{grid-column:1/-1}.new-fabric-form .submit-small{grid-column:1/-1}.item-fabric-qualities{gap:5px}.item-fabric-qualities span{padding:8px 6px}.enquiry-selected-option{grid-template-columns:1fr auto}.enquiry-selected-option span{grid-column:1/-1}
+}
