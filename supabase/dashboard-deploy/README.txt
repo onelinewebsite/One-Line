@@ -1,13 +1,17 @@
-Supabase Dashboard manual deploy copies for One-Line v56.
+Supabase Dashboard manual deploy copies for One-Line v62.
 
-For the existing project, first run RUN-NEXT-v56.sql from the project root once. The v56 customizer-pricing update changes the database pricing RPC, so an Edge Function redeploy is not required only for this update.
+Database:
+- No new SQL is required beyond RUN-NEXT-v56.sql if that migration was already run.
 
-If you need to redeploy customer functions from the Dashboard for another reason, use these matching files:
+IMPORTANT FOR v62:
+- Redeploy the place-order Edge Function because Team enquiries now save directly as orders and upload/verify the final front/back design assets before the customer loading screen finishes.
+- Dashboard function name: place-order
+- Use: place-order-index.ts
+- Keep Verify JWT with legacy secret = OFF.
+
+Other matching Dashboard copies remain available if needed:
 - customer-account -> customer-account-index.ts
-- place-order -> place-order-index.ts
 - customer-event -> customer-event-index.ts
+- admin-user -> admin-user-index.ts
 
-Keep Verify JWT with legacy secret = OFF for those three and for otp-session.
 Keep the existing MSG91_AUTH_KEY secret unchanged.
-
-For default portal access, admin-user-index.ts remains the Dashboard copy for the admin-user function.
