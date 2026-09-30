@@ -32,7 +32,10 @@ async function persistTeamDesignAssets(db:any,customerId:string,raw:any){
     if(side.backgroundDataUrl){side.backgroundUrl=await uploadOrderImage(db,customerId,side.backgroundDataUrl,sideName+'-original');delete side.backgroundDataUrl;}
     if(side.compositeDataUrl){side.compositeUrl=await uploadOrderImage(db,customerId,side.compositeDataUrl,sideName+'-final');delete side.compositeDataUrl;}
     if(Array.isArray(side.layers))for(let i=0;i<side.layers.length;i++){
-      const layer=side.layers[i];if(layer?.imageDataUrl){layer.imageUrl=await uploadOrderImage(db,customerId,layer.imageDataUrl,sideName+'-logo-'+(i+1));delete layer.imageDataUrl;}
+      const layer=side.layers[i];if(!layer||layer.type!=='image')continue;
+      if(layer.originalDataUrl){layer.originalImageUrl=await uploadOrderImage(db,customerId,layer.originalDataUrl,sideName+'-logo-original-'+(i+1));delete layer.originalDataUrl;}
+      if(layer.imageDataUrl){layer.imageUrl=await uploadOrderImage(db,customerId,layer.imageDataUrl,sideName+'-logo-preview-'+(i+1));delete layer.imageDataUrl;}
+      if(!layer.originalImageUrl&&layer.imageUrl)layer.originalImageUrl=layer.imageUrl;
     }
   }
   return design;
@@ -64,7 +67,7 @@ Deno.serve(async(req)=>{
     if(!directOrder){const cleared=await db.rpc('customer_cart_mutate',{p_customer_id:s.customer_id,p_operation:'clear',p_item_key:null,p_item:null});if(cleared.error)console.error('Order placed but cart clear failed:',cleared.error.message);}
     const verify=await db.from('order_items').select('id,item_type,design_json').eq('order_id',q.data.id);if(verify.error)throw verify.error;
     const teamItems=(verify.data||[]).filter((x:any)=>x.item_type==='team_design');
-    for(const saved of teamItems){const d=saved.design_json||{},front=d?.design?.front||d?.front||{},back=d?.design?.back||d?.back||{};if(!front.compositeUrl||!back.compositeUrl||!Array.isArray(d.roster))throw new Error('Team enquiry was not fully saved. Please try again.');}
+    for(const saved of teamItems){const d=saved.design_json||{},front=d?.design?.front||d?.front||{},back=d?.design?.back||d?.back||{};if(!front.compositeUrl||!back.compositeUrl||!Array.isArray(d.roster))throw new Error('Team enquiry was not fully saved. Please try again.');for(const side of [front,back])for(const layer of side.layers||[]){if(layer?.type==='image'&&(!layer.imageUrl||!layer.originalImageUrl))throw new Error('One of the uploaded logo files was not fully saved. Please try again.');}}
     await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'order_placed',payload:{order:q.data,directOrder}});
     for(const item of items.filter((x:any)=>x.itemType==='team_design')){const a=await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'team_design_enquiry',payload:{...item.design,orderId:q.data.id,orderCode:q.data.orderCode}});if(a.error)console.error('Team enquiry activity log failed:',a.error.message);}
     return json({ok:true,order:q.data,verified:true});

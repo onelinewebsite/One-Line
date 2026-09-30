@@ -422,3 +422,21 @@ html,body{background:#f6f2f7;color:#241c27}
 .team-order-design-grid{display:grid;grid-template-columns:minmax(250px,.8fr) minmax(320px,1.2fr);gap:12px}
 .team-order-design .team-admin-design-card>img{max-height:340px}
 @media(max-width:800px){.team-order-design-grid{grid-template-columns:1fr}.team-order-design-actions{justify-content:flex-start}}
+
+/* ===== v64 original Team logo files ===== */
+.team-admin-logo-assets{margin:0 16px 16px;padding:14px;border:1px solid #e7dfe9;border-radius:15px;background:#fbf9fc}
+.team-admin-logo-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}
+.team-admin-logo-head h3{margin:0;font-size:13px;color:#2e2530}
+.team-admin-logo-head span{display:block;margin-top:3px;color:#8b7f8e;font-size:9px}
+.team-admin-logo-head>b{flex:0 0 auto;padding:5px 8px;border-radius:999px;background:#efe5f1;color:#64116f;font-size:8px;text-transform:uppercase;letter-spacing:.05em}
+.team-admin-logo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:9px}
+.team-admin-logo-card{min-width:0;display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;align-items:center;padding:8px;border:1px solid #e6dee8;border-radius:11px;background:#fff}
+.team-admin-logo-preview{width:62px;height:62px;border:1px solid #eee8ef;border-radius:9px;background:linear-gradient(45deg,#f4f2f4 25%,transparent 25%),linear-gradient(-45deg,#f4f2f4 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#f4f2f4 75%),linear-gradient(-45deg,transparent 75%,#f4f2f4 75%);background-size:12px 12px;background-position:0 0,0 6px,6px -6px,-6px 0;overflow:hidden}
+.team-admin-logo-preview img{display:block;width:100%;height:100%;object-fit:contain;background:rgba(255,255,255,.72)}
+.team-admin-logo-copy{min-width:0;display:grid;gap:4px}
+.team-admin-logo-copy>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:#312833}
+.team-admin-logo-copy>small{font-size:8px;color:#8d8190}
+.team-admin-logo-copy>button{min-height:31px;width:max-content;max-width:100%;display:inline-flex;align-items:center;gap:5px;padding:0 9px;border:1px solid #d9ccdc;border-radius:8px;background:#fff;color:#64116f;font:inherit;font-size:8px;font-weight:850;cursor:pointer}
+.team-admin-logo-copy>button svg{width:12px;height:12px}
+.team-order-design>.team-admin-logo-assets{margin:12px 0 0}
+@media(max-width:760px){.team-admin-logo-assets{margin:0 11px 11px;padding:10px}.team-admin-logo-grid{grid-template-columns:1fr}.team-admin-logo-card{grid-template-columns:56px minmax(0,1fr)}.team-admin-logo-preview{width:56px;height:56px}}
