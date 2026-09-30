@@ -4550,4 +4550,104 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 .team-creative-home-card{width:100%;margin-top:20px;padding:18px;display:grid;grid-template-columns:56px minmax(0,1fr) auto;align-items:center;gap:14px;border:1px solid #e4dce6;border-radius:20px;background:#fff;text-align:left;box-shadow:0 14px 36px rgba(52,27,58,.06);cursor:pointer}.team-creative-home-icon{width:56px;height:56px;display:grid;place-items:center;border-radius:16px;background:#f6eef7;color:#64116f}.team-creative-home-icon svg{width:25px;height:25px}.team-creative-home-card>span:nth-child(2){display:grid;gap:4px}.team-creative-home-card b{font-size:18px}.team-creative-home-card small{color:#857987;font-size:11px;line-height:1.45}.team-creative-home-card>svg{width:19px;color:#64116f}
 @media(max-width:820px){.team-upload-page{padding-top:22px!important;padding-bottom:95px!important}.team-page-title{align-items:flex-start;display:grid}.team-no-cart{width:max-content}.team-stepper{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.team-stepper>div{display:grid;justify-items:center;padding:8px 4px;text-align:center}.team-stepper>div>b{width:28px;height:28px;flex-basis:28px}.team-stepper span{justify-items:center}.team-stepper small{display:none}.team-stepper strong{font-size:9px}.team-upload-first,.team-editor-card,.team-enquiry-roster{border-radius:18px;padding:13px}.team-side-upload-grid{grid-template-columns:1fr 1fr;gap:8px}.team-side-upload-preview{min-height:0;aspect-ratio:3/4;border-radius:13px}.team-side-upload-preview>b{font-size:13px}.team-side-upload-preview>small{padding:0 7px;font-size:8px}.team-side-upload-head small{display:none}.team-upload-continue{width:100%!important;margin-top:13px!important}.team-editor-head{align-items:flex-start}.team-editor-head h2{font-size:24px}.team-editor-head p{font-size:10px}.team-add-logo{height:40px;padding:0 10px;font-size:9px}.team-design-editor{padding:7px;border-radius:15px}.team-edit-stage,.team-edit-background{max-height:64svh}.team-layer-controls{grid-template-columns:1fr;gap:9px}.team-layer-controls label{grid-template-columns:45px 1fr}.team-delete-selected{width:max-content}.team-editor-actions .primary,.team-editor-actions .secondary{min-width:0;flex:1}.team-enquiry-roster .team-roster-head{align-items:flex-end}.team-enquiry-roster .team-roster-footer{position:static!important}.team-enquiry-roster .team-roster-footer>div{width:100%;display:grid;grid-template-columns:auto 1fr}.team-enquiry-roster .team-roster-footer{display:grid;gap:10px}.team-enquire-button{min-width:0}.team-enquiry-success{margin-top:3vh;border-radius:20px}.team-enquiry-success>div{width:100%;display:grid;grid-template-columns:1fr}.team-creative-home-card{grid-template-columns:48px minmax(0,1fr) auto;padding:13px}.team-creative-home-icon{width:48px;height:48px}.team-creative-home-card b{font-size:15px}.team-creative-home-card small{font-size:9px}}
 @media(max-width:430px){.team-page-title h1{font-size:30px}.team-side-upload-grid{grid-template-columns:1fr 1fr}.team-side-upload-preview{aspect-ratio:4/5}.team-side-upload-head span{font-size:11px}.team-edit-stage{width:100%}.team-roster-row{grid-template-columns:26px minmax(0,1.2fr) minmax(64px,.65fr)!important}.team-roster-row input,.team-roster-row select{font-size:16px!important}.team-creative-home-card small{display:block}}
-\n\n/* ===== v58 simplified team flow + mobile editor usability ===== */\n.team-simple-home{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border:1px solid #e7dfe9;border-radius:20px;background:#fff;box-shadow:0 12px 30px rgba(49,25,54,.045)}\n.team-simple-home h2{margin:3px 0 5px;font-size:clamp(22px,2.6vw,34px);letter-spacing:-.03em}.team-simple-home p{margin:0;color:#7f7381;font-size:12px;line-height:1.45}.team-simple-home .team-open-button{flex:0 0 auto;min-width:126px;height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;background:#64116f;color:#fff;font:inherit;font-size:11px;font-weight:850;cursor:pointer}.team-simple-home .team-open-button svg{width:16px}\n.team-upload-page>.team-stepper{margin:16px 0 0}.team-upload-first{padding:18px}.team-upload-intro{margin-bottom:14px}.team-upload-intro h1{font-size:clamp(24px,3vw,36px)}\n.team-editor-card{width:100%;max-width:980px;margin:0 auto}.team-design-editor{overflow:visible}.team-edit-stage{touch-action:pan-y;overscroll-behavior:contain}.team-edit-layer{touch-action:pan-y;cursor:pointer}.team-edit-layer.selected{touch-action:none;cursor:grab}.team-edit-layer.selected:after{inset:-5px;border:1px dashed rgba(255,255,255,.95);box-shadow:0 0 0 1.5px #64116f}.team-resize-handle{position:absolute;z-index:8;right:-11px;bottom:-11px;width:22px;height:22px;display:none;border:2px solid #fff;border-radius:6px;background:#64116f;box-shadow:0 3px 9px rgba(0,0,0,.2);cursor:nwse-resize;touch-action:none}.team-resize-handle:after{content:"";position:absolute;right:4px;bottom:4px;width:7px;height:7px;border-right:2px solid #fff;border-bottom:2px solid #fff}.team-edit-layer.selected>.team-resize-handle{display:block}\n.team-fixed-text{font-family:"Arial Narrow",Impact,Haettenschweiler,sans-serif;font-weight:800;letter-spacing:.025em;line-height:.92;color:#fff;-webkit-text-stroke:clamp(.7px,.085vw,1.35px) #111;text-shadow:none}.team-layer-controls{grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px 12px}.team-layer-controls.empty{display:block}.team-delete-selected{justify-self:end}\n.team-add-row-wrap{display:flex;justify-content:flex-start;margin-top:10px}.team-add-row-wrap .secondary{min-height:40px}.team-enquiry-roster .team-roster-list{overflow-x:auto;overflow-y:visible;padding:0 0 5px}.team-enquiry-roster .team-roster-row{grid-template-columns:36px minmax(180px,1.5fr) minmax(90px,.65fr) minmax(95px,.65fr) 40px;grid-template-areas:none;align-items:end;min-width:600px}.team-enquiry-roster .team-roster-row .row-number,.team-enquiry-roster .team-roster-row label,.team-enquiry-roster .team-row-remove{grid-area:auto}.team-enquiry-roster .team-roster-head{margin-bottom:10px}\n@media(max-width:820px){.team-upload-home{padding-top:24px;padding-bottom:24px}.team-simple-home{padding:14px;gap:12px}.team-simple-home h2{font-size:21px}.team-simple-home p{font-size:10px}.team-simple-home .team-open-button{min-width:104px;height:40px;padding:0 11px}.team-upload-page{width:100%;max-width:100%;padding-left:10px!important;padding-right:10px!important}.team-upload-first,.team-editor-card,.team-enquiry-roster{width:100%;max-width:100%;box-sizing:border-box}.team-side-upload-grid{width:100%}.team-side-upload{min-width:0}.team-side-upload-preview{width:100%}.team-editor-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px}.team-editor-head h2{font-size:22px}.team-editor-head p{font-size:9px}.team-design-editor{width:100%;box-sizing:border-box}.team-edit-stage{width:100%;max-width:100%;max-height:none}.team-edit-background{width:100%;max-height:none}.team-layer-controls{grid-template-columns:minmax(0,1fr) auto}.team-stepper{width:100%;overflow:hidden}.team-stepper>div{min-width:0}.team-enquiry-roster .team-roster-list{margin-left:-3px;margin-right:-3px;padding-left:3px;padding-right:3px}.team-enquiry-roster .team-roster-footer>div{display:grid!important;grid-template-columns:1fr 1fr!important}.team-add-row-wrap .secondary{width:100%}}\n@media(max-width:520px){.team-simple-home{display:grid;grid-template-columns:minmax(0,1fr) auto}.team-simple-home .eyebrow{font-size:8px}.team-simple-home h2{font-size:18px;margin-top:2px}.team-simple-home p{font-size:9px}.team-simple-home .team-open-button{min-width:92px;font-size:10px}.team-side-upload-preview{aspect-ratio:3/4}.team-upload-intro p{font-size:10px}.team-editor-card{padding:10px}.team-editor-head{grid-template-columns:minmax(0,1fr) auto}.team-add-logo{height:38px;padding:0 9px}.team-design-editor{padding:4px}.team-layer-controls{padding:9px}.team-layer-controls small,.team-layer-controls.empty span{font-size:8px}.team-stepper{gap:4px}.team-stepper>div{padding:7px 3px}.team-stepper strong{font-size:8px}.team-stepper>div>b{width:25px;height:25px;font-size:8px}.team-enquiry-roster .team-roster-row{min-width:570px}.team-roster-row input,.team-roster-row select{font-size:16px!important}}\n
+
+
+/* ===== v58 simplified team flow + mobile editor usability ===== */
+.team-simple-home{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border:1px solid #e7dfe9;border-radius:20px;background:#fff;box-shadow:0 12px 30px rgba(49,25,54,.045)}
+.team-simple-home h2{margin:3px 0 5px;font-size:clamp(22px,2.6vw,34px);letter-spacing:-.03em}.team-simple-home p{margin:0;color:#7f7381;font-size:12px;line-height:1.45}.team-simple-home .team-open-button{flex:0 0 auto;min-width:126px;height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;background:#64116f;color:#fff;font:inherit;font-size:11px;font-weight:850;cursor:pointer}.team-simple-home .team-open-button svg{width:16px}
+.team-upload-page>.team-stepper{margin:16px 0 0}.team-upload-first{padding:18px}.team-upload-intro{margin-bottom:14px}.team-upload-intro h1{font-size:clamp(24px,3vw,36px)}
+.team-editor-card{width:100%;max-width:980px;margin:0 auto}.team-design-editor{overflow:visible}.team-edit-stage{touch-action:pan-y;overscroll-behavior:contain}.team-edit-layer{touch-action:pan-y;cursor:pointer}.team-edit-layer.selected{touch-action:none;cursor:grab}.team-edit-layer.selected:after{inset:-5px;border:1px dashed rgba(255,255,255,.95);box-shadow:0 0 0 1.5px #64116f}.team-resize-handle{position:absolute;z-index:8;right:-11px;bottom:-11px;width:22px;height:22px;display:none;border:2px solid #fff;border-radius:6px;background:#64116f;box-shadow:0 3px 9px rgba(0,0,0,.2);cursor:nwse-resize;touch-action:none}.team-resize-handle:after{content:"";position:absolute;right:4px;bottom:4px;width:7px;height:7px;border-right:2px solid #fff;border-bottom:2px solid #fff}.team-edit-layer.selected>.team-resize-handle{display:block}
+.team-fixed-text{font-family:"Arial Narrow",Impact,Haettenschweiler,sans-serif;font-weight:800;letter-spacing:.025em;line-height:.92;color:#fff;-webkit-text-stroke:clamp(.7px,.085vw,1.35px) #111;text-shadow:none}.team-layer-controls{grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px 12px}.team-layer-controls.empty{display:block}.team-delete-selected{justify-self:end}
+.team-add-row-wrap{display:flex;justify-content:flex-start;margin-top:10px}.team-add-row-wrap .secondary{min-height:40px}.team-enquiry-roster .team-roster-list{overflow-x:auto;overflow-y:visible;padding:0 0 5px}.team-enquiry-roster .team-roster-row{grid-template-columns:36px minmax(180px,1.5fr) minmax(90px,.65fr) minmax(95px,.65fr) 40px;grid-template-areas:none;align-items:end;min-width:600px}.team-enquiry-roster .team-roster-row .row-number,.team-enquiry-roster .team-roster-row label,.team-enquiry-roster .team-row-remove{grid-area:auto}.team-enquiry-roster .team-roster-head{margin-bottom:10px}
+@media(max-width:820px){.team-upload-home{padding-top:24px;padding-bottom:24px}.team-simple-home{padding:14px;gap:12px}.team-simple-home h2{font-size:21px}.team-simple-home p{font-size:10px}.team-simple-home .team-open-button{min-width:104px;height:40px;padding:0 11px}.team-upload-page{width:100%;max-width:100%;padding-left:10px!important;padding-right:10px!important}.team-upload-first,.team-editor-card,.team-enquiry-roster{width:100%;max-width:100%;box-sizing:border-box}.team-side-upload-grid{width:100%}.team-side-upload{min-width:0}.team-side-upload-preview{width:100%}.team-editor-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px}.team-editor-head h2{font-size:22px}.team-editor-head p{font-size:9px}.team-design-editor{width:100%;box-sizing:border-box}.team-edit-stage{width:100%;max-width:100%;max-height:none}.team-edit-background{width:100%;max-height:none}.team-layer-controls{grid-template-columns:minmax(0,1fr) auto}.team-stepper{width:100%;overflow:hidden}.team-stepper>div{min-width:0}.team-enquiry-roster .team-roster-list{margin-left:-3px;margin-right:-3px;padding-left:3px;padding-right:3px}.team-enquiry-roster .team-roster-footer>div{display:grid!important;grid-template-columns:1fr 1fr!important}.team-add-row-wrap .secondary{width:100%}}
+@media(max-width:520px){.team-simple-home{display:grid;grid-template-columns:minmax(0,1fr) auto}.team-simple-home .eyebrow{font-size:8px}.team-simple-home h2{font-size:18px;margin-top:2px}.team-simple-home p{font-size:9px}.team-simple-home .team-open-button{min-width:92px;font-size:10px}.team-side-upload-preview{aspect-ratio:3/4}.team-upload-intro p{font-size:10px}.team-editor-card{padding:10px}.team-editor-head{grid-template-columns:minmax(0,1fr) auto}.team-add-logo{height:38px;padding:0 9px}.team-design-editor{padding:4px}.team-layer-controls{padding:9px}.team-layer-controls small,.team-layer-controls.empty span{font-size:8px}.team-stepper{gap:4px}.team-stepper>div{padding:7px 3px}.team-stepper strong{font-size:8px}.team-stepper>div>b{width:25px;height:25px;font-size:8px}.team-enquiry-roster .team-roster-row{min-width:570px}.team-roster-row input,.team-roster-row select{font-size:16px!important}}
+
+
+/* ===== v59 team workflow polish ===== */
+.team-upload-page{overflow-x:clip}
+.team-upload-page>.team-stepper{margin:28px 0 0!important}
+.team-upload-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px}
+.team-upload-actions .team-upload-continue{margin:0!important;width:auto!important;min-width:210px}
+.team-upload-actions .secondary{min-width:120px}
+
+.team-stepper{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:100%}
+.team-stepper>button{appearance:none;min-width:0;display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid #e9e2ea;border-radius:14px;background:#fff;color:#877989;text-align:left;font:inherit;cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease,opacity .18s ease}
+.team-stepper>button:not(:disabled):active{transform:scale(.985)}
+.team-stepper>button>b{width:32px;height:32px;flex:0 0 32px;display:grid;place-items:center;border-radius:10px;background:#f4f0f5;font-size:10px}
+.team-stepper>button>b svg{width:15px}
+.team-stepper>button span{min-width:0;display:grid;gap:2px}
+.team-stepper>button strong{font-size:12px}
+.team-stepper>button small{overflow:hidden;color:#9a8f9c;font-size:9px;text-overflow:ellipsis;white-space:nowrap}
+.team-stepper>button.active{border-color:#7a2682;background:#fbf5fc;color:#64116f;box-shadow:0 8px 22px rgba(93,23,102,.08)}
+.team-stepper>button.active>b,.team-stepper>button.done>b{background:#64116f;color:#fff}
+.team-stepper>button.done{color:#655669}
+.team-stepper>button.locked{opacity:.48;cursor:not-allowed;background:#faf9fa}
+
+.professional-team-editor{overflow:hidden}
+.professional-team-editor .team-editor-head{padding:2px 2px 0}
+.team-editor-side-badge{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;background:#64116f;color:#fff;font-size:8px;font-weight:900;letter-spacing:.13em}
+.professional-team-editor .team-editor-head h2{margin:7px 0 4px}
+.professional-team-editor .team-design-editor{background:#171417;border-color:#2c252e;padding:12px}
+.professional-team-editor .team-edit-stage{background:#242025}
+
+/* One clean selection line only. */
+.team-edit-layer.selected{filter:none!important}
+.team-edit-layer.selected:after{content:"";position:absolute;inset:-5px;border:2px solid #64116f!important;border-radius:7px;box-shadow:none!important;pointer-events:none}
+.team-fixed-text{font-family:Impact,"Arial Black","Helvetica Neue",Arial,sans-serif!important;font-weight:900!important;font-style:normal!important;letter-spacing:.035em!important;line-height:.9!important;color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-text-stroke:clamp(.65px,.075vw,1.15px) #111!important;text-shadow:none!important;filter:none!important;background:none!important}
+.team-fixed-text span{text-shadow:none!important;filter:none!important;background:none!important}
+
+/* True one-line player table, no page overflow. */
+.team-enquiry-roster{min-width:0;overflow:hidden}
+.team-roster-columns,.team-enquiry-roster .team-roster-row{display:grid;grid-template-columns:34px minmax(0,1fr) minmax(78px,.34fr) minmax(78px,.32fr) 40px;gap:8px;align-items:center;width:100%;min-width:0;box-sizing:border-box}
+.team-roster-columns{padding:0 10px 7px;color:#8b7f8d;font-size:8px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+.team-enquiry-roster .team-roster-list{display:grid;gap:8px;width:100%;min-width:0;max-width:100%;overflow:visible!important;padding:0!important;margin:0!important}
+.team-enquiry-roster .team-roster-row{padding:9px 10px;border:1px solid #ebe5ec;border-radius:13px;background:#fcfbfc}
+.team-enquiry-roster .team-roster-row .row-number{font-size:10px;color:#9c909e;white-space:nowrap}
+.team-enquiry-roster .team-roster-row input,.team-enquiry-roster .team-roster-row select{width:100%;min-width:0;max-width:100%;height:40px;box-sizing:border-box;border:1px solid #ddd4df;border-radius:9px;background:#fff;padding:0 9px;font:inherit;font-size:13px}
+.team-enquiry-roster .team-roster-row select{padding-right:3px}
+.team-enquiry-roster .team-row-remove{width:40px;height:40px;min-width:0;border-radius:9px}
+
+@media(max-width:820px){
+  .team-upload-page{width:100%!important;max-width:100%!important;padding-left:10px!important;padding-right:10px!important}
+  .team-upload-page>.team-stepper{margin-top:22px!important}
+  .team-stepper{gap:5px}
+  .team-stepper>button{display:grid;justify-items:center;gap:5px;padding:8px 4px;text-align:center}
+  .team-stepper>button>b{width:28px;height:28px;flex-basis:28px}
+  .team-stepper>button span{justify-items:center}
+  .team-stepper>button small{display:none}
+  .team-stepper>button strong{font-size:9px}
+
+  .professional-team-editor{width:calc(100% + 20px)!important;max-width:none!important;margin-left:-10px!important;margin-right:-10px!important;padding:0 0 14px!important;border-left:0!important;border-right:0!important;border-radius:0!important;background:#fff}
+  .professional-team-editor .team-editor-head{margin:0!important;padding:12px 12px 11px!important;align-items:center;background:#fff;border-bottom:1px solid #eee7ef}
+  .professional-team-editor .team-editor-head h2{font-size:21px;margin:5px 0 2px}
+  .professional-team-editor .team-editor-head p{font-size:9px;line-height:1.35}
+  .professional-team-editor .team-add-logo{height:40px}
+  .professional-team-editor .team-design-editor{width:100vw!important;max-width:100vw!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:#171417}
+  .professional-team-editor .team-edit-stage{width:100vw!important;max-width:100vw!important;max-height:none!important;border-radius:0!important;box-shadow:none!important;background:#242025}
+  .professional-team-editor .team-edit-background{display:block;width:100vw!important;height:auto!important;max-height:none!important;object-fit:contain}
+  .professional-team-editor .team-layer-controls{margin:11px 12px 0!important}
+  .professional-team-editor .team-editor-actions{margin:12px 12px 0!important}
+  .team-upload-actions{margin-top:14px}
+
+  .team-roster-columns,.team-enquiry-roster .team-roster-row{grid-template-columns:24px minmax(0,1fr) 64px 64px 36px;gap:5px}
+  .team-roster-columns{padding:0 7px 6px;font-size:7px}
+  .team-enquiry-roster .team-roster-row{padding:7px;border-radius:11px}
+  .team-enquiry-roster .team-roster-row input,.team-enquiry-roster .team-roster-row select{height:38px;padding:0 7px;font-size:12px!important}
+  .team-enquiry-roster .team-row-remove{width:36px;height:38px}
+}
+
+@media(max-width:430px){
+  .team-upload-page>.team-stepper{margin-top:20px!important}
+  .team-stepper>button{padding:7px 2px}
+  .team-stepper>button>b{width:25px;height:25px;font-size:8px}
+  .team-stepper>button strong{font-size:8px}
+  .team-upload-actions .secondary{min-width:92px}
+  .team-upload-actions .team-upload-continue{min-width:0;flex:1}
+  .team-roster-columns,.team-enquiry-roster .team-roster-row{grid-template-columns:20px minmax(0,1fr) 54px 58px 32px;gap:4px}
+  .team-roster-columns{padding-left:5px;padding-right:5px;font-size:6.5px;letter-spacing:.04em}
+  .team-enquiry-roster .team-roster-row{padding:5px}
+  .team-enquiry-roster .team-roster-row input,.team-enquiry-roster .team-roster-row select{height:36px;padding:0 5px;font-size:11px!important;border-radius:8px}
+  .team-enquiry-roster .team-roster-row input[data-team-field="number"]{text-align:center}
+  .team-enquiry-roster .team-row-remove{width:32px;height:36px;border-radius:8px}
+  .team-enquiry-roster .team-row-remove svg{width:14px}
+}
