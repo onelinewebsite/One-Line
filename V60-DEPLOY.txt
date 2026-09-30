@@ -1,0 +1,9 @@
+ONE-LINE v60 DEPLOY NOTES
+
+1. Upload/replace the full website with this v60 build.
+2. No new Supabase SQL is required if RUN-NEXT-v56.sql was already applied.
+3. Team workflow now renders without the website header or mobile bottom navigation.
+4. NAME / 99 use the new condensed jersey-style font and the same font is used in generated design composites.
+5. Vertical swiping on the uploaded design now scrolls the page normally. Selected objects remain draggable/resizable.
+
+BUILD: one-line-v60-team-editor-20260930
