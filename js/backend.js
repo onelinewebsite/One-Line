@@ -103,13 +103,21 @@
     if(mapped.delivery?.length)local('custom-store-delivery-v3',mapped.delivery.map(x=>({name:x.name,note:x.note||'',active:x.active!==false})));
     // Custom Catalogue stays separate from Ready Made. Keep older databases from breaking if those tables are unavailable.
     // Never let an optional catalogue table break the existing storefront.
-    let customCategories=[],customItems=[],customFabrics=[];
+    let customCategories=[],customItems=[],customFabrics=[],customSportswearFabrics=[],customSportswearTypes=[];
     try{
-      const cq=await Promise.all([sb.from('custom_catalog_categories').select('*').order('sort_order'),sb.from('custom_catalog_items').select('*').order('sort_order'),sb.from('custom_catalog_fabrics').select('*').order('sort_order')]);
+      const cq=await Promise.all([
+        sb.from('custom_catalog_categories').select('*').order('sort_order'),
+        sb.from('custom_catalog_items').select('*').order('sort_order'),
+        sb.from('custom_catalog_fabrics').select('*').order('sort_order'),
+        sb.from('custom_sportswear_fabrics').select('*').order('sort_order'),
+        sb.from('custom_sportswear_types').select('*').order('sort_order')
+      ]);
       if(!cq[0].error&&!cq[1].error){customCategories=cq[0].data||[];customItems=cq[1].data||[];local('one-line-custom-catalog-categories-v1',customCategories);local('one-line-custom-catalog-items-v1',customItems);}
       if(!cq[2].error){customFabrics=cq[2].data||[];local('one-line-custom-catalog-fabrics-v1',customFabrics);}
+      if(!cq[3].error){customSportswearFabrics=cq[3].data||[];local('one-line-custom-sportswear-fabrics-v1',customSportswearFabrics);}
+      if(!cq[4].error){customSportswearTypes=cq[4].data||[];local('one-line-custom-sportswear-types-v1',customSportswearTypes);}
     }catch(_){}
-    return{configured:true,...mapped,customCategories,customItems,customFabrics};
+    return{configured:true,...mapped,customCategories,customItems,customFabrics,customSportswearFabrics,customSportswearTypes};
   }
   function ready(){if(!readyPromise)readyPromise=hydrate().catch(error=>({configured:true,error}));return readyPromise;}
   async function createCustomerSession(phone,accessToken,name){

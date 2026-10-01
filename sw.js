@@ -1,4 +1,4 @@
-const CACHE='one-line-v68-custom-catalog-enquiry-20261001';
+const CACHE='one-line-v70-sportswear-custom-catalog-20261001';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./receiver.html','./b2b.html',
   './css/site.css','./css/admin.css',

@@ -21,6 +21,11 @@ async function ordersMeta(db:any,customerId:string){
   if(q.error)throw q.error
   return {count:Number(q.count||0),updatedAt:q.data?.[0]?.updated_at||''}
 }
+async function enquiriesMeta(db:any,customerId:string){
+  const q=await db.from('customer_activity').select('created_at',{count:'exact'}).eq('customer_id',customerId).eq('event_type','custom_catalog_enquiry').order('created_at',{ascending:false}).limit(1)
+  if(q.error)throw q.error
+  return {count:Number(q.count||0),updatedAt:q.data?.[0]?.created_at||''}
+}
 
 Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:cors})
@@ -81,10 +86,11 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='sync'){
-      const [customerQ,cartQ,meta]=await Promise.all([
+      const [customerQ,cartQ,meta,enquiryMeta]=await Promise.all([
         db.from('customers').select('*').eq('id',customerId).single(),
         db.from('customer_carts').select('piece_count,total,version,updated_at').eq('customer_id',customerId).maybeSingle(),
-        ordersMeta(db,customerId)
+        ordersMeta(db,customerId),
+        enquiriesMeta(db,customerId)
       ])
       if(customerQ.error)throw customerQ.error
       if(cartQ.error)throw cartQ.error
@@ -93,22 +99,26 @@ Deno.serve(async(req)=>{
         await db.from('customers').update({last_seen_at:nowIso()}).eq('id',customerId)
       }
       const cart=cartQ.data?{pieceCount:Number(cartQ.data.piece_count||0),total:Number(cartQ.data.total||0),version:Number(cartQ.data.version||0),updatedAt:cartQ.data.updated_at||''}:{pieceCount:0,total:0,version:0,updatedAt:''}
-      return json({ok:true,customer:customerJson(c),cart,ordersMeta:meta})
+      return json({ok:true,customer:customerJson(c),cart,ordersMeta:meta,enquiriesMeta:enquiryMeta})
     }
 
-    const [customerQ,cartQ,ordersQ]=await Promise.all([
+    const [customerQ,cartQ,ordersQ,enquiriesQ]=await Promise.all([
       db.from('customers').select('*').eq('id',customerId).single(),
       db.from('customer_carts').select('*').eq('customer_id',customerId).maybeSingle(),
-      db.from('orders').select('*,order_items(*)').eq('customer_id',customerId).order('created_at',{ascending:false}).limit(100)
+      db.from('orders').select('*,order_items(*)').eq('customer_id',customerId).order('created_at',{ascending:false}).limit(100),
+      db.from('customer_activity').select('id,event_type,payload,created_at').eq('customer_id',customerId).eq('event_type','custom_catalog_enquiry').order('created_at',{ascending:false}).limit(100)
     ])
     if(customerQ.error)throw customerQ.error
     if(cartQ.error)throw cartQ.error
     if(ordersQ.error)throw ordersQ.error
+    if(enquiriesQ.error)throw enquiriesQ.error
     const latest=(ordersQ.data||[]).reduce((m:any,o:any)=>String(o.updated_at||'')>m?String(o.updated_at||''):m,'')
+    const latestEnquiry=(enquiriesQ.data||[]).reduce((m:any,e:any)=>String(e.created_at||'')>m?String(e.created_at||''):m,'')
     await db.from('customers').update({last_seen_at:nowIso()}).eq('id',customerId)
     return json({
       ok:true,customer:customerJson(customerQ.data),cart:cartJson(cartQ.data),
-      orders:ordersQ.data||[],ordersMeta:{count:(ordersQ.data||[]).length,updatedAt:latest}
+      orders:ordersQ.data||[],ordersMeta:{count:(ordersQ.data||[]).length,updatedAt:latest},
+      enquiries:enquiriesQ.data||[],enquiriesMeta:{count:(enquiriesQ.data||[]).length,updatedAt:latestEnquiry}
     })
   }catch(e){return json({error:e instanceof Error?e.message:'Could not load customer account.'},500)}
 })

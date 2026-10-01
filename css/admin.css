@@ -552,3 +552,23 @@ html,body{background:#f6f2f7;color:#241c27}
 @media(prefers-reduced-motion:reduce){
   .portal-action-loader-pill span,.portal-inline-dots span{animation:none;opacity:.75}
 }
+
+/* ===== v70 Sportswear pricing manager ===== */
+.sportswear-pricing-admin{margin-top:20px}
+.sportswear-admin-subhead{display:grid;gap:3px;margin:16px 0 9px;padding-top:13px;border-top:1px solid #e4dbe6}
+.sportswear-admin-subhead:first-of-type{margin-top:4px;padding-top:0;border-top:0}
+.sportswear-admin-subhead b{font-size:14px;color:#382c3b}
+.sportswear-admin-subhead small{font-size:10px;color:#7c7080;line-height:1.45}
+.sportswear-type-admin-main{grid-template-columns:minmax(180px,1.4fr) minmax(170px,.9fr) minmax(110px,.65fr)}
+.sportswear-type-form{grid-template-columns:minmax(190px,1.25fr) minmax(180px,1fr) minmax(150px,.75fr) auto}
+.sportswear-type-form>div{grid-column:auto}
+.sportswear-type-form .submit-small{grid-column:auto}
+.sportswear-fabric-head{margin-top:22px}
+@media(max-width:980px){
+  .sportswear-type-admin-main{grid-template-columns:1fr 1fr}.sportswear-type-admin-main .active-check{grid-column:1/-1}
+  .sportswear-type-form{grid-template-columns:1fr 1fr}.sportswear-type-form>div{grid-column:1/-1}.sportswear-type-form .submit-small{grid-column:1/-1}
+}
+@media(max-width:560px){
+  .sportswear-type-admin-main{grid-template-columns:1fr}.sportswear-type-admin-main .active-check{grid-column:auto}
+  .sportswear-type-form{grid-template-columns:1fr}.sportswear-type-form input,.sportswear-type-form .submit-small{grid-column:1/-1}
+}

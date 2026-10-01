@@ -5022,3 +5022,77 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
     object-fit:contain!important;
   }
 }
+
+
+/* ===== v69 customer history + flush mobile bottom navigation ===== */
+.customer-history-enquiry .customer-order-head{background:#f3edf5!important;color:#392e3d!important;border-bottom:1px solid #e2d8e5}
+.customer-history-enquiry .customer-order-head span{color:#7b6d7e!important}
+.customer-history-enquiry .customer-order-head h2{color:#64116f!important}
+.customer-history-enquiry .customer-order-head small{color:#857989!important}
+.customer-history-enquiry .customer-order-head strong{color:#64116f!important}
+.customer-enquiry-history-item>img{object-fit:cover!important;background:#f4f0f5}
+.customer-enquiry-history-item>div:nth-child(2){min-width:0}
+.customer-enquiry-history-item>div:nth-child(2)>p{margin:5px 0;color:#64116f;font-size:10px;font-weight:800}
+.customer-enquiry-history-item>div:nth-child(2)>small{display:block;margin-top:6px;color:#817585;font-size:9px;line-height:1.45}
+.customer-enquiry-history-placeholder{width:155px;height:145px;display:grid;place-items:center;border:1px solid #e5dce7;border-radius:12px;background:#f7f3f8;color:#64116f}
+.customer-enquiry-history-placeholder svg{width:30px;height:30px}
+@media(max-width:620px){
+  .customer-enquiry-history-placeholder{width:105px;height:112px}
+}
+
+/* Keep the main customer navigation physically attached to the bottom edge.
+   No floating card, no side gaps, and no raised centre button. */
+@media(max-width:820px){
+  .mobile-bottom{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    height:calc(66px + env(safe-area-inset-bottom))!important;
+    margin:0!important;
+    padding:4px 6px max(4px,env(safe-area-inset-bottom))!important;
+    gap:0!important;
+    border:0!important;
+    border-top:1px solid #e5dde7!important;
+    border-radius:0!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    overflow:hidden!important;
+  }
+  .mobile-bottom button,
+  .mobile-bottom button:nth-child(3),
+  .mobile-bottom .create-only{
+    width:auto!important;
+    height:auto!important;
+    min-height:54px!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:10px!important;
+    transform:none!important;
+    box-shadow:none!important;
+  }
+  .mobile-bottom button:nth-child(3),
+  .mobile-bottom .create-only{
+    background:#64116f!important;
+    color:#fff!important;
+  }
+  .mobile-bottom button:nth-child(3) svg,
+  .mobile-bottom .create-only svg{transform:none!important}
+  .mobile-bottom button:nth-child(3):after,
+  .mobile-bottom .create-only:after{display:none!important;content:none!important}
+  footer{margin-bottom:0!important;padding-bottom:calc(66px + env(safe-area-inset-bottom))!important}
+  .customer-orders-page{padding-bottom:calc(86px + env(safe-area-inset-bottom))!important}
+}
+
+/* ===== v70 Sportswear Custom Catalogue type + fabric pricing ===== */
+.custom-sportswear-options .custom-sportswear-type-grid{margin-bottom:2px}
+.custom-sportswear-type-choice{grid-template-columns:1fr;grid-template-areas:"name" "price" "meta";align-content:start}
+.custom-sportswear-type-choice small{white-space:normal!important;line-height:1.35}
+.custom-sportswear-type-choice span{margin-top:1px}
+@media(max-width:520px){
+  .custom-sportswear-type-choice{padding:10px 9px}
+  .custom-sportswear-type-choice small{font-size:9px!important}
+}
