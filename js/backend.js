@@ -134,7 +134,22 @@
     return createCustomerSession(phone,verified.accessToken,name);
   }
   async function customerEvent(event_type,payload){const s=session();if(!s?.token)return null;return invoke('customer-event',{token:s.token,event_type,payload},false).catch(()=>null);}
-  async function customerEnquiry(payload){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');return invoke('customer-event',{token:s.token,event_type:'custom_catalog_enquiry',payload:payload||{}},false);}
+  async function customerEnquiry(payload){
+    const s=session();
+    if(!s?.token)throw new Error('Please verify your phone number first.');
+    try{
+      // Custom Catalogue enquiries use the same verified customer-account
+      // function as the working cart/profile flow. This avoids depending on
+      // customer-event for this one customer-facing action.
+      return await invoke('customer-account',{token:s.token,action:'custom_catalog_enquiry',payload:payload||{}},false);
+    }catch(err){
+      const message=String(err?.message||'').trim();
+      if(/Could not connect to the One-Line verification server/i.test(message)){
+        throw new Error('Could not send the Custom Catalogue enquiry. Deploy the latest customer-account function and try again.');
+      }
+      throw err;
+    }
+  }
   async function customerTeamEnquiry(payload){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');return invoke('customer-event',{token:s.token,event_type:'team_design_enquiry',payload:payload||{}},false);}
   async function customerAccount(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'get'},false);}
   async function customerSync(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'sync'},false);}

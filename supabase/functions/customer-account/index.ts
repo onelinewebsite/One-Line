@@ -44,6 +44,23 @@ Deno.serve(async(req)=>{
       return json({ok:true,customer:customerJson(q.data)})
     }
 
+    if(action==='custom_catalog_enquiry'){
+      const safePayload=body?.payload&&typeof body.payload==='object'&&!Array.isArray(body.payload)?body.payload:{}
+      const itemId=text((safePayload as any)?.itemId,180)
+      const itemTitle=text((safePayload as any)?.itemTitle,240)
+      if(!itemId&&!itemTitle)return json({error:'Custom Catalogue item is required.'},400)
+      const payloadSize=new TextEncoder().encode(JSON.stringify(safePayload)).byteLength
+      if(payloadSize>1_000_000)return json({error:'This Custom Catalogue enquiry is too large. Please try again.'},413)
+      const q=await db.from('customer_activity').insert({
+        customer_id:customerId,
+        event_type:'custom_catalog_enquiry',
+        payload:safePayload
+      }).select('id,created_at').single()
+      if(q.error)throw q.error
+      await db.from('customers').update({last_seen_at:nowIso()}).eq('id',customerId)
+      return json({ok:true,enquiry:{id:q.data.id,createdAt:q.data.created_at}})
+    }
+
     if(action==='cart_mutate'){
       const operation=String(body?.operation||'').toLowerCase()
       if(!['upsert','remove','clear'].includes(operation))return json({error:'Invalid cart operation.'},400)
