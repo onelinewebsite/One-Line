@@ -10,5 +10,5 @@ window.ONE_LINE_CONFIG = Object.freeze({
   MSG91_WIDGET_TOKEN: "575771TJuANy3r6ab9371bP1",
 
   CUSTOMER_SESSION_KEY: "one-line-customer-session-v2",
-  BUILD: "one-line-v70-sportswear-custom-catalog-20261001"
+  BUILD: "one-line-v71-sportswear-options-old-nav-20261001"
 });
