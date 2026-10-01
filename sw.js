@@ -1,10 +1,10 @@
-const CACHE='one-line-v65-20260930';
+const CACHE='one-line-v66-20261001';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./receiver.html','./b2b.html',
   './css/site.css','./css/admin.css',
   './js/config.js','./js/data.js','./js/msg91-widget.js','./js/backend.js','./js/designer.js','./js/app.js','./js/admin.js',
   './one-line-logo.webp','./favicon.png','./icon-192.png','./icon-512.png','./manifest.webmanifest',
-  './assets/product-placeholder.svg','./assets/category-placeholder.svg','./assets/contact-support.webp'
+  './assets/product-placeholder.svg','./assets/category-placeholder.svg','./assets/contact-support.webp','./assets/bulk-enquiry-discount.png'
 ];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil((async()=>{const cache=await caches.open(CACHE);await Promise.all(CORE.map(async url=>{try{const request=new Request(url,{cache:'reload'}),response=await fetch(request);if(response&&response.ok)await cache.put(request,response.clone());}catch(_){}}));})());});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)));await self.clients.claim();})());});

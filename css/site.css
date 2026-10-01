@@ -4032,8 +4032,8 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 .custom-catalog-view-button:hover .icon{transform:translateX(3px)!important}
 .custom-catalog-view-button:focus-visible{outline:3px solid rgba(100,17,111,.2)!important;outline-offset:3px!important}
 
-/* Custom Catalogue photos are intentionally square regardless of uploaded source ratio. */
-.custom-idea-card .product-image-wrap.ratio-3x4{aspect-ratio:1/1!important;height:auto!important;background:#f3eff3!important}
+/* Custom Catalogue item photos use the requested portrait 3:4 ratio. */
+.custom-idea-card .product-image-wrap.ratio-3x4{aspect-ratio:3/4!important;height:auto!important;background:#f3eff3!important}
 .custom-idea-card .product-image-wrap.ratio-3x4 img{width:100%!important;height:100%!important;object-fit:cover!important}
 .custom-item-page.product-fullscreen{background:#fff!important}
 .custom-item-page .custom-item-inner{overflow:visible!important}
@@ -4977,4 +4977,30 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 .custom-catalog-enquiry-button:disabled{opacity:.56;cursor:not-allowed;transform:none!important}
 @media(max-width:520px){
   .custom-tshirt-options{margin:16px -2px 14px;padding:12px;border-radius:14px}.custom-fabric-grid{grid-template-columns:1fr 1fr;gap:6px}.custom-fabric-choice{padding:10px 9px}.custom-fabric-choice b{font-size:12px}.custom-fabric-choice small{font-size:9px}.custom-quality-grid{gap:6px}.custom-quality-choice{padding:10px 8px}.custom-quality-choice span{font-size:10px}.custom-quality-choice b{font-size:13px}
+}
+
+
+/* ===== v66 mobile catalogue bulk-enquiry tile ===== */
+.custom-mobile-bulk-enquiry{display:none!important}
+@media(max-width:760px){
+  .custom-idea-grid .custom-mobile-bulk-enquiry{
+    display:block!important;
+    grid-column:2!important;
+    grid-row:2!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    align-self:start!important;
+    background:transparent!important;
+  }
+  .custom-idea-grid .custom-mobile-bulk-enquiry img{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    height:auto!important;
+    margin:0!important;
+    padding:0!important;
+    object-fit:contain!important;
+  }
 }
