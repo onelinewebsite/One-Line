@@ -500,3 +500,55 @@ html,body{background:#f6f2f7;color:#241c27}
 @media(max-width:560px){
   .fabric-pricing-admin{margin:14px -4px 20px;padding:13px;border-radius:14px}.fabric-admin-card{grid-template-columns:1fr}.fabric-admin-main{grid-template-columns:1fr 1fr}.fabric-admin-main>label:first-child{grid-column:1/-1}.fabric-budget-control{grid-column:1/-1}.fabric-admin-card>.field-edit-button{width:100%}.new-fabric-form{grid-template-columns:1fr 1fr}.new-fabric-form input[name="name"]{grid-column:1/-1}.new-fabric-form .submit-small{grid-column:1/-1}.item-fabric-qualities{gap:5px}.item-fabric-qualities span{padding:8px 6px}.enquiry-selected-option{grid-template-columns:1fr auto}.enquiry-selected-option span{grid-column:1/-1}
 }
+
+/* ===== v67 portal action loading: Admin / Management / Staff ===== */
+.portal-action-loader{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:rgba(250,248,250,.46);
+  -webkit-backdrop-filter:blur(1.5px);
+  backdrop-filter:blur(1.5px);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity .14s ease,visibility .14s ease;
+}
+.portal-action-loader.active{opacity:1;visibility:visible;pointer-events:auto}
+.portal-action-loader-pill,
+.portal-inline-dots{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.portal-action-loader-pill{
+  min-width:66px;
+  height:44px;
+  padding:0 17px;
+  border:1px solid rgba(100,17,111,.14);
+  border-radius:999px;
+  background:rgba(255,255,255,.96);
+  box-shadow:0 10px 34px rgba(44,23,48,.14);
+}
+.portal-action-loader-pill span,
+.portal-inline-dots span{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#64116f;
+  animation:portal-three-dot .9s ease-in-out infinite;
+}
+.portal-action-loader-pill span:nth-child(2),.portal-inline-dots span:nth-child(2){animation-delay:.14s}
+.portal-action-loader-pill span:nth-child(3),.portal-inline-dots span:nth-child(3){animation-delay:.28s}
+.portal-inline-dots span{width:6px;height:6px}
+@keyframes portal-three-dot{
+  0%,70%,100%{transform:translateY(0);opacity:.34}
+  35%{transform:translateY(-5px);opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .portal-action-loader-pill span,.portal-inline-dots span{animation:none;opacity:.75}
+}

@@ -4980,27 +4980,45 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 }
 
 
-/* ===== v66 mobile catalogue bulk-enquiry tile ===== */
+/* ===== v66 mobile catalogue bulk-enquiry tile (v67 placement supersedes this) ===== */
 .custom-mobile-bulk-enquiry{display:none!important}
+
+/* ===== v67 mobile Custom Catalogue masonry promo placement ===== */
+.custom-idea-masonry{display:none}
 @media(max-width:760px){
-  .custom-idea-grid .custom-mobile-bulk-enquiry{
+  .custom-idea-grid-desktop.has-mobile-masonry{display:none!important}
+  .custom-idea-masonry{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    width:100%;
+    align-items:start;
+  }
+  .custom-idea-masonry-column{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-width:0;
+  }
+  .custom-idea-masonry .custom-idea-card{
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+  .custom-idea-masonry .custom-mobile-bulk-enquiry{
     display:block!important;
-    grid-column:2!important;
-    grid-row:2!important;
     width:100%!important;
     min-width:0!important;
     margin:0!important;
     padding:0!important;
-    align-self:start!important;
     background:transparent!important;
   }
-  .custom-idea-grid .custom-mobile-bulk-enquiry img{
+  .custom-idea-masonry .custom-mobile-bulk-enquiry img{
     display:block!important;
     width:100%!important;
     max-width:100%!important;
     height:auto!important;
     margin:0!important;
-    padding:0!important;
     object-fit:contain!important;
   }
 }

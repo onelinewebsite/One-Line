@@ -4,9 +4,59 @@
   const requested=(document.body.dataset.portalRole||'admin').toLowerCase();
   const esc=S.esc,money=S.money;
   const state={profile:null,view:requested==='receiver'?'orders':requested==='staff'?'stock':'products',loading:true,error:'',toast:'',menu:false,products:[],categories:[],subcategories:[],subitems:[],orders:[],orderItems:[],activity:[],customers:[],carts:[],profiles:[],customCatalogCategories:[],customCatalogItems:[],customCatalogFabrics:[],enquiries:[],settings:S.getSettings?.()||{},customSchemaReady:true,editor:null,b2bEditor:null,editSections:{},editFields:{},subEditor:null,categoryEditor:null,categoryType:'ready',customCategoryEditor:null,customItemEditor:null,query:'',orderQuery:'',orderFilter:'All',customerQuery:'',enquiryQuery:'',productCategoryFilter:'',b2bCategoryFilter:''};
+  const portalBusyEnabled=['admin','management','staff'].includes(requested);
+  const portalBusy={pending:0,session:false,armUntil:0,hideTimer:null};
+  function portalBusyElement(){
+    let el=document.getElementById('portalActionLoader');
+    if(!el){
+      el=document.createElement('div');
+      el.id='portalActionLoader';
+      el.className='portal-action-loader';
+      el.setAttribute('aria-hidden','true');
+      el.innerHTML='<div class="portal-action-loader-pill" role="status" aria-label="Processing"><span></span><span></span><span></span></div>';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function armPortalBusy(){if(portalBusyEnabled)portalBusy.armUntil=Date.now()+700;}
+  function showPortalBusy(){
+    if(!portalBusyEnabled)return;
+    clearTimeout(portalBusy.hideTimer);
+    const el=portalBusyElement();
+    el.classList.add('active');
+    el.setAttribute('aria-hidden','false');
+    document.body.classList.add('portal-operation-busy');
+  }
+  function schedulePortalBusyHide(){
+    if(!portalBusyEnabled)return;
+    clearTimeout(portalBusy.hideTimer);
+    portalBusy.hideTimer=setTimeout(()=>{
+      if(portalBusy.pending>0)return;
+      portalBusy.session=false;
+      const el=document.getElementById('portalActionLoader');
+      el?.classList.remove('active');
+      el?.setAttribute('aria-hidden','true');
+      document.body.classList.remove('portal-operation-busy');
+    },260);
+  }
+  if(portalBusyEnabled&&typeof window.fetch==='function'&&!window.__oneLinePortalBusyFetch){
+    window.__oneLinePortalBusyFetch=true;
+    const nativeFetch=window.fetch.bind(window);
+    window.fetch=async function(input,init){
+      const method=String(init?.method||(typeof Request!=='undefined'&&input instanceof Request?input.method:'GET')||'GET').toUpperCase();
+      const track=!['GET','HEAD','OPTIONS'].includes(method)||portalBusy.session||Date.now()<=portalBusy.armUntil;
+      if(!track)return nativeFetch(input,init);
+      portalBusy.session=true;portalBusy.pending++;showPortalBusy();
+      try{return await nativeFetch(input,init);}
+      finally{portalBusy.pending=Math.max(0,portalBusy.pending-1);if(portalBusy.pending===0)schedulePortalBusyHide();}
+    };
+    document.addEventListener('submit',armPortalBusy,true);
+    document.addEventListener('click',e=>{if(e.target.closest('button,[data-action],[data-edit-section],[data-edit-field],[data-edit-fabric],[data-edit-item-fabric],[data-stock]'))armPortalBusy();},true);
+    document.addEventListener('change',e=>{if(e.target.matches('input[type="file"],select[data-order-status]'))armPortalBusy();},true);
+  }
   const sb=()=>B?.supa?.();
   const img=(src,alt='')=>'<img src="'+esc(src||'assets/product-placeholder.svg')+'" alt="'+esc(alt)+'" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src=\'assets/product-placeholder.svg\'">';
-  const adminLoader=(label='Loading')=>'<div class="admin-loading">'+esc(label)+'…</div>';
+  const adminLoader=(label='Loading')=>'<div class="admin-loading"><div class="portal-inline-dots" role="status" aria-label="'+esc(label)+'"><span></span><span></span><span></span></div></div>';
   const roles=['admin','management','staff','receiver'];
   const labels={admin:'Admin',management:'Management',staff:'Staff',receiver:'Order Receiving'};
   function notify(msg){state.toast=msg;render();clearTimeout(notify.t);notify.t=setTimeout(()=>{state.toast='';renderToast();},2400);}
