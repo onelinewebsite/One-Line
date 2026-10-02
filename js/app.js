@@ -51,7 +51,7 @@
   const img=(src,alt,cls,fallback)=>'<img src="'+S.esc(src||fallback||'assets/product-placeholder.svg')+'" alt="'+S.esc(alt||'')+'" class="'+S.esc(cls||'')+'" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src=\''+S.esc(fallback||'assets/product-placeholder.svg')+'\'">';
   function logo(compact){return '<div class="brand" aria-label="One-Line"><img class="brand-mark" src="one-line-logo.webp" alt="">'+(compact?'':'<span class="brand-copy"><b>One-Line</b><small>CUSTOM APPAREL STUDIO</small></span>')+'</div>';}
   const QUARTZ_SITE='https://quartzsolution.netlify.app/';
-  function developerCredit(extraClass){return '<div class="developer-credit '+S.esc(extraClass||'')+'">Developed by <a href="'+QUARTZ_SITE+'" target="_blank" rel="noopener noreferrer">Quartz Web Solutions</a></div>';}
+  
   function clearMenuModalState(){if(!state.menu)return;try{if(history.state?.oneLineModal==='menu'){const next={...(history.state||{})};delete next.oneLineModal;history.replaceState(next,'',location.href);}}catch(_){}state.menu=false;root.querySelector('.site-header nav.open')?.classList.remove('open');root.querySelector('.menu-scrim')?.remove();syncModalScrollLock();}
   function showToast(text){state.toast=text;render();setTimeout(()=>{if(state.toast===text){state.toast='';render();}},2200);}
   function rememberScroll(){
@@ -240,9 +240,9 @@
     go(audience==='b2b'?'b2bProduct':'product');
   }
   function selectedProductImage(p){return state.previewImage||(state.color?S.productImageForColor(p,state.color):(p.images?.[0]||p.image));}
-  function currentSizes(p){const row=p.colorVariants?.find(v=>String(v.color).toLowerCase()===String(state.color).toLowerCase());return row?.sizes?.length?row.sizes:(p.sizes||[]);}
-  function currentSubSizes(p){const sub=p?.subItem;if(!sub)return[];const row=sub.colorVariants?.find(v=>String(v.color).toLowerCase()===String(state.subColor).toLowerCase());return row?.sizes?.length?row.sizes:(sub.sizes||[]);}
-  function currentSubImage(p){const sub=p?.subItem;if(!sub)return'';const row=sub.colorVariants?.find(v=>String(v.color).toLowerCase()===String(state.subColor).toLowerCase());return row?.image||sub.image||sub.images?.[0]||p.image||'assets/crew-tee.webp';}
+  
+  
+  
   function productImages(p){
     if(!p)return ['assets/product-placeholder.svg'];
     const images=[p.image,...(Array.isArray(p.images)?p.images:[]),...(Array.isArray(p.colorVariants)?p.colorVariants.map(v=>v&&v.image):[]),...(Array.isArray(p.variants)?p.variants.map(v=>v&&v.image):[])].filter(Boolean);

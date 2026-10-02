@@ -132,25 +132,7 @@
     function garmentColourPickerHtml(){
       return '<div class="fast-colour-overlay garment-colour-overlay" data-garment-picker aria-hidden="true"><div class="fast-colour-sheet" role="dialog" aria-modal="true" aria-label="Choose any colour"><div class="fast-colour-head"><strong>Choose any colour</strong><button type="button" data-garment-picker-close aria-label="Close">×</button></div><div class="fast-sv-wrap"><canvas width="640" height="360" data-garment-sv></canvas><i data-garment-sv-cursor></i></div><input class="fast-hue" data-garment-hue type="range" min="0" max="360" value="210" aria-label="Hue"><div class="fast-picker-bottom"><i data-garment-colour-preview></i><label><span>#</span><input data-garment-hex value="1F2C43" maxlength="6" inputmode="text" aria-label="Hex colour"></label><button type="button" data-garment-picker-apply>Apply</button></div></div></div>';
     }
-    function drawGarmentColour(value){
-      const canvas=root.querySelector('[data-garment-canvas]');if(!canvas)return;
-      const src=canvas.dataset.garmentSrc||garmentSrc(),ctx=canvas.getContext('2d',{willReadFrequently:true});if(!ctx)return;
-      const hex=String(value||colourValue(state.color));
-      const target=hexToRgb(/^#[0-9a-f]{6}$/i.test(hex)?hex:colourValue(state.color));
-      const paint=img=>{
-        if(!canvas.isConnected)return;
-        canvas.width=img.naturalWidth||img.width||1000;canvas.height=img.naturalHeight||img.height||1000;
-        ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
-        let image;try{image=ctx.getImageData(0,0,canvas.width,canvas.height);}catch(_){return;}
-        const d=image.data;let base=0,count=0;
-        for(let i=0;i<d.length;i+=4){if(d[i+3]<28)continue;base+=(d[i]*.2126+d[i+1]*.7152+d[i+2]*.0722)/255;count++;}
-        base=count?base/count:.9;
-        for(let i=0;i<d.length;i+=4){if(d[i+3]<8)continue;const lum=(d[i]*.2126+d[i+1]*.7152+d[i+2]*.0722)/255,ratio=clamp(lum/Math.max(.08,base),.34,1.24);if(ratio<=1){const shade=.44+.56*ratio;d[i]=target[0]*shade;d[i+1]=target[1]*shade;d[i+2]=target[2]*shade;}else{const lift=clamp((ratio-1)*1.55,0,.33);d[i]=target[0]+(255-target[0])*lift;d[i+1]=target[1]+(255-target[1])*lift;d[i+2]=target[2]+(255-target[2])*lift;}}
-        ctx.putImageData(image,0,0);
-      };
-      const cached=garmentImageCache.get(src);if(cached?.complete&&cached.naturalWidth){paint(cached);return;}
-      const img=new Image();garmentImageCache.set(src,img);img.onload=()=>paint(img);img.src=src;
-    }
+    
     function setGarmentTintPreview(value){const tint=root.querySelector('.compact-garment > .garment-tint');if(tint)tint.style.background=value;}
     function bindGarmentColourPicker(){
       const overlay=root.querySelector('[data-garment-picker]'),sv=root.querySelector('[data-garment-sv]'),ctx=sv?.getContext('2d'),cursor=root.querySelector('[data-garment-sv-cursor]'),hue=root.querySelector('[data-garment-hue]'),hex=root.querySelector('[data-garment-hex]'),preview=root.querySelector('[data-garment-colour-preview]');if(!overlay||!sv||!ctx)return;
