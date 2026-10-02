@@ -471,7 +471,15 @@
     if(!file?.type?.startsWith('image/'))throw new Error('Choose an image file.');
     const src=await teamFileDataUrl(file),image=await teamLoadImage(src);
     state.teamCrop={side:side==='back'?'back':'front',fileName:file.name||((side==='back'?'back':'front')+'-design'),src,image,imageWidth:image.naturalWidth||image.width,imageHeight:image.naturalHeight||image.height,frame:null,imageLeft:0,imageTop:0,imageWidthPx:0,imageHeightPx:0,displayScale:1,stageWidth:0,stageHeight:0};
+    try{history.pushState({...history.state,oneLine:true,screen:state.screen,oneLineCrop:true,scrollY:window.scrollY},'',location.href);}catch(_){}
     render();
+  }
+  function closeTeamCrop(){
+    if(!state.teamCrop)return;
+    if(history.state?.oneLineCrop){
+      try{history.back();return;}catch(_){}
+    }
+    state.teamCrop=null;render();
   }
   function teamCropModal(){
     const crop=state.teamCrop;if(!crop)return'';
@@ -496,7 +504,11 @@
     const scale=Math.max(.0001,Number(crop.displayScale||1)),iw=Math.max(1,Number(crop.imageWidth||crop.image.naturalWidth||1)),ih=Math.max(1,Number(crop.imageHeight||crop.image.naturalHeight||1));
     const sx=teamClamp((frame.left-crop.imageLeft)/scale,0,iw-1),sy=teamClamp((frame.top-crop.imageTop)/scale,0,ih-1),sw=teamClamp(frame.width/scale,1,iw-sx),sh=teamClamp(frame.height/scale,1,ih-sy),outScale=Math.min(1,1200/Math.max(sw,sh)),c=document.createElement('canvas');
     c.width=Math.max(1,Math.round(sw*outScale));c.height=Math.max(1,Math.round(sh*outScale));const ctx=c.getContext('2d',{alpha:true});ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(crop.image,sx,sy,sw,sh,0,0,c.width,c.height);
-    const data=teamSide(crop.side);data.background=c.toDataURL('image/webp',.84);data.fileName=crop.fileName;state.teamCrop=null;state.teamActiveLayer='';render();
+    const data=teamSide(crop.side);data.background=c.toDataURL('image/webp',.84);data.fileName=crop.fileName;state.teamActiveLayer='';
+    if(history.state?.oneLineCrop){
+      try{history.back();return;}catch(_){}
+    }
+    state.teamCrop=null;render();
   }
   function teamLayerHtml(layer){
     const active=state.teamActiveLayer===layer.id,pos='left:'+teamClamp(layer.x,0,100)+'%;top:'+teamClamp(layer.y,0,100)+'%;',handle='<i class="team-resize-handle" data-team-resize-layer="'+S.esc(layer.id)+'" aria-hidden="true"></i>';
@@ -690,7 +702,7 @@
     root.querySelectorAll('[data-team-jump]').forEach(x=>x.addEventListener('click',()=>{const target=Number(x.dataset.teamJump||0);if(target>=1&&target<=state.teamUnlockedStep&&target!==state.teamStep){state.teamActiveLayer='';state.teamStep=target;window.scrollTo({top:0,behavior:'smooth'});render();}}));
     root.querySelectorAll('[data-team-side-upload]').forEach(input=>input.addEventListener('change',async()=>{const file=input.files?.[0],side=input.dataset.teamSideUpload;if(!file)return;try{await startTeamCrop(file,side);}catch(err){showToast(err.message||'Could not read that image');}}));
     bindTeamCrop();
-    const teamCropOverlay=root.querySelector('[data-team-crop-overlay]');if(teamCropOverlay)teamCropOverlay.addEventListener('click',e=>{if(e.target===teamCropOverlay){state.teamCrop=null;render();}});
+    const teamCropOverlay=root.querySelector('[data-team-crop-overlay]');if(teamCropOverlay)teamCropOverlay.addEventListener('click',e=>{if(e.target===teamCropOverlay)closeTeamCrop();});
 
     root.querySelectorAll('[data-team-logo-upload]').forEach(input=>input.addEventListener('change',async()=>{const side=input.dataset.teamLogoUpload,files=[...(input.files||[])].filter(f=>f.type.startsWith('image/'));if(!files.length)return;try{const data=teamSide(side);for(const file of files){const [src,originalDataUrl]=await Promise.all([compressTeamArtwork(file,600,.7),teamFileDataUrl(file)]);data.layers.push({id:teamUid('logo'),type:'image',src,assetName:file.name,originalName:file.name,originalType:file.type||'',originalSize:Number(file.size||0),originalDataUrl,x:50,y:50,widthPct:24});}state.teamActiveLayer=data.layers[data.layers.length-1]?.id||'';render();}catch(err){showToast(err.message||'Could not add logo');}}));
     root.querySelectorAll('[data-team-remove-layer]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();for(const side of ['front','back']){const data=teamSide(side),i=data.layers.findIndex(l=>l.id===btn.dataset.teamRemoveLayer);if(i>=0){data.layers.splice(i,1);break;}}if(state.teamActiveLayer===btn.dataset.teamRemoveLayer)state.teamActiveLayer='';render();}));
@@ -721,7 +733,7 @@
       else if(a==='clear-filters'){resetFilters();render();}
       else if(a==='add-product'){if(requireCustomer('add-product'))addSelectedProductToCart();}
       else if(a==='team-add-row'){state.teamRows.push({name:'',number:'',size:'M'});render();}
-      else if(a==='team-crop-cancel'){state.teamCrop=null;render();}
+      else if(a==='team-crop-cancel'){closeTeamCrop();}
       else if(a==='team-crop-apply'){applyTeamCrop();}
       else if(a==='team-next-step'){if(state.teamStep===1&&(!state.teamFront.background||!state.teamBack.background)){showToast('Upload both front and back designs first');return;}state.teamActiveLayer='';const next=Math.min(4,state.teamStep+1);state.teamUnlockedStep=Math.max(state.teamUnlockedStep,next);state.teamStep=next;render();}
       else if(a==='team-prev-step'){state.teamActiveLayer='';if(state.teamStep>1){state.teamStep-=1;render();}else navigateBack('home');}
@@ -798,7 +810,7 @@
   window.addEventListener('storage',e=>{state.products=S.getProducts();state.categories=S.getCategories();state.customCatalogCategories=S.getCustomCatalogCategories?.()||[];state.customCatalogItems=S.getCustomCatalogItems?.()||[];state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||[];state.settings=S.getSettings();state.cart.forEach(item=>{if(item.itemType==='custom_design'&&item.customDesign){item.price=S.customDesignPrice?.(item.customDesign,item.qty,state.settings)??item.price;item.total=Number(item.price||0)*Number(item.qty||0);}});if(e.key===(window.ONE_LINE_CONFIG?.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1')){const sess=B?.customerSession?.();if(sess?.token){state.customer={...(state.customer||{}),...sess};state.accountLoaded=false;refreshCustomerAccount(true);}else{state.customer=null;state.cart=[];state.orders=[];state.enquiries=[];state.accountLoaded=false;render();}}else render();});
   window.addEventListener('one-line-change',()=>{state.products=S.getProducts();state.categories=S.getCategories();state.customCatalogCategories=S.getCustomCatalogCategories?.()||[];state.customCatalogItems=S.getCustomCatalogItems?.()||[];state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||[];state.settings=S.getSettings();});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollCustomerAccount(true);});
-  document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('dragstart',e=>{if(!e.target.closest('input[type=file]'))e.preventDefault();});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.zoomImage){closeZoom();}else if(e.key==='Escape'&&state.filterOpen){closeFilter(false);}else if(e.key==='Escape'&&state.menu){closeMenu(false);}if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))e.preventDefault();});document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
+  document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('dragstart',e=>{if(!e.target.closest('input[type=file]'))e.preventDefault();});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.teamCrop){closeTeamCrop();}else if(e.key==='Escape'&&state.zoomImage){closeZoom();}else if(e.key==='Escape'&&state.filterOpen){closeFilter(false);}else if(e.key==='Escape'&&state.menu){closeMenu(false);}if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))e.preventDefault();});document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
   try{
     const valid=['home','categories','catalog','product','customCatalog','customCategory','customItem','cart','checkout','orders','profile','customize','teamUpload','b2b','b2bProduct'];const hash=location.hash.replace('#','');const params=new URLSearchParams(location.search);let initial=valid.includes(hash)?hash:'home';
     const sharedCategory=params.get('category'),sharedSub=params.get('subcategory'),sharedProduct=params.get('product'),sharedAudience=params.get('audience'),sharedSection=params.get('section'),sharedCustomCategory=params.get('customCategory'),sharedCustomItem=params.get('customItem');
@@ -810,6 +822,7 @@
     else history.replaceState({...routeState(initial,0),fromScreen:''},'',routeUrl(initial));
   }catch(_){}
   window.addEventListener('popstate',e=>{
+    if(state.teamCrop){state.teamCrop=null;state.teamActiveLayer='';render();return;}
     if(state.menu){state.menu=false;state.filterOpen=false;state.filterDraft=null;syncModalScrollLock();render();requestAnimationFrame(()=>window.scrollTo(0,Number(e.state?.scrollY||window.scrollY||0)));return;}
     const next=e.state?.oneLine?e.state.screen:'home';
     if(e.state?.oneLineModal==='legal'){state.screen=next||state.screen;restoreRouteState(state.screen,e.state||{});state.legal=e.state.legal||'About';state.menu=false;state.filterOpen=false;state.filterDraft=null;render();requestAnimationFrame(()=>window.scrollTo(0,Number(e.state?.scrollY||0)));return;}
