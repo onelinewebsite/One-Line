@@ -1,9 +1,0 @@
-One-Line v38
-
-Requested restoration and customizer alignment update:
-- Restored the home-page custom studio visual from the supplied on-work-cztms-main build.
-- Kept newer catalogue/team/order/backend features intact.
-- Added matching T-Shirt, Sportswear and Polo left/right sleeve artwork from the old project.
-- Centered all editable garment views and aligned sleeve print areas to the matching sleeve image.
-- Added the normal OneLine footer to the customizer page; Quartz Web Solutions credit is at the bottom of that footer.
-- Cache/service worker bumped to v38 and the new sleeve assets are precached.
