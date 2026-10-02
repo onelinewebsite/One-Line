@@ -987,3 +987,16 @@ insert into public.custom_sportswear_types(name,price_adjustment,is_base,active,
   ('Polo',50,false,true,30),
   ('Semi Collar',30,false,true,40)
 on conflict(name) do nothing;
+
+
+-- ===== v77 Uniform Custom Catalogue =====
+-- Uniform items reuse custom_catalog_items.fabric_options to store highlighted features.
+insert into public.custom_catalog_categories(name,description,image_url,active,sort_order)
+values(
+  'Uniform',
+  'Custom uniforms with a starting price and simple highlighted features.',
+  '',
+  true,
+  30
+)
+on conflict(name) do nothing;

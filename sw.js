@@ -1,4 +1,4 @@
-const CACHE='one-line-v76-crop-gap-cancel-20261002';
+const CACHE='one-line-v77-uniform-copy-bulk-20261002';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./receiver.html','./b2b.html',
   './css/site.css','./css/admin.css',
