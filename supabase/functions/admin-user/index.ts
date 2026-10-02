@@ -1,14 +1,27 @@
-import { cors,json,admin,requirePortalUser } from '../_shared.ts'
+import { createClient } from "npm:@supabase/supabase-js@2"
 
+const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-one-line-public","Access-Control-Allow-Methods":"POST, OPTIONS"}
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"content-type":"application/json"}})
+const secretKey=()=>{const packed=Deno.env.get('SUPABASE_SECRET_KEYS');if(packed){try{const obj=JSON.parse(packed);if(obj.default)return obj.default;const first=Object.values(obj)[0];if(first)return String(first)}catch{}}return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}
+const admin=()=>createClient(Deno.env.get('SUPABASE_URL')!,secretKey(),{auth:{persistSession:false,autoRefreshToken:false}})
 const cleanUsername=(username:string)=>String(username||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')
 const emailFor=(username:string)=>cleanUsername(username)+'@staff.oneline.local'
 const allowedRoles=['admin','management','staff','receiver']
+
+async function requirePortalUser(req:Request,roles:string[]){
+  const jwt=(req.headers.get('Authorization')||'').replace(/^Bearer\s+/i,'')
+  if(!jwt)return null
+  const db=admin();const {data:{user}}=await db.auth.getUser(jwt)
+  if(!user)return null
+  const {data}=await db.from('profiles').select('*').eq('id',user.id).maybeSingle()
+  if(!data?.active||!roles.includes(data.role))return null
+  return {user,profile:data}
+}
 
 async function upsertPortalAccount(db:any,spec:{name:string;username:string;password:string;role:string}){
   const username=cleanUsername(spec.username),email=emailFor(username)
   let {data:profile,error:profileError}=await db.from('profiles').select('*').eq('username',username).maybeSingle()
   if(profileError)throw profileError
-
   if(profile?.id){
     const u=await db.auth.admin.updateUserById(profile.id,{email,password:spec.password,email_confirm:true,user_metadata:{username,name:spec.name,role:spec.role}})
     if(u.error)throw u.error
@@ -16,7 +29,6 @@ async function upsertPortalAccount(db:any,spec:{name:string;username:string;pass
     if(q.error)throw q.error
     return q.data
   }
-
   const listed=await db.auth.admin.listUsers({page:1,perPage:1000})
   if(listed.error)throw listed.error
   const existing=(listed.data?.users||[]).find((u:any)=>String(u.email||'').toLowerCase()===email)
@@ -51,16 +63,39 @@ async function listUnitTransfers(db:any){
   return (q.data||[]).map(transferSummary)
 }
 
+async function adminFeed(db:any){
+  const [ordersQ,enquiriesQ]=await Promise.all([
+    db.from('orders').select('*').order('created_at',{ascending:false}).limit(1000),
+    db.from('customer_activity').select('*,customers(id,name,phone,business_name,job_title,created_at,last_seen_at)').in('event_type',['custom_catalog_enquiry','team_design_enquiry']).order('created_at',{ascending:false}).limit(1000)
+  ])
+  if(ordersQ.error)throw ordersQ.error
+  if(enquiriesQ.error)throw enquiriesQ.error
+  const orders=(ordersQ.data||[]).filter((o:any)=>o.metadata?.unit_transfer!==true)
+  const ids=orders.map((o:any)=>o.id)
+  const orderItems:any[]=[]
+  for(let start=0;start<ids.length;start+=100){
+    const batch=ids.slice(start,start+100)
+    for(let offset=0;;offset+=500){
+      const page=await db.from('order_items').select('*').in('order_id',batch).order('created_at',{ascending:true}).order('id').range(offset,offset+499)
+      if(page.error)throw page.error
+      orderItems.push(...(page.data||[]))
+      if((page.data||[]).length<500)break
+    }
+  }
+  return {orders,orderItems,enquiries:enquiriesQ.data||[]}
+}
+
 async function createUnitTransfer(db:any,portal:any,body:any){
   const sourceType=String(body.source_type||'').trim(),sourceId=String(body.source_id||'').trim()
-  if(!['ready_made','custom_catalog','order_item'].includes(sourceType)||!sourceId)return json({error:'Invalid Unit Transfer item.'},400)
+  if(!['ready_made','custom_catalog','order_item','enquiry'].includes(sourceType)||!sourceId)return json({error:'Invalid Unit Transfer item.'},400)
   const sourceKey=sourceType+':'+sourceId
   const existing=await db.from('orders').select('id,order_code,metadata,created_at').contains('metadata',{unit_transfer:true,source_key:sourceKey}).order('created_at',{ascending:false}).limit(1).maybeSingle()
   if(existing.error)throw existing.error
   if(existing.data)return json({ok:true,already:true,transfer:transferSummary(existing.data)})
 
-  let itemName='',itemCode='',qty=1,unitPrice=0,itemType='product',productId=null as string|null,design:any={}
+  let itemName='',itemCode='',qty=1,unitPrice=0,itemType='product',productId=null as string|null,subitemId=null as string|null,lineColor='',lineSize='',design:any={}
   let sourceLabel=''
+
   if(sourceType==='ready_made'){
     const p=await db.from('products').select('*').eq('id',sourceId).maybeSingle();if(p.error)throw p.error;if(!p.data)return json({error:'Ready Made item not found.'},404)
     const [variants,category,subcat]=await Promise.all([
@@ -86,13 +121,24 @@ async function createUnitTransfer(db:any,portal:any,body:any){
     }
     itemName=String(i.data.title||'Custom Catalogue');itemCode='';unitPrice=Number(i.data.rate||0);itemType='custom_catalog';sourceLabel='Custom Catalogue'
     design={unit_snapshot:{source_type:sourceType,images:i.data.images||[],description:i.data.description||'',category:categoryName,rate:i.data.rate,fabric_options:fabricOptions,selected_options:selectedOptions,sort_order:i.data.sort_order||0}}
+  }else if(sourceType==='enquiry'){
+    const e=await db.from('customer_activity').select('*').eq('id',sourceId).maybeSingle();if(e.error)throw e.error;if(!e.data)return json({error:'Customer enquiry not found.'},404)
+    if(!['custom_catalog_enquiry','team_design_enquiry'].includes(String(e.data.event_type||'')))return json({error:'This activity is not a transferable enquiry.'},400)
+    const customer=e.data.customer_id?await db.from('customers').select('id,name,phone,business_name,job_title').eq('id',e.data.customer_id).maybeSingle():{data:null,error:null};if(customer.error)throw customer.error
+    const p=e.data.payload&&typeof e.data.payload==='object'?e.data.payload:{},team=e.data.event_type==='team_design_enquiry'
+    itemName=String(team?(p.title||'Team creative design'):(p.itemTitle||p.title||'Custom Catalogue enquiry'))
+    itemCode=team?'TEAM':'ENQUIRY';qty=team?Math.max(1,Number(p.rowCount||(Array.isArray(p.roster)?p.roster.length:1))):Math.max(1,Number(p.qty||1));unitPrice=Number(p.itemRate||p.rate||0);itemType=team?'team_design':'custom_catalog_enquiry';sourceLabel=team?'Team Enquiry':'Custom Catalogue Enquiry'
+    const snapshot={source_type:sourceType,source_enquiry_id:e.data.id,customer_name:customer.data?.name||'',phone:customer.data?.phone||'',business:customer.data?.business_name||'',job_title:customer.data?.job_title||'',images:Array.isArray(p.images)?p.images:(p.image?[p.image]:[]),description:p.itemDescription||p.description||'',category:p.categoryName||'',selected_options:[p.garmentTypeName?{label:'Type',value:p.garmentTypeName}:null,p.fabricName?{label:'Fabric',value:p.fabricName}:null,p.fabricQuality?{label:'Quality',value:p.fabricQuality}:null].filter(Boolean),enquiry_payload:p}
+    design=team?{...p,unit_snapshot:snapshot}:{unit_snapshot:snapshot,enquiry_payload:p}
   }else{
-    const line=await db.from('order_items').select('*').eq('id',sourceId).maybeSingle();if(line.error)throw line.error;if(!line.data)return json({error:'Customize order item not found.'},404)
+    const line=await db.from('order_items').select('*').eq('id',sourceId).maybeSingle();if(line.error)throw line.error;if(!line.data)return json({error:'Order item not found.'},404)
     const order=await db.from('orders').select('*').eq('id',line.data.order_id).maybeSingle();if(order.error)throw order.error;if(!order.data)return json({error:'Source customer order not found.'},404)
     if(order.data.metadata?.unit_transfer===true)return json({error:'A Unit Transfer cannot be transferred again.'},400)
-    itemName=String(line.data.item_name||'Customize item');itemCode=String(line.data.item_code||'');qty=Math.max(1,Number(line.data.qty||1));unitPrice=Number(line.data.unit_price||0);itemType=String(line.data.item_type||'custom_design');productId=line.data.product_id||null;sourceLabel='Customize Order Item'
+    itemName=String(line.data.item_name||'Order item');itemCode=String(line.data.item_code||'');qty=Math.max(1,Number(line.data.qty||1));unitPrice=Number(line.data.unit_price||0);itemType=String(line.data.item_type||'product');productId=line.data.product_id||null;subitemId=line.data.subitem_id||null;lineColor=String(line.data.color||'');lineSize=String(line.data.size||'');sourceLabel='Customer Order Item'
     const original=(line.data.design_json&&typeof line.data.design_json==='object')?line.data.design_json:{}
-    design={...original,unit_snapshot:{...(original.unit_snapshot||{}),source_type:sourceType,source_order_id:order.data.id,source_order_code:order.data.order_code,customer_name:order.data.customer_name||order.data.business||'',phone:order.data.phone||'',address:order.data.address||'',delivery:order.data.delivery||'',payment:order.data.payment||''}}
+    let productSnapshot:any={}
+    if(line.data.product_id){const p=await db.from('products').select('id,name,description,images,product_type,option_title').eq('id',line.data.product_id).maybeSingle();if(!p.error&&p.data)productSnapshot={images:p.data.images||[],description:p.data.description||'',product_type:p.data.product_type||'',option_title:p.data.option_title||''}}else if(line.data.subitem_id){const si=await db.from('subitems').select('id,name,images,option_title').eq('id',line.data.subitem_id).maybeSingle();if(!si.error&&si.data)productSnapshot={images:si.data.images||[],option_title:si.data.option_title||''}}
+    design={...original,unit_snapshot:{...(original.unit_snapshot||{}),...productSnapshot,source_type:sourceType,source_order_id:order.data.id,source_order_code:order.data.order_code,customer_name:order.data.customer_name||order.data.business||'',phone:order.data.phone||'',address:order.data.address||'',delivery:order.data.delivery||'',payment:order.data.payment||'',color:line.data.color||'',size:line.data.size||''}}
   }
 
   const random=crypto.randomUUID().replace(/-/g,'').slice(0,6).toUpperCase(),stamp=new Date().toISOString().replace(/\D/g,'').slice(2,14)
@@ -100,7 +146,7 @@ async function createUnitTransfer(db:any,portal:any,body:any){
   const metadata={unit_transfer:true,source_type:sourceType,source_id:sourceId,source_key:sourceKey,source_label:sourceLabel,transferred_by:portal.profile.id,transferred_by_name:portal.profile.name||portal.profile.username||'',transferred_at:new Date().toISOString()}
   const inserted=await db.from('orders').insert({order_code:orderCode,customer_name:'Production Unit',phone:'',address:'',business:'',delivery:'Unit transfer',payment:'Internal',status:'Transferred',total:unitPrice*qty,metadata}).select().single()
   if(inserted.error)throw inserted.error
-  const lineInsert=await db.from('order_items').insert({order_id:inserted.data.id,product_id:productId,item_type:itemType,item_name:itemName,item_code:itemCode,qty,unit_price:unitPrice,design_json:design,group_key:sourceKey})
+  const lineInsert=await db.from('order_items').insert({order_id:inserted.data.id,product_id:productId,subitem_id:subitemId,item_type:itemType,item_name:itemName,item_code:itemCode,color:lineColor,size:lineSize,qty,unit_price:unitPrice,design_json:design,group_key:sourceKey})
   if(lineInsert.error){await db.from('orders').delete().eq('id',inserted.data.id);throw lineInsert.error}
   return json({ok:true,transfer:transferSummary(inserted.data)})
 }
@@ -114,6 +160,7 @@ Deno.serve(async(req)=>{
     if(!portal)return json({error:transferAction?'Admin or Management authorization required.':'Admin authorization required.'},403)
     const db=admin()
 
+    if(action==='admin_feed')return json({ok:true,...await adminFeed(db)})
     if(action==='unit_transfer_list')return json({ok:true,transfers:await listUnitTransfers(db)})
     if(action==='unit_transfer')return await createUnitTransfer(db,portal,body)
 
