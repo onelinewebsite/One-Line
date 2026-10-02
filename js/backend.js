@@ -63,19 +63,14 @@
   };
   const values=(rows,key)=>[...new Set((rows||[]).map(x=>String(x?.[key]||'').trim()).filter(Boolean))];
   function mapData(data,includeInactive=false){
-    const cats=data.categories||[],subs=data.subcategories||[],variants=data.product_variants||[],subitems=data.subitems||[],subvars=data.subitem_variants||[],links=data.product_subitems||[];
+    const cats=data.categories||[],subs=data.subcategories||[],variants=data.product_variants||[];
     const catMap=new Map(cats.map(c=>[c.id,c])),subMap=new Map(subs.map(s=>[s.id,s]));
-    const subitemById=new Map(subitems.map(si=>{
-      const vv=subvars.filter(v=>v.subitem_id===si.id&&v.active!==false);
-      return [si.id,{id:si.id,code:si.code||'',barcode:si.barcode||'',name:si.name||'',price:Number(si.price||0),optionTitle:si.option_title||'Size',images:si.images||[],image:(si.images||[])[0]||'',colors:values(vv,'color'),sizes:values(vv,'size'),variants:vv.map(v=>({id:v.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??si.price??0),barcode:v.barcode||'',image:v.image_url||'',active:v.active!==false})),active:si.active!==false}];
-    }));
     const products=(data.products||[]).filter(p=>includeInactive||p.active!==false).map(p=>{
       const vv=variants.filter(v=>v.product_id===p.id&&(includeInactive||v.active!==false));
-      const linked=links.filter(x=>x.product_id===p.id).map(x=>subitemById.get(x.subitem_id)).filter(Boolean);
       const cat=catMap.get(p.category_id),sub=subMap.get(p.subcategory_id);
       const colors=values(vv,'color'),sizes=values(vv,'size');
       const colorVariants=colors.map(color=>{const rows=vv.filter(v=>v.color===color);return{color,image:rows.find(v=>v.image_url)?.image_url||'',sizes:values(rows,'size')};});
-      return {id:p.id,code:p.code||'',sku:p.code||'',barcode:p.barcode||'',audience:p.b2b_only?'b2b':'retail',name:p.name||'',description:p.description||'',category:cat?.name||'',categoryId:p.category_id||'',subcategory:sub?.name||'',subcategoryId:p.subcategory_id||'',price:Number(p.price||0),mrp:Number(p.mrp||0),image:(p.images||[])[0]||'',images:p.images||[],type:p.product_type||'Simple',optionTitle:p.option_title||'Size',colors,sizes,colorVariants,variants:vv.map(v=>({id:v.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??p.price??0),barcode:v.barcode||'',image:v.image_url||'',active:v.active!==false})),stock:vv.length?vv.reduce((n,v)=>n+Number(v.stock||0),0):Number(p.stock||0),active:p.active!==false,customerVisible:p.customer_visible!==false,askForPrice:!!p.ask_for_price,subItems:linked};
+      return {id:p.id,code:p.code||'',sku:p.code||'',barcode:p.barcode||'',audience:p.b2b_only?'b2b':'retail',name:p.name||'',description:p.description||'',category:cat?.name||'',categoryId:p.category_id||'',subcategory:sub?.name||'',subcategoryId:p.subcategory_id||'',price:Number(p.price||0),mrp:Number(p.mrp||0),image:(p.images||[])[0]||'',images:p.images||[],type:p.product_type||'Simple',optionTitle:p.option_title||'Size',colors,sizes,colorVariants,variants:vv.map(v=>({id:v.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??p.price??0),barcode:v.barcode||'',image:v.image_url||'',active:v.active!==false})),stock:vv.length?vv.reduce((n,v)=>n+Number(v.stock||0),0):Number(p.stock||0),active:p.active!==false,customerVisible:p.customer_visible!==false,askForPrice:!!p.ask_for_price};
     });
     const categories=cats.filter(c=>c.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(c=>({id:c.id,name:c.name,image:c.image_url||'',sub:subs.filter(s=>s.category_id===c.id&&s.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(s=>s.name).join(' · ')||c.subtitle||'',active:true}));
     return{products,categories,orders:data.orders||[],settings:data.settings||{},prints:data.print_types||null,delivery:data.delivery_methods||null};
@@ -88,15 +83,12 @@
       sb.from('subcategories').select('*').order('sort_order'),
       sb.from('products').select('*'),
       sb.from('product_variants').select('*'),
-      sb.from('subitems').select('*'),
-      sb.from('subitem_variants').select('*'),
-      sb.from('product_subitems').select('*'),
       sb.from('store_settings').select('*').limit(1).maybeSingle(),
       sb.from('print_types').select('*').order('sort_order'),
       sb.from('delivery_methods').select('*').order('sort_order')
     ]);
     const firstError=queries.find(q=>q.error)?.error;if(firstError)throw firstError;
-    const rawData={categories:queries[0].data,subcategories:queries[1].data,products:queries[2].data,product_variants:queries[3].data,subitems:queries[4].data,subitem_variants:queries[5].data,product_subitems:queries[6].data,settings:queries[7].data||{},print_types:queries[8].data,delivery_methods:queries[9].data};
+    const rawData={categories:queries[0].data,subcategories:queries[1].data,products:queries[2].data,product_variants:queries[3].data,settings:queries[4].data||{},print_types:queries[5].data,delivery_methods:queries[6].data};
     const publicMapped=mapData(rawData),mapped=document.body.dataset.portalRole?mapData(rawData,true):publicMapped;portalProducts=mapped.products;
     local('custom-store-products-v3',publicMapped.products);local('custom-store-categories-v3',mapped.categories);
     if(mapped.settings&&Object.keys(mapped.settings).length){const prev=S?.getSettings?.()||{};local('custom-store-settings-v3',{...prev,...mapped.settings,whatsapp:mapped.settings.whatsapp||prev.whatsapp||''});}
@@ -119,7 +111,7 @@
       if(!cq[3].error){customSportswearFabrics=cq[3].data||[];local('one-line-custom-sportswear-fabrics-v1',customSportswearFabrics);}
       if(!cq[4].error){customSportswearTypes=cq[4].data||[];local('one-line-custom-sportswear-types-v1',customSportswearTypes);}
     }catch(_){}
-    return{configured:true,...mapped,customCategories,customItems,customFabrics,customSportswearFabrics,customSportswearTypes,customSchemaReady,sportswearSchemaReady,rawCategories:queries[0].data||[],rawSubcategories:queries[1].data||[],rawSubitems:(queries[4].data||[]).map(si=>({...si,variants:(queries[5].data||[]).filter(v=>v.subitem_id===si.id)}))};
+    return{configured:true,...mapped,customCategories,customItems,customFabrics,customSportswearFabrics,customSportswearTypes,customSchemaReady,sportswearSchemaReady,rawCategories:queries[0].data||[],rawSubcategories:queries[1].data||[]};
   }
   function ready(){if(!readyPromise)readyPromise=hydrate().catch(error=>({configured:true,error}));return readyPromise;}
   async function createCustomerSession(phone,accessToken,name){
@@ -210,11 +202,8 @@
     const base={id:p.id||undefined,code:p.code||p.sku||'',barcode:p.barcode||null,name:p.name||'',description:p.description||'',category_id:p.categoryId||null,subcategory_id:p.subcategoryId||null,price:Number(p.price||0),mrp:Number(p.mrp||0),product_type:p.type||'Simple',option_title:p.optionTitle||'Size',images:p.images?.length?p.images:[p.image].filter(Boolean),active:p.active!==false,customer_visible:p.audience!=='b2b',b2b_only:p.audience==='b2b',ask_for_price:!!p.askForPrice,stock:Number(p.stock||0)};
     const {data,error}=await sb.from('products').upsert(base).select().single();if(error)throw error;
     if(Array.isArray(p.variants)){const removed=await sb.from('product_variants').delete().eq('product_id',data.id);if(removed.error)throw removed.error;if(p.variants.length){const rows=p.variants.map(v=>({product_id:data.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??p.price??0),barcode:v.barcode||null,image_url:v.image||'',active:v.active!==false}));const r=await sb.from('product_variants').insert(rows);if(r.error)throw r.error;}}
-    if(Array.isArray(p.subItemIds)){const removed=await sb.from('product_subitems').delete().eq('product_id',data.id);if(removed.error)throw removed.error;if(p.subItemIds.length){const r=await sb.from('product_subitems').insert(p.subItemIds.map(id=>({product_id:data.id,subitem_id:id})));if(r.error)throw r.error;}}
     await hydrate();return data;
   }
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate();}
-  async function listSubitems(){const sb=supa();const [{data:items,error},{data:vars,error:ve}]=await Promise.all([sb.from('subitems').select('*').order('name'),sb.from('subitem_variants').select('*')]);if(error)throw error;if(ve)throw ve;return(items||[]).map(si=>({...si,variants:(vars||[]).filter(v=>v.subitem_id===si.id)}));}
-  async function upsertSubitem(si){const sb=supa();const payload={id:si.id||undefined,code:si.code||'',barcode:si.barcode||null,name:si.name||'',price:Number(si.price||0),option_title:si.optionTitle||'Size',images:si.images||[],active:si.active!==false};const {data,error}=await sb.from('subitems').upsert(payload).select().single();if(error)throw error;const removed=await sb.from('subitem_variants').delete().eq('subitem_id',data.id);if(removed.error)throw removed.error;if(si.variants?.length){const r=await sb.from('subitem_variants').insert(si.variants.map(v=>({subitem_id:data.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??si.price??0),barcode:v.barcode||null,image_url:v.image||'',active:v.active!==false})));if(r.error)throw r.error;}await hydrate();return data;}
-  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,listSubitems,upsertSubitem,cleanPhone};
+  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
 })();

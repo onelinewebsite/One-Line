@@ -9,7 +9,7 @@ function normalizeOrderItem(item:any){
     return {itemType:type,name:item?.name||'Custom design',code:item?.code||'CUSTOM',qty:Number(item?.qty||1),unitPrice:Number(item?.price||0),design:item?.design||item?.customDesign||{},groupKey:item?.key||''}
   }
   if(item?.lines)return item // transition compatibility with v40 request shape
-  return {itemType:'product',productId:item?.productId,name:item?.name||'',code:item?.code||'',lines:Array.isArray(item?.bulkLines)?item.bulkLines:[],subitems:Array.isArray(item?.subitems)?item.subitems:[],groupKey:item?.key||''}
+  return {itemType:'product',productId:item?.productId,name:item?.name||'',code:item?.code||'',lines:Array.isArray(item?.bulkLines)?item.bulkLines:[],groupKey:item?.key||''}
 }
 
 async function uploadOrderImage(db:any,customerId:string,value:any,label:string){
