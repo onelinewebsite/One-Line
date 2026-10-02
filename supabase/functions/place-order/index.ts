@@ -19,6 +19,30 @@ async function uploadOrderImage(db:any,customerId:string,value:any,label:string)
   const up=await db.storage.from('product-images').upload(path,decoded.bytes,{contentType:decoded.type,cacheControl:'31536000',upsert:false});if(up.error)throw up.error;
   return db.storage.from('product-images').getPublicUrl(path).data.publicUrl;
 }
+async function persistCustomDesignAssets(db:any,customerId:string,raw:any){
+  const design=structuredClone(raw||{}),surfaces=design?.surfaceDesigns||{};
+  for(const [surfaceName,surface] of Object.entries(surfaces)){
+    if(!surface||typeof surface!=='object')continue;
+    const layers=Array.isArray((surface as any).layers)?(surface as any).layers:[];
+    for(let i=0;i<layers.length;i++){
+      const layer=layers[i];if(!layer||layer.type!=='image')continue;
+      const original=layer.originalDataUrl||layer.src||layer.imageDataUrl||'';
+      const preview=layer.src||layer.imageDataUrl||original;
+      if(String(original).startsWith('data:'))layer.originalImageUrl=await uploadOrderImage(db,customerId,original,`${surfaceName}-artwork-${i+1}`);
+      else if(original)layer.originalImageUrl=String(original);
+      if(String(preview).startsWith('data:'))layer.imageUrl=await uploadOrderImage(db,customerId,preview,`${surfaceName}-artwork-preview-${i+1}`);
+      else if(preview)layer.imageUrl=String(preview);
+      if(!layer.originalImageUrl&&layer.imageUrl)layer.originalImageUrl=layer.imageUrl;
+      layer.src=layer.imageUrl||layer.originalImageUrl||'';
+      delete layer.originalDataUrl;delete layer.imageDataUrl;
+    }
+  }
+  if(design.frontCompositeDataUrl){design.frontCompositeUrl=await uploadOrderImage(db,customerId,design.frontCompositeDataUrl,'front-final');delete design.frontCompositeDataUrl;}
+  if(design.backCompositeDataUrl){design.backCompositeUrl=await uploadOrderImage(db,customerId,design.backCompositeDataUrl,'back-final');delete design.backCompositeDataUrl;}
+  if(design.uploadedImage&&String(design.uploadedImage).startsWith('data:')){design.uploadedImageUrl=await uploadOrderImage(db,customerId,design.uploadedImage,'front-artwork');design.uploadedImage=design.uploadedImageUrl;}
+  return design;
+}
+
 async function persistTeamDesignAssets(db:any,customerId:string,raw:any){
   const design=structuredClone(raw||{}),sides=design?.design||design;
   for(const sideName of ['front','back']){
@@ -49,9 +73,14 @@ Deno.serve(async(req)=>{
     const browserItems=Array.isArray(body.items)?body.items:[];
     const sourceItems=directOrder?browserItems:(serverCart.length?serverCart:browserItems);
     const items=sourceItems.map(normalizeOrderItem);
+    if(!directOrder&&browserItems.length){
+      const prepared=browserItems.map(normalizeOrderItem);
+      for(let i=0;i<items.length;i++){const item=items[i];if(item?.itemType!=='custom_design')continue;const match=prepared.find((x:any)=>x?.itemType==='custom_design'&&String(x.groupKey||'')&&String(x.groupKey)===String(item.groupKey||''))||prepared.filter((x:any)=>x?.itemType==='custom_design')[i];if(match?.design)item.design=match.design;}
+    }
 
     for(const item of items){
       if(item?.itemType==='team_design')item.design=await persistTeamDesignAssets(db,s.customer_id,item.design||{});
+      else if(item?.itemType==='custom_design')item.design=await persistCustomDesignAssets(db,s.customer_id,item.design||{});
       else if(item?.design?.artworkDataUrl){const decoded=decodeDataUrl(String(item.design.artworkDataUrl));if(decoded){const path=`orders/${s.customer_id}/${crypto.randomUUID()}.${decoded.ext}`;const up=await db.storage.from('product-images').upload(path,decoded.bytes,{contentType:decoded.type,cacheControl:'31536000',upsert:false});if(up.error)throw up.error;item.design.artworkUrl=db.storage.from('product-images').getPublicUrl(path).data.publicUrl;delete item.design.artworkDataUrl;}}
     }
     const customerName=String(details.customerName||details.name||customer.name||'').trim().slice(0,120);
@@ -62,6 +91,8 @@ Deno.serve(async(req)=>{
     const verify=await db.from('order_items').select('id,item_type,design_json').eq('order_id',q.data.id);if(verify.error)throw verify.error;
     const teamItems=(verify.data||[]).filter((x:any)=>x.item_type==='team_design');
     for(const saved of teamItems){const d=saved.design_json||{},front=d?.design?.front||d?.front||{},back=d?.design?.back||d?.back||{};if(!front.compositeUrl||!back.compositeUrl||!Array.isArray(d.roster))throw new Error('Team enquiry was not fully saved. Please try again.');for(const side of [front,back])for(const layer of side.layers||[]){if(layer?.type==='image'&&(!layer.imageUrl||!layer.originalImageUrl))throw new Error('One of the uploaded logo files was not fully saved. Please try again.');}}
+    const customItems=(verify.data||[]).filter((x:any)=>x.item_type==='custom_design');
+    for(const saved of customItems){const d=saved.design_json||{};if(!d.frontCompositeUrl||!d.backCompositeUrl)throw new Error('The final front/back design images were not fully saved. Please try again.');for(const surface of Object.values(d.surfaceDesigns||{}))for(const layer of ((surface as any)?.layers||[])){if(layer?.type==='image'&&!layer.originalImageUrl)throw new Error('One of the customer artwork files was not fully saved. Please try again.');}}
     await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'order_placed',payload:{order:q.data,directOrder}});
     for(const item of items.filter((x:any)=>x.itemType==='team_design')){const a=await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'team_design_enquiry',payload:{...item.design,orderId:q.data.id,orderCode:q.data.orderCode}});if(a.error)console.error('Team enquiry activity log failed:',a.error.message);}
     return json({ok:true,order:q.data,verified:true});

@@ -5285,3 +5285,5 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 @keyframes oneLineOrderSpin{to{transform:rotate(360deg)}}
 @keyframes oneLineOrderDot{0%,70%,100%{transform:translateY(0);opacity:.35}35%{transform:translateY(-5px);opacity:1}}
 @media(max-width:620px){.order-submit-loader{border-radius:18px;padding:26px 18px 23px}.order-submit-loader strong{font-size:18px}.order-submit-spinner{width:38px;height:38px}}
+.design-surface-gallery figure>img{display:block;width:100%;height:73px;object-fit:contain;border-radius:6px;background:#f5f1f6}
+@media(max-width:760px){.design-surface-gallery figure>img{height:52px}}
