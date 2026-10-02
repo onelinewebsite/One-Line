@@ -1,4 +1,4 @@
-const CACHE='one-line-v72-custom-catalog-editor-fix-20261001';
+const CACHE='one-line-v73-team-image-crop-20261002';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./receiver.html','./b2b.html',
   './css/site.css','./css/admin.css',

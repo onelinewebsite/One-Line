@@ -6,7 +6,7 @@
     screen:'home',products:S.getProducts(),categories:S.getCategories(),customCatalogCategories:S.getCustomCatalogCategories?.()||[],customCatalogItems:S.getCustomCatalogItems?.()||[],customCatalogFabrics:S.getCustomCatalogFabrics?.()||[],customSportswearFabrics:S.getCustomSportswearFabrics?.()||[],customSportswearTypes:S.getCustomSportswearTypes?.()||[],customCategoryId:'',customItemId:'',customFabricId:'',customQuality:'',customSportswearTypeId:'',enquiryBusyId:'',enquirySuccessId:'',cart:[],orders:[],enquiries:[],settings:S.getSettings(),
     filterCategories:[],filterSubs:[],filterOptions:[],filterOpen:false,filterDraft:null,selected:null,previewImage:'',color:'',size:'',subItem:false,subColor:'',subSize:'',menu:false,
     bulkQty:{},subBulkQty:{},selectedSubitems:{},
-    teamStep:1,teamUnlockedStep:1,teamFront:{background:'',fileName:'',layers:[]},teamBack:{background:'',fileName:'',layers:[{id:'team-name',type:'fixedText',text:'NAME',x:50,y:24,sizePct:7},{id:'team-number',type:'fixedText',text:'99',x:50,y:55,sizePct:22}]},teamRows:[{name:'',number:'',size:'M'}],teamActiveLayer:'',teamEnquiryBusy:false,teamEnquirySuccess:false,pendingCustomItem:null,
+    teamStep:1,teamUnlockedStep:1,teamFront:{background:'',fileName:'',layers:[]},teamBack:{background:'',fileName:'',layers:[{id:'team-name',type:'fixedText',text:'NAME',x:50,y:24,sizePct:7},{id:'team-number',type:'fixedText',text:'99',x:50,y:55,sizePct:22}]},teamRows:[{name:'',number:'',size:'M'}],teamActiveLayer:'',teamCrop:null,teamEnquiryBusy:false,teamEnquirySuccess:false,pendingCustomItem:null,
     authModal:false,authStep:'phone',authPhone:'',authOtp:'',authName:'',authBusy:false,authError:'',pendingAction:'',customer:B?.customerSession?.()||null,
     backendReady:false,backendError:'',catalogQuery:'',profileEditing:false,accountLoaded:false,accountSyncing:false,cartVersion:0,cartUpdatedAt:'',ordersStamp:'',enquiriesStamp:'',profileUpdatedAt:'',
     toast:'',legal:'',checkoutStep:1,details:{name:'',phone:'',address:'',business:''},delivery:'Courier',payment:'Cash on delivery',paymentDemo:false,
@@ -449,7 +449,7 @@
   const teamSide=side=>side==='back'?state.teamBack:state.teamFront;
   const teamUid=prefix=>prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
   function resetTeamBuilder(){
-    state.teamStep=1;state.teamUnlockedStep=1;state.teamFront={background:'',fileName:'',layers:[]};state.teamBack={background:'',fileName:'',layers:[{id:'team-name',type:'fixedText',text:'NAME',x:50,y:24,sizePct:7},{id:'team-number',type:'fixedText',text:'99',x:50,y:55,sizePct:22}]};state.teamRows=[{name:'',number:'',size:'M'}];state.teamActiveLayer='';state.teamEnquiryBusy=false;state.teamEnquirySuccess=false;
+    state.teamStep=1;state.teamUnlockedStep=1;state.teamFront={background:'',fileName:'',layers:[]};state.teamBack={background:'',fileName:'',layers:[{id:'team-name',type:'fixedText',text:'NAME',x:50,y:24,sizePct:7},{id:'team-number',type:'fixedText',text:'99',x:50,y:55,sizePct:22}]};state.teamRows=[{name:'',number:'',size:'M'}];state.teamActiveLayer='';state.teamCrop=null;state.teamEnquiryBusy=false;state.teamEnquirySuccess=false;
   }
   function teamStepBar(){
     const steps=[['Upload','Front + back'],['Front','Place logos'],['Back','NAME / 99 + logos'],['Team','Player rows']];
@@ -458,6 +458,51 @@
   function teamUploadCard(side,label){
     const data=teamSide(side),has=!!data.background;
     return '<label class="team-side-upload '+(has?'has-image':'')+'"><input type="file" accept="image/png,image/jpeg,image/webp" data-team-side-upload="'+side+'"><div class="team-side-upload-head"><span>'+label+'</span><small>'+(has?'Tap to replace':'PNG, JPG or WebP')+'</small></div><div class="team-side-upload-preview">'+(has?'<img src="'+S.esc(data.background)+'" alt="'+label+' uploaded design">':I('image')+'<b>Upload '+label.toLowerCase()+'</b><small>Choose the clean design image for this side.</small>')+'</div>'+(data.fileName?'<em>'+S.esc(data.fileName)+'</em>':'')+'</label>';
+  }
+
+  function teamCropRatio(crop=state.teamCrop){
+    if(!crop)return 3/4;
+    if(crop.aspect==='square')return 1;
+    if(crop.aspect==='original')return Math.max(.05,Number(crop.imageWidth||1)/Math.max(1,Number(crop.imageHeight||1)));
+    return 3/4;
+  }
+  function teamCropRect(crop=state.teamCrop){
+    if(!crop)return null;
+    const iw=Math.max(1,Number(crop.imageWidth||crop.image?.naturalWidth||1)),ih=Math.max(1,Number(crop.imageHeight||crop.image?.naturalHeight||1)),ratio=teamCropRatio(crop),zoom=teamClamp(crop.zoom||1,1,4);
+    let baseW,baseH;
+    if(iw/ih>ratio){baseH=ih;baseW=ih*ratio;}else{baseW=iw;baseH=iw/ratio;}
+    const sw=Math.max(1,baseW/zoom),sh=Math.max(1,baseH/zoom),halfW=sw/2,halfH=sh/2,cx=teamClamp(Number(crop.cx||.5)*iw,halfW,Math.max(halfW,iw-halfW)),cy=teamClamp(Number(crop.cy||.5)*ih,halfH,Math.max(halfH,ih-halfH));
+    crop.cx=cx/iw;crop.cy=cy/ih;
+    return {sx:cx-halfW,sy:cy-halfH,sw,sh,cx,cy,iw,ih};
+  }
+  function teamCropCanvasSize(crop=state.teamCrop){
+    const ratio=teamCropRatio(crop),long=900;
+    if(ratio>=1)return {width:long,height:Math.max(1,Math.round(long/ratio))};
+    return {width:Math.max(1,Math.round(long*ratio)),height:long};
+  }
+  function drawTeamCrop(){
+    const crop=state.teamCrop,canvas=root.querySelector('[data-team-crop-canvas]');
+    if(!crop||!canvas||!crop.image)return;
+    const size=teamCropCanvasSize(crop);if(canvas.width!==size.width)canvas.width=size.width;if(canvas.height!==size.height)canvas.height=size.height;
+    const r=teamCropRect(crop),ctx=canvas.getContext('2d',{alpha:false});if(!r||!ctx)return;
+    ctx.fillStyle='#eee9ef';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(crop.image,r.sx,r.sy,r.sw,r.sh,0,0,canvas.width,canvas.height);
+    ctx.save();ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=Math.max(1,canvas.width/700);ctx.setLineDash([6,7]);for(const n of [1,2]){ctx.beginPath();ctx.moveTo(canvas.width*n/3,0);ctx.lineTo(canvas.width*n/3,canvas.height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,canvas.height*n/3);ctx.lineTo(canvas.width,canvas.height*n/3);ctx.stroke();}ctx.restore();
+  }
+  async function startTeamCrop(file,side){
+    if(!file?.type?.startsWith('image/'))throw new Error('Choose an image file.');
+    const src=await teamFileDataUrl(file),image=await teamLoadImage(src);
+    state.teamCrop={side:side==='back'?'back':'front',fileName:file.name||((side==='back'?'back':'front')+'-design'),src,image,imageWidth:image.naturalWidth||image.width,imageHeight:image.naturalHeight||image.height,aspect:'portrait',zoom:1,cx:.5,cy:.5};
+    render();
+  }
+  function teamCropModal(){
+    const crop=state.teamCrop;if(!crop)return'';const size=teamCropCanvasSize(crop),label=crop.side==='back'?'Back':'Front';
+    const aspect=(key,title)=>'<button type="button" class="'+(crop.aspect===key?'active':'')+'" data-team-crop-aspect="'+key+'">'+title+'</button>';
+    return '<div class="team-crop-overlay" data-team-crop-overlay><section class="team-crop-modal" role="dialog" aria-modal="true" aria-label="Crop '+label.toLowerCase()+' image"><header><div><span class="eyebrow">'+label.toUpperCase()+' DESIGN</span><h2>Crop image</h2><p>Drag the image to position it, then zoom if needed.</p></div><button type="button" class="team-crop-close" data-action="team-crop-cancel" aria-label="Cancel crop">×</button></header><div class="team-crop-aspects">'+aspect('portrait','3:4')+aspect('square','1:1')+aspect('original','Original')+'</div><div class="team-crop-stage"><canvas class="team-crop-canvas" data-team-crop-canvas width="'+size.width+'" height="'+size.height+'"></canvas><span>Drag to reposition</span></div><div class="team-crop-controls"><label><span>Zoom</span><input type="range" min="1" max="4" step="0.01" value="'+Number(crop.zoom||1)+'" data-team-crop-zoom></label><button type="button" data-action="team-crop-reset">Reset</button></div><footer><button type="button" class="secondary" data-action="team-crop-cancel">Cancel</button><button type="button" class="primary" data-action="team-crop-apply">Use cropped image '+I('check')+'</button></footer></section></div>';
+  }
+  function applyTeamCrop(){
+    const crop=state.teamCrop,r=teamCropRect(crop);if(!crop||!r||!crop.image)return;
+    const scale=Math.min(1,1000/Math.max(r.sw,r.sh)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(r.sw*scale));c.height=Math.max(1,Math.round(r.sh*scale));const ctx=c.getContext('2d',{alpha:true});ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(crop.image,r.sx,r.sy,r.sw,r.sh,0,0,c.width,c.height);
+    const data=teamSide(crop.side);data.background=c.toDataURL('image/webp',.82);data.fileName=crop.fileName;state.teamCrop=null;state.teamActiveLayer='';render();showToast((crop.side==='back'?'Back':'Front')+' image cropped');
   }
   function teamLayerHtml(layer){
     const active=state.teamActiveLayer===layer.id,pos='left:'+teamClamp(layer.x,0,100)+'%;top:'+teamClamp(layer.y,0,100)+'%;',handle='<i class="team-resize-handle" data-team-resize-layer="'+S.esc(layer.id)+'" aria-hidden="true"></i>';
@@ -479,7 +524,7 @@
     else if(state.teamStep===2)body=teamEditor('front');
     else if(state.teamStep===3)body=teamEditor('back');
     else body=teamRoster();
-    return '<main class="team-upload-page section-wrap screen screen-enter">'+body+teamStepBar()+teamSubmitOverlay()+'</main>';
+    return '<main class="team-upload-page section-wrap screen screen-enter">'+body+teamStepBar()+teamSubmitOverlay()+teamCropModal()+'</main>';
   }
   async function teamFileDataUrl(file){return new Promise((resolve,reject)=>{if(!file?.type?.startsWith('image/')){reject(new Error('Choose an image file.'));return;}const reader=new FileReader();reader.onerror=()=>reject(new Error('Could not read that image.'));reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(file);});}
   async function compressTeamArtwork(file,max=1000,quality=.7){return new Promise((resolve,reject)=>{if(!file?.type?.startsWith('image/')){reject(new Error('Choose an image file.'));return;}const reader=new FileReader();reader.onerror=reject;reader.onload=()=>{const im=new Image();im.onerror=reject;im.onload=()=>{const scale=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*scale));c.height=Math.max(1,Math.round(im.height*scale));const ctx=c.getContext('2d',{alpha:true});ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(im,0,0,c.width,c.height);resolve(c.toDataURL('image/webp',quality));};im.src=String(reader.result);};reader.readAsDataURL(file);});}
@@ -649,7 +694,12 @@
     root.querySelectorAll('select[data-team-row]').forEach(x=>x.addEventListener('change',()=>{const i=Number(x.dataset.teamRow);if(state.teamRows[i])state.teamRows[i][x.dataset.teamField]=x.value;}));
     root.querySelectorAll('[data-team-remove]').forEach(x=>x.addEventListener('click',()=>{if(state.teamRows.length===1)state.teamRows=[{name:'',number:'',size:'M'}];else state.teamRows.splice(Number(x.dataset.teamRemove),1);render();}));
     root.querySelectorAll('[data-team-jump]').forEach(x=>x.addEventListener('click',()=>{const target=Number(x.dataset.teamJump||0);if(target>=1&&target<=state.teamUnlockedStep&&target!==state.teamStep){state.teamActiveLayer='';state.teamStep=target;window.scrollTo({top:0,behavior:'smooth'});render();}}));
-    root.querySelectorAll('[data-team-side-upload]').forEach(input=>input.addEventListener('change',async()=>{const file=input.files?.[0],side=input.dataset.teamSideUpload;if(!file)return;try{const data=teamSide(side);data.background=await compressTeamArtwork(file,1000,.7);data.fileName=file.name;state.teamActiveLayer='';render();}catch(err){showToast(err.message||'Could not read that image');}}));
+    root.querySelectorAll('[data-team-side-upload]').forEach(input=>input.addEventListener('change',async()=>{const file=input.files?.[0],side=input.dataset.teamSideUpload;if(!file)return;try{await startTeamCrop(file,side);}catch(err){showToast(err.message||'Could not read that image');}}));
+    root.querySelectorAll('[data-team-crop-aspect]').forEach(btn=>btn.addEventListener('click',()=>{if(!state.teamCrop)return;state.teamCrop.aspect=btn.dataset.teamCropAspect||'portrait';state.teamCrop.zoom=1;state.teamCrop.cx=.5;state.teamCrop.cy=.5;render();}));
+    const teamCropZoom=root.querySelector('[data-team-crop-zoom]');if(teamCropZoom)teamCropZoom.addEventListener('input',()=>{if(!state.teamCrop)return;state.teamCrop.zoom=Number(teamCropZoom.value||1);drawTeamCrop();});
+    const teamCropCanvas=root.querySelector('[data-team-crop-canvas]');if(teamCropCanvas&&state.teamCrop){drawTeamCrop();let drag=null;teamCropCanvas.addEventListener('pointerdown',e=>{if(!state.teamCrop)return;e.preventDefault();const r=teamCropRect(state.teamCrop),box=teamCropCanvas.getBoundingClientRect();drag={id:e.pointerId,startX:e.clientX,startY:e.clientY,startCx:r.cx,startCy:r.cy,sourceW:r.sw,sourceH:r.sh,box};try{teamCropCanvas.setPointerCapture(e.pointerId);}catch(_){}});teamCropCanvas.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId||!state.teamCrop)return;e.preventDefault();const c=state.teamCrop,iw=Math.max(1,Number(c.imageWidth||1)),ih=Math.max(1,Number(c.imageHeight||1)),halfW=drag.sourceW/2,halfH=drag.sourceH/2,dx=(e.clientX-drag.startX)/Math.max(1,drag.box.width)*drag.sourceW,dy=(e.clientY-drag.startY)/Math.max(1,drag.box.height)*drag.sourceH,cx=teamClamp(drag.startCx-dx,halfW,Math.max(halfW,iw-halfW)),cy=teamClamp(drag.startCy-dy,halfH,Math.max(halfH,ih-halfH));c.cx=cx/iw;c.cy=cy/ih;drawTeamCrop();});const end=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;};teamCropCanvas.addEventListener('pointerup',end);teamCropCanvas.addEventListener('pointercancel',end);}
+    const teamCropOverlay=root.querySelector('[data-team-crop-overlay]');if(teamCropOverlay)teamCropOverlay.addEventListener('click',e=>{if(e.target===teamCropOverlay){state.teamCrop=null;render();}});
+
     root.querySelectorAll('[data-team-logo-upload]').forEach(input=>input.addEventListener('change',async()=>{const side=input.dataset.teamLogoUpload,files=[...(input.files||[])].filter(f=>f.type.startsWith('image/'));if(!files.length)return;try{const data=teamSide(side);for(const file of files){const [src,originalDataUrl]=await Promise.all([compressTeamArtwork(file,600,.7),teamFileDataUrl(file)]);data.layers.push({id:teamUid('logo'),type:'image',src,assetName:file.name,originalName:file.name,originalType:file.type||'',originalSize:Number(file.size||0),originalDataUrl,x:50,y:50,widthPct:24});}state.teamActiveLayer=data.layers[data.layers.length-1]?.id||'';render();}catch(err){showToast(err.message||'Could not add logo');}}));
     root.querySelectorAll('[data-team-remove-layer]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();for(const side of ['front','back']){const data=teamSide(side),i=data.layers.findIndex(l=>l.id===btn.dataset.teamRemoveLayer);if(i>=0){data.layers.splice(i,1);break;}}if(state.teamActiveLayer===btn.dataset.teamRemoveLayer)state.teamActiveLayer='';render();}));
     root.querySelectorAll('[data-team-resize-layer]').forEach(handle=>{let resize=null;handle.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const id=handle.dataset.teamResizeLayer,el=handle.closest('[data-team-layer-id]'),stage=el?.closest('[data-team-edit-stage]'),side=stage?.dataset.teamEditStage,layer=teamSide(side).layers.find(l=>l.id===id),rect=stage?.getBoundingClientRect();if(!layer||!rect)return;state.teamActiveLayer=id;resize={id:e.pointerId,layer,rect,startX:e.clientX,startY:e.clientY,startSize:layer.type==='image'?teamClamp(layer.widthPct,5,100):teamClamp(layer.sizePct,3,30)};try{handle.setPointerCapture(e.pointerId);}catch(_){}});handle.addEventListener('pointermove',e=>{if(!resize||resize.id!==e.pointerId)return;e.preventDefault();e.stopPropagation();const dx=e.clientX-resize.startX,dy=e.clientY-resize.startY,delta=((dx/Math.max(1,resize.rect.width))+(dy/Math.max(1,resize.rect.height)))*50,newSize=resize.startSize+delta;if(resize.layer.type==='image'){resize.layer.widthPct=teamClamp(newSize,5,100);const el=root.querySelector('[data-team-layer-id="'+CSS.escape(resize.layer.id)+'"]');if(el)el.style.width=resize.layer.widthPct+'%';}else{resize.layer.sizePct=teamClamp(newSize,3,30);const el=root.querySelector('[data-team-layer-id="'+CSS.escape(resize.layer.id)+'"]');if(el)el.style.fontSize=resize.layer.sizePct+'cqw';}});const end=e=>{if(!resize||resize.id!==e.pointerId)return;resize=null;render();};handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',end);});
@@ -679,6 +729,9 @@
       else if(a==='clear-filters'){resetFilters();render();}
       else if(a==='add-product'){if(requireCustomer('add-product'))addSelectedProductToCart();}
       else if(a==='team-add-row'){state.teamRows.push({name:'',number:'',size:'M'});render();}
+      else if(a==='team-crop-cancel'){state.teamCrop=null;render();}
+      else if(a==='team-crop-reset'){if(state.teamCrop){state.teamCrop.zoom=1;state.teamCrop.cx=.5;state.teamCrop.cy=.5;render();}}
+      else if(a==='team-crop-apply'){applyTeamCrop();}
       else if(a==='team-next-step'){if(state.teamStep===1&&(!state.teamFront.background||!state.teamBack.background)){showToast('Upload both front and back designs first');return;}state.teamActiveLayer='';const next=Math.min(4,state.teamStep+1);state.teamUnlockedStep=Math.max(state.teamUnlockedStep,next);state.teamStep=next;render();}
       else if(a==='team-prev-step'){state.teamActiveLayer='';if(state.teamStep>1){state.teamStep-=1;render();}else navigateBack('home');}
       else if(a==='team-enquire'){if(requireCustomer('team-enquiry'))await submitTeamEnquiry();}
@@ -712,7 +765,7 @@
     bindWhatsappDrag();bindProductSliders();bindDetailSliders();bindFastUniformCustomizer();
   }
   function syncModalScrollLock(){
-    const locked=!!(state.menu||state.filterOpen||state.zoomImage||state.authModal);
+    const locked=!!(state.menu||state.filterOpen||state.zoomImage||state.authModal||state.teamCrop);
     document.documentElement.classList.toggle('modal-scroll-lock',locked);
     document.body.classList.toggle('modal-scroll-lock',locked);
   }
