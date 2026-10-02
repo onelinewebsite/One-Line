@@ -139,18 +139,12 @@
   async function customerEnquiry(payload){
     const s=session();
     if(!s?.token)throw new Error('Please verify your phone number first.');
-    try{
-      // Custom Catalogue enquiries use the same verified customer-account
-      // function as the working cart/profile flow. This avoids depending on
-      // customer-event for this one customer-facing action.
-      return await invoke('customer-account',{token:s.token,action:'custom_catalog_enquiry',payload:payload||{}},false);
-    }catch(err){
-      const message=String(err?.message||'').trim();
-      if(/Could not connect to the One-Line verification server/i.test(message)){
-        throw new Error('Could not send the Custom Catalogue enquiry. Deploy the latest customer-account function and try again.');
-      }
-      throw err;
-    }
+    // Save Custom Catalogue enquiries through customer-event, the same verified
+    // activity endpoint used by the working enquiry flow. Do not swallow errors:
+    // the customer only sees success after Supabase confirms the insert.
+    const data=await invoke('customer-event',{token:s.token,event_type:'custom_catalog_enquiry',payload:payload||{}},false);
+    if(!data?.ok)throw new Error('Could not save the Custom Catalogue enquiry.');
+    return data;
   }
   async function customerTeamEnquiry(payload){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');return invoke('customer-event',{token:s.token,event_type:'team_design_enquiry',payload:payload||{}},false);}
   async function customerAccount(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'get'},false);}

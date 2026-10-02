@@ -57,6 +57,32 @@
   const sb=()=>B?.supa?.();
   const img=(src,alt='')=>'<img src="'+esc(src||'assets/product-placeholder.svg')+'" alt="'+esc(alt)+'" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src=\'assets/product-placeholder.svg\'">';
   const adminLoader=(label='Loading')=>'<div class="admin-loading"><div class="portal-inline-dots" role="status" aria-label="'+esc(label)+'"><span></span><span></span><span></span></div></div>';
+  function canonicalEnquiry(row){
+    if(!row||typeof row!=='object')return null;
+    const p=row.payload&&typeof row.payload==='object'?row.payload:{};
+    const type=String(row.event_type||'').trim().toLowerCase();
+    const team=type==='team_design_enquiry'||type==='team_enquiry'||(Array.isArray(p.roster)&&p.design);
+    const catalogue=type==='custom_catalog_enquiry'||type==='custom_catalogue_enquiry'||type==='catalog_enquiry'||type==='catalogue_enquiry'||String(p.source||'').toLowerCase()==='customization_catalogue'||(!!p.itemId&&!!(p.itemTitle||p.categoryName));
+    if(!team&&!catalogue)return null;
+    return {...row,event_type:team?'team_design_enquiry':'custom_catalog_enquiry'};
+  }
+  function mergeEnquiries(...sets){
+    const rows=new Map();
+    for(const set of sets)for(const raw of (Array.isArray(set)?set:[])){const row=canonicalEnquiry(raw);if(!row)continue;const key=String(row.id||[row.event_type,row.created_at,JSON.stringify(row.payload||{})].join(':'));if(!rows.has(key))rows.set(key,row);}
+    return [...rows.values()].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
+  }
+  async function directAdminEnquiries(client){
+    try{
+      const [activityQ,customersQ]=await Promise.all([
+        client.from('customer_activity').select('*').order('created_at',{ascending:false}).limit(1000),
+        client.from('customers').select('id,name,phone,business_name,job_title,created_at,last_seen_at').limit(2000)
+      ]);
+      if(activityQ.error)throw activityQ.error;
+      if(customersQ.error)throw customersQ.error;
+      const customerMap=new Map((customersQ.data||[]).map(c=>[String(c.id),c]));
+      return (activityQ.data||[]).map(row=>({...row,customers:customerMap.get(String(row.customer_id||''))||null}));
+    }catch(_){return[];}
+  }
   const roles=['admin','management','staff'];
   const labels={admin:'Admin',management:'Management',staff:'Staff'};
   function notify(msg){state.toast=msg;renderToast();clearTimeout(notify.t);notify.t=setTimeout(()=>{state.toast='';renderToast();},2400);}
@@ -475,13 +501,15 @@
           try{state.profiles=await B.listProfiles();}catch(_){state.profiles=[];}
           let feed=null;
           try{feed=await B.adminFeed?.();}catch(_){feed=null;}
+          // Read enquiry activity from both paths and merge it. This keeps the
+          // Enquiry menu working even when the deployed admin-user function is
+          // older or a historic Custom Catalogue event used a different name.
+          const directEnquiries=await directAdminEnquiries(client);
+          state.enquiries=mergeEnquiries(feed?.enquiries||[],directEnquiries);
           if(feed?.orders&&feed?.orderItems){
-            // admin-user uses the service role and is the authoritative admin feed.
-            // Do not overwrite it with a direct RLS query that can legitimately return [] without an error.
-            state.enquiries=Array.isArray(feed.enquiries)?feed.enquiries:[];state.orders=feed.orders||[];state.orderItems=feed.orderItems||[];
+            state.orders=feed.orders||[];state.orderItems=feed.orderItems||[];
           }else{
-            const directEnquiries=await client.from('customer_activity').select('*,customers(id,name,phone,business_name,job_title,created_at,last_seen_at)').in('event_type',['custom_catalog_enquiry','team_design_enquiry']).order('created_at',{ascending:false}).limit(1000);
-            const orderData=await loadOrders(client),{orders,items}=orderData;if(directEnquiries.error)throw directEnquiries.error;state.enquiries=directEnquiries.data||[];if(orders.error)throw orders.error;if(items.error)throw items.error;state.orders=orders.data||[];state.orderItems=items.data||[];
+            const orderData=await loadOrders(client),{orders,items}=orderData;if(orders.error)throw orders.error;if(items.error)throw items.error;state.orders=orders.data||[];state.orderItems=items.data||[];
           }
         }
       }
