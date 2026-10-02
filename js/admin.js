@@ -68,8 +68,28 @@
   }
   function mergeEnquiries(...sets){
     const rows=new Map();
-    for(const set of sets)for(const raw of (Array.isArray(set)?set:[])){const row=canonicalEnquiry(raw);if(!row)continue;const key=String(row.id||[row.event_type,row.created_at,JSON.stringify(row.payload||{})].join(':'));if(!rows.has(key))rows.set(key,row);}
+    for(const set of sets)for(const raw of (Array.isArray(set)?set:[])){
+      const row=canonicalEnquiry(raw);if(!row)continue;
+      const orderRef=String(row.payload?.orderId||row.payload?.order_id||row.order_id||'').trim();
+      const key=orderRef?'order:'+orderRef:String(row.id||[row.event_type,row.created_at,JSON.stringify(row.payload||{})].join(':'));
+      if(!rows.has(key))rows.set(key,row);
+    }
     return [...rows.values()].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
+  }
+  function isCatalogEnquiryOrder(order){
+    if(!order)return false;
+    if(order.metadata?.custom_catalog_enquiry===true||String(order.status||'').toLowerCase()==='enquiry')return true;
+    return state.orderItems.some(line=>String(line.order_id)===String(order.id)&&String(line.item_type)==='custom_catalog_enquiry');
+  }
+  function orderBackedCatalogEnquiries(orders,items){
+    const linesByOrder=new Map();
+    for(const line of (items||[])){const key=String(line.order_id||'');if(!linesByOrder.has(key))linesByOrder.set(key,[]);linesByOrder.get(key).push(line);}
+    return (orders||[]).filter(o=>o?.metadata?.custom_catalog_enquiry===true||(linesByOrder.get(String(o.id))||[]).some(l=>String(l.item_type)==='custom_catalog_enquiry')).map(o=>{
+      const line=(linesByOrder.get(String(o.id))||[]).find(l=>String(l.item_type)==='custom_catalog_enquiry')||(linesByOrder.get(String(o.id))||[])[0]||{};
+      const saved=(o.metadata?.enquiry_payload&&typeof o.metadata.enquiry_payload==='object')?o.metadata.enquiry_payload:((line.design_json&&typeof line.design_json==='object')?line.design_json:{});
+      const payload={...saved,orderId:o.id,orderCode:o.order_code};
+      return {id:'order-'+o.id,event_type:'custom_catalog_enquiry',customer_id:o.customer_id,payload,created_at:o.created_at,customers:{id:o.customer_id||'',name:o.customer_name||'',phone:o.phone||'',business_name:o.business||'',job_title:''}};
+    });
   }
   async function directAdminEnquiries(client){
     try{
@@ -128,7 +148,7 @@
   }
   function view(){return({dashboard:dashboardView,products:productsView,categories:categoriesView,customCatalog:customCatalogView,customOptions:customOptionsView,b2b:b2bView,customisable:customisableView,catalogEnquiries:catalogEnquiriesView,stock:stockView,orders:ordersView,customers:customersView,carts:cartsView,activity:activityView,accounts:accountsView,settings:settingsView})[state.view]?.()||((requested==='admin'||requested==='management')?productsView():stockView());}
   function dashboardView(){
-    const today=new Date().toDateString(),todayOrders=state.orders.filter(o=>new Date(o.created_at).toDateString()===today),low=stockRows().filter(x=>x.stock<=5),activeCarts=state.carts.filter(c=>Number(c.piece_count||0)>0),recentCustomers=state.customers.filter(c=>Date.now()-new Date(c.last_seen_at||c.created_at).getTime()<86400000).length;
+    const today=new Date().toDateString(),todayOrders=state.orders.filter(o=>!isCatalogEnquiryOrder(o)&&new Date(o.created_at).toDateString()===today),low=stockRows().filter(x=>x.stock<=5),activeCarts=state.carts.filter(c=>Number(c.piece_count||0)>0),recentCustomers=state.customers.filter(c=>Date.now()-new Date(c.last_seen_at||c.created_at).getTime()<86400000).length;
     return '<section class="portal-overview"><div class="panel-head"><div><p class="tag">LIVE OVERVIEW</p><h1>'+esc(labels[requested])+'</h1><p>Catalogue, customers, live carts, stock and orders in one place.</p></div><button class="ghost-btn" data-action="refresh-data">Refresh</button></div><div class="metric-grid admin-metric-grid"><article><span>Ready Made</span><b>'+state.products.length+'</b><small>Stock catalogue items</small></article><article><span>Orders today</span><b>'+todayOrders.length+'</b><small>'+money(todayOrders.reduce((n,o)=>n+Number(o.total||0),0))+'</small></article><article><span>Customers</span><b>'+state.customers.length+'</b><small>'+recentCustomers+' active in 24h</small></article><article><span>Live carts</span><b>'+activeCarts.length+'</b><small>'+activeCarts.reduce((n,c)=>n+Number(c.piece_count||0),0)+' pieces selected</small></article><article><span>Low stock</span><b>'+low.length+'</b><small>Options with 5 or fewer</small></article><article><span>Enquiries</span><b>'+state.enquiries.length+'</b><small>Customization catalogue requests</small></article></div><div class="admin-quick-actions">'+(canEditCatalog()?'<button data-action="new-product">+ Ready Made</button><button data-action="new-custom-item" '+(!state.customCatalogCategories.length?'disabled':'')+'>+ Customize item</button>':'')+'<button data-view="orders">Custom orders</button>'+(requested==='admin'?'<button data-view="catalogEnquiries">View enquiries</button><button data-view="customisable">Customisable</button><button data-view="customCatalog">Custom catalogue</button>':'')+''+((requested==='admin'||requested==='management')?'<button data-view="carts">View live carts</button><button data-view="customers">Customers</button>':'')+'</div>'+(low.length?'<div class="clean-card"><div class="panel-head"><div><p class="tag">ATTENTION</p><h2>Low stock</h2></div><button data-view="stock">Open stock desk</button></div><div class="compact-table">'+low.slice(0,8).map(r=>'<div><b>'+esc(r.name)+'</b><span>'+esc(r.option)+'</span><strong>'+r.stock+'</strong></div>').join('')+'</div></div>':'')+'</section>';
   }
   function productSearchList(){
@@ -443,7 +463,7 @@
     return '<div class="portal-detail-backdrop" data-close-detail><section class="portal-detail-sheet order-detail-sheet" role="dialog" aria-modal="true"><header class="portal-detail-head"><div><span>ORDER #'+esc(o.order_code)+'</span><h2>'+esc(o.customer_name||o.business||'Customer')+'</h2><small>'+esc(o.phone||'')+' · '+esc(new Date(o.created_at).toLocaleString())+'</small></div><button type="button" class="detail-close" data-close-detail>×</button></header><div class="detail-actions"><button type="button" data-order-pdf="'+esc(o.id)+'">'+I('download')+' PDF</button><button type="button" data-order-share-pdf="'+esc(o.id)+'">'+I('share')+' Share PDF</button><button type="button" data-order-json="'+esc(o.id)+'">'+I('download')+' Full details</button><button type="button" data-order-files="'+esc(o.id)+'">'+I('download')+' All files</button></div><div class="portal-detail-body"><div class="order-detail-customer"><span><b>Total</b>'+money(o.total||0)+'</span><span><b>Delivery</b>'+esc(o.delivery||'—')+'</span><span><b>Payment</b>'+esc(o.payment||'—')+'</span><span><b>Address</b>'+esc(o.address||'—')+'</span><label><b>Status</b><select data-order-status="'+esc(o.id)+'">'+statuses.map(s=>'<option '+(o.status===s?'selected':'')+'>'+s+'</option>').join('')+'</select></label></div><div class="order-detail-lines">'+lines.map(l=>'<article class="order-detail-line"><div class="order-detail-line-head"><div><b>'+esc(l.item_name)+'</b><small>'+esc([l.item_code,l.color,l.size,l.item_type].filter(Boolean).join(' · '))+'</small></div><span>× '+Number(l.qty||1)+'</span><strong>'+money(Number(l.unit_price||0)*Number(l.qty||0))+'</strong></div>'+customOrderDesignHtml(l,o)+'</article>').join('')+'</div><details class="order-design-raw"><summary>Full order data</summary><pre>'+esc(JSON.stringify(orderExportObject(o),null,2))+'</pre></details></div></section></div>';
   }
   function ordersView(){
-    const q=state.orderQuery.trim().toLowerCase(),list=state.orders.filter(o=>(state.orderFilter==='All'||o.status===state.orderFilter)&&(!q||[o.order_code,o.customer_name,o.phone,o.business].join(' ').toLowerCase().includes(q))),statuses=['Confirmed','Processing','Ready','Dispatched','Completed','Cancelled'],selected=orderById(state.detailOrderId);
+    const q=state.orderQuery.trim().toLowerCase(),list=state.orders.filter(o=>!isCatalogEnquiryOrder(o)).filter(o=>(state.orderFilter==='All'||o.status===state.orderFilter)&&(!q||[o.order_code,o.customer_name,o.phone,o.business].join(' ').toLowerCase().includes(q))),statuses=['Confirmed','Processing','Ready','Dispatched','Completed','Cancelled'],selected=orderById(state.detailOrderId);
     const cards=list.map(o=>{const lines=orderLines(o.id),pieces=lines.reduce((n,l)=>n+Number(l.qty||0),0);return '<article class="portal-summary-card" data-open-order="'+esc(o.id)+'" tabindex="0"><div class="summary-main"><span>#'+esc(o.order_code)+'</span><b>'+esc(o.customer_name||o.business||'Customer')+'</b><small>'+esc(o.phone||'')+'</small></div><div class="summary-meta"><b>'+pieces+' pcs · '+lines.length+' item'+(lines.length===1?'':'s')+'</b><small>'+esc(new Date(o.created_at).toLocaleString())+'</small></div><div class="summary-status"><b>'+money(o.total||0)+'</b><span>'+esc(o.status||'Confirmed')+'</span></div><button type="button" class="summary-open" data-open-order="'+esc(o.id)+'">View</button></article>';}).join('');
     return '<section class="clean-card compact-portal-section"><div class="panel-head"><div><p class="tag">CUSTOMER ORDERS</p><h1>Custom Order</h1><p>Compact list. Click an order for complete details and downloads.</p></div><button class="ghost-btn" data-action="refresh-data">Refresh</button></div><div class="order-toolbar"><input id="orderSearch" value="'+esc(state.orderQuery)+'" placeholder="Search order, customer or phone"><div>'+['All',...statuses].map(s=>'<button data-order-filter="'+s+'" class="'+(state.orderFilter===s?'active':'')+'">'+s+'</button>').join('')+'</div></div><div class="portal-summary-list">'+(cards||'<div class="empty-admin">No matching orders.</div>')+'</div></section>'+orderDetailModal(selected);
   }
@@ -505,12 +525,15 @@
           // Enquiry menu working even when the deployed admin-user function is
           // older or a historic Custom Catalogue event used a different name.
           const directEnquiries=await directAdminEnquiries(client);
-          state.enquiries=mergeEnquiries(feed?.enquiries||[],directEnquiries);
           if(feed?.orders&&feed?.orderItems){
             state.orders=feed.orders||[];state.orderItems=feed.orderItems||[];
           }else{
             const orderData=await loadOrders(client),{orders,items}=orderData;if(orders.error)throw orders.error;if(items.error)throw items.error;state.orders=orders.data||[];state.orderItems=items.data||[];
           }
+          // Custom Catalogue enquiries are now saved in the same orders/order_items
+          // system as customer orders. Build the Enquiry menu from those rows too,
+          // so it works even if an older admin-user feed does not return activity.
+          state.enquiries=mergeEnquiries(feed?.enquiries||[],directEnquiries,orderBackedCatalogEnquiries(state.orders,state.orderItems));
         }
       }
     }catch(e){state.error=e.message||String(e);}finally{state.loading=false;render();}

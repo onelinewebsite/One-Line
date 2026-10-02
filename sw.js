@@ -1,4 +1,4 @@
-const CACHE='one-line-catalog-defaults-20261002h';
+const CACHE='one-line-catalog-defaults-20261003a';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',
