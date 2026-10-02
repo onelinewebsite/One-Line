@@ -5201,3 +5201,25 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 .team-crop-modal>footer .secondary,.team-crop-modal>footer .primary{min-width:112px;justify-content:center;border-radius:0!important}
 @media(max-width:620px){.team-crop-modal>header{height:52px;min-height:52px;padding-left:12px;padding-right:8px}.team-crop-modal>header h2{font-size:20px}.team-crop-modal>footer{display:grid;grid-template-columns:1fr 1fr;padding-left:10px;padding-right:10px}.team-crop-modal>footer .secondary,.team-crop-modal>footer .primary{width:100%;min-width:0}}
 
+
+/* ===== v76 crop side gap + visible cancel ===== */
+.team-crop-stage{
+  width:calc(100% - 24px);
+  margin-left:12px;
+  margin-right:12px;
+  box-sizing:border-box;
+}
+.team-crop-modal>footer .secondary{
+  color:#64116f!important;
+  background:#fff!important;
+  border-color:#64116f!important;
+  opacity:1!important;
+  -webkit-text-fill-color:#64116f;
+}
+@media(max-width:620px){
+  .team-crop-stage{
+    width:calc(100% - 20px);
+    margin-left:10px;
+    margin-right:10px;
+  }
+}
