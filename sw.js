@@ -1,4 +1,4 @@
-const CACHE='one-line-v73-team-image-crop-20261002';
+const CACHE='one-line-v74-simple-free-crop-20261002';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./receiver.html','./b2b.html',
   './css/site.css','./css/admin.css',

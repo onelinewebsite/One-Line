@@ -460,49 +460,43 @@
     return '<label class="team-side-upload '+(has?'has-image':'')+'"><input type="file" accept="image/png,image/jpeg,image/webp" data-team-side-upload="'+side+'"><div class="team-side-upload-head"><span>'+label+'</span><small>'+(has?'Tap to replace':'PNG, JPG or WebP')+'</small></div><div class="team-side-upload-preview">'+(has?'<img src="'+S.esc(data.background)+'" alt="'+label+' uploaded design">':I('image')+'<b>Upload '+label.toLowerCase()+'</b><small>Choose the clean design image for this side.</small>')+'</div>'+(data.fileName?'<em>'+S.esc(data.fileName)+'</em>':'')+'</label>';
   }
 
-  function teamCropRatio(crop=state.teamCrop){
-    if(!crop)return 3/4;
-    if(crop.aspect==='square')return 1;
-    if(crop.aspect==='original')return Math.max(.05,Number(crop.imageWidth||1)/Math.max(1,Number(crop.imageHeight||1)));
-    return 3/4;
-  }
-  function teamCropRect(crop=state.teamCrop){
-    if(!crop)return null;
-    const iw=Math.max(1,Number(crop.imageWidth||crop.image?.naturalWidth||1)),ih=Math.max(1,Number(crop.imageHeight||crop.image?.naturalHeight||1)),ratio=teamCropRatio(crop),zoom=teamClamp(crop.zoom||1,1,4);
-    let baseW,baseH;
-    if(iw/ih>ratio){baseH=ih;baseW=ih*ratio;}else{baseW=iw;baseH=iw/ratio;}
-    const sw=Math.max(1,baseW/zoom),sh=Math.max(1,baseH/zoom),halfW=sw/2,halfH=sh/2,cx=teamClamp(Number(crop.cx||.5)*iw,halfW,Math.max(halfW,iw-halfW)),cy=teamClamp(Number(crop.cy||.5)*ih,halfH,Math.max(halfH,ih-halfH));
-    crop.cx=cx/iw;crop.cy=cy/ih;
-    return {sx:cx-halfW,sy:cy-halfH,sw,sh,cx,cy,iw,ih};
-  }
-  function teamCropCanvasSize(crop=state.teamCrop){
-    const ratio=teamCropRatio(crop),long=900;
-    if(ratio>=1)return {width:long,height:Math.max(1,Math.round(long/ratio))};
-    return {width:Math.max(1,Math.round(long*ratio)),height:long};
-  }
-  function drawTeamCrop(){
-    const crop=state.teamCrop,canvas=root.querySelector('[data-team-crop-canvas]');
-    if(!crop||!canvas||!crop.image)return;
-    const size=teamCropCanvasSize(crop);if(canvas.width!==size.width)canvas.width=size.width;if(canvas.height!==size.height)canvas.height=size.height;
-    const r=teamCropRect(crop),ctx=canvas.getContext('2d',{alpha:false});if(!r||!ctx)return;
-    ctx.fillStyle='#eee9ef';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(crop.image,r.sx,r.sy,r.sw,r.sh,0,0,canvas.width,canvas.height);
-    ctx.save();ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=Math.max(1,canvas.width/700);ctx.setLineDash([6,7]);for(const n of [1,2]){ctx.beginPath();ctx.moveTo(canvas.width*n/3,0);ctx.lineTo(canvas.width*n/3,canvas.height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,canvas.height*n/3);ctx.lineTo(canvas.width,canvas.height*n/3);ctx.stroke();}ctx.restore();
+  function teamCropFrame(crop=state.teamCrop){
+    const frame=crop?.frame;
+    if(!frame)return null;
+    const left=Number(frame.left),top=Number(frame.top),width=Number(frame.width),height=Number(frame.height);
+    if(![left,top,width,height].every(Number.isFinite)||width<=0||height<=0)return null;
+    return {left,top,width,height};
   }
   async function startTeamCrop(file,side){
     if(!file?.type?.startsWith('image/'))throw new Error('Choose an image file.');
     const src=await teamFileDataUrl(file),image=await teamLoadImage(src);
-    state.teamCrop={side:side==='back'?'back':'front',fileName:file.name||((side==='back'?'back':'front')+'-design'),src,image,imageWidth:image.naturalWidth||image.width,imageHeight:image.naturalHeight||image.height,aspect:'portrait',zoom:1,cx:.5,cy:.5};
+    state.teamCrop={side:side==='back'?'back':'front',fileName:file.name||((side==='back'?'back':'front')+'-design'),src,image,imageWidth:image.naturalWidth||image.width,imageHeight:image.naturalHeight||image.height,frame:null,imageLeft:0,imageTop:0,imageWidthPx:0,imageHeightPx:0,displayScale:1,stageWidth:0,stageHeight:0};
     render();
   }
   function teamCropModal(){
-    const crop=state.teamCrop;if(!crop)return'';const size=teamCropCanvasSize(crop),label=crop.side==='back'?'Back':'Front';
-    const aspect=(key,title)=>'<button type="button" class="'+(crop.aspect===key?'active':'')+'" data-team-crop-aspect="'+key+'">'+title+'</button>';
-    return '<div class="team-crop-overlay" data-team-crop-overlay><section class="team-crop-modal" role="dialog" aria-modal="true" aria-label="Crop '+label.toLowerCase()+' image"><header><div><span class="eyebrow">'+label.toUpperCase()+' DESIGN</span><h2>Crop image</h2><p>Drag the image to position it, then zoom if needed.</p></div><button type="button" class="team-crop-close" data-action="team-crop-cancel" aria-label="Cancel crop">×</button></header><div class="team-crop-aspects">'+aspect('portrait','3:4')+aspect('square','1:1')+aspect('original','Original')+'</div><div class="team-crop-stage"><canvas class="team-crop-canvas" data-team-crop-canvas width="'+size.width+'" height="'+size.height+'"></canvas><span>Drag to reposition</span></div><div class="team-crop-controls"><label><span>Zoom</span><input type="range" min="1" max="4" step="0.01" value="'+Number(crop.zoom||1)+'" data-team-crop-zoom></label><button type="button" data-action="team-crop-reset">Reset</button></div><footer><button type="button" class="secondary" data-action="team-crop-cancel">Cancel</button><button type="button" class="primary" data-action="team-crop-apply">Use cropped image '+I('check')+'</button></footer></section></div>';
+    const crop=state.teamCrop;if(!crop)return'';
+    return '<div class="team-crop-overlay" data-team-crop-overlay><section class="team-crop-modal" role="dialog" aria-modal="true" aria-label="Crop image"><header><h2>Crop</h2><button type="button" class="team-crop-close" data-action="team-crop-cancel" aria-label="Cancel crop">×</button></header><div class="team-crop-stage" data-team-crop-stage><img class="team-crop-image" data-team-crop-image src="'+S.esc(crop.src)+'" alt="" draggable="false"><div class="team-crop-box" data-team-crop-box><i class="team-crop-handle nw" data-team-crop-handle="nw"></i><i class="team-crop-handle ne" data-team-crop-handle="ne"></i><i class="team-crop-handle sw" data-team-crop-handle="sw"></i><i class="team-crop-handle se" data-team-crop-handle="se"></i></div></div><footer><button type="button" class="secondary" data-action="team-crop-cancel">Cancel</button><button type="button" class="primary" data-action="team-crop-apply">Done</button></footer></section></div>';
+  }
+  function bindTeamCrop(){
+    const crop=state.teamCrop,stage=root.querySelector('[data-team-crop-stage]'),imageEl=root.querySelector('[data-team-crop-image]'),box=root.querySelector('[data-team-crop-box]');
+    if(!crop||!stage||!imageEl||!box)return;
+    const stageRect=stage.getBoundingClientRect(),sw=Math.max(1,stageRect.width),sh=Math.max(1,stageRect.height),iw=Math.max(1,Number(crop.imageWidth||crop.image?.naturalWidth||1)),ih=Math.max(1,Number(crop.imageHeight||crop.image?.naturalHeight||1));
+    const scale=Math.min(sw/iw,sh/ih),dw=Math.max(1,iw*scale),dh=Math.max(1,ih*scale);
+    crop.stageWidth=sw;crop.stageHeight=sh;crop.displayScale=scale;crop.imageWidthPx=dw;crop.imageHeightPx=dh;crop.imageLeft=(sw-dw)/2;crop.imageTop=(sh-dh)/2;crop.frame={left:crop.imageLeft,top:crop.imageTop,width:dw,height:dh};
+    const paint=()=>{const f=teamCropFrame(crop);if(!f)return;imageEl.style.left=crop.imageLeft+'px';imageEl.style.top=crop.imageTop+'px';imageEl.style.width=crop.imageWidthPx+'px';imageEl.style.height=crop.imageHeightPx+'px';box.style.left=f.left+'px';box.style.top=f.top+'px';box.style.width=f.width+'px';box.style.height=f.height+'px';box.style.opacity='1';};
+    paint();
+    let pan=null;
+    stage.addEventListener('pointerdown',e=>{if(e.target.closest('[data-team-crop-handle]'))return;const x=e.clientX-stage.getBoundingClientRect().left,y=e.clientY-stage.getBoundingClientRect().top;if(x<crop.imageLeft||x>crop.imageLeft+crop.imageWidthPx||y<crop.imageTop||y>crop.imageTop+crop.imageHeightPx)return;e.preventDefault();pan={id:e.pointerId,startX:e.clientX,startY:e.clientY,left:crop.imageLeft,top:crop.imageTop};try{stage.setPointerCapture(e.pointerId);}catch(_){}});
+    stage.addEventListener('pointermove',e=>{if(!pan||pan.id!==e.pointerId)return;e.preventDefault();const f=teamCropFrame(crop);if(!f)return;const minLeft=f.left+f.width-crop.imageWidthPx,maxLeft=f.left,minTop=f.top+f.height-crop.imageHeightPx,maxTop=f.top;crop.imageLeft=teamClamp(pan.left+(e.clientX-pan.startX),minLeft,maxLeft);crop.imageTop=teamClamp(pan.top+(e.clientY-pan.startY),minTop,maxTop);paint();});
+    const stopPan=e=>{if(!pan||pan.id!==e.pointerId)return;pan=null;};stage.addEventListener('pointerup',stopPan);stage.addEventListener('pointercancel',stopPan);
+    root.querySelectorAll('[data-team-crop-handle]').forEach(handle=>{let resize=null;handle.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const f=teamCropFrame(crop);if(!f)return;resize={id:e.pointerId,corner:handle.dataset.teamCropHandle,start:{...f}};try{handle.setPointerCapture(e.pointerId);}catch(_){}});handle.addEventListener('pointermove',e=>{if(!resize||resize.id!==e.pointerId)return;e.preventDefault();e.stopPropagation();const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,il=crop.imageLeft,it=crop.imageTop,ir=il+crop.imageWidthPx,ib=it+crop.imageHeightPx,min=44,s=resize.start,right=s.left+s.width,bottom=s.top+s.height;let left=s.left,top=s.top,newRight=right,newBottom=bottom;if(resize.corner.includes('w'))left=teamClamp(x,il,right-min);if(resize.corner.includes('e'))newRight=teamClamp(x,s.left+min,ir);if(resize.corner.includes('n'))top=teamClamp(y,it,bottom-min);if(resize.corner.includes('s'))newBottom=teamClamp(y,s.top+min,ib);crop.frame={left,top,width:newRight-left,height:newBottom-top};paint();});const stop=e=>{if(!resize||resize.id!==e.pointerId)return;resize=null;};handle.addEventListener('pointerup',stop);handle.addEventListener('pointercancel',stop);});
   }
   function applyTeamCrop(){
-    const crop=state.teamCrop,r=teamCropRect(crop);if(!crop||!r||!crop.image)return;
-    const scale=Math.min(1,1000/Math.max(r.sw,r.sh)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(r.sw*scale));c.height=Math.max(1,Math.round(r.sh*scale));const ctx=c.getContext('2d',{alpha:true});ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(crop.image,r.sx,r.sy,r.sw,r.sh,0,0,c.width,c.height);
-    const data=teamSide(crop.side);data.background=c.toDataURL('image/webp',.82);data.fileName=crop.fileName;state.teamCrop=null;state.teamActiveLayer='';render();showToast((crop.side==='back'?'Back':'Front')+' image cropped');
+    const crop=state.teamCrop,frame=teamCropFrame(crop);if(!crop||!frame||!crop.image)return;
+    const scale=Math.max(.0001,Number(crop.displayScale||1)),iw=Math.max(1,Number(crop.imageWidth||crop.image.naturalWidth||1)),ih=Math.max(1,Number(crop.imageHeight||crop.image.naturalHeight||1));
+    const sx=teamClamp((frame.left-crop.imageLeft)/scale,0,iw-1),sy=teamClamp((frame.top-crop.imageTop)/scale,0,ih-1),sw=teamClamp(frame.width/scale,1,iw-sx),sh=teamClamp(frame.height/scale,1,ih-sy),outScale=Math.min(1,1200/Math.max(sw,sh)),c=document.createElement('canvas');
+    c.width=Math.max(1,Math.round(sw*outScale));c.height=Math.max(1,Math.round(sh*outScale));const ctx=c.getContext('2d',{alpha:true});ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(crop.image,sx,sy,sw,sh,0,0,c.width,c.height);
+    const data=teamSide(crop.side);data.background=c.toDataURL('image/webp',.84);data.fileName=crop.fileName;state.teamCrop=null;state.teamActiveLayer='';render();
   }
   function teamLayerHtml(layer){
     const active=state.teamActiveLayer===layer.id,pos='left:'+teamClamp(layer.x,0,100)+'%;top:'+teamClamp(layer.y,0,100)+'%;',handle='<i class="team-resize-handle" data-team-resize-layer="'+S.esc(layer.id)+'" aria-hidden="true"></i>';
@@ -695,9 +689,7 @@
     root.querySelectorAll('[data-team-remove]').forEach(x=>x.addEventListener('click',()=>{if(state.teamRows.length===1)state.teamRows=[{name:'',number:'',size:'M'}];else state.teamRows.splice(Number(x.dataset.teamRemove),1);render();}));
     root.querySelectorAll('[data-team-jump]').forEach(x=>x.addEventListener('click',()=>{const target=Number(x.dataset.teamJump||0);if(target>=1&&target<=state.teamUnlockedStep&&target!==state.teamStep){state.teamActiveLayer='';state.teamStep=target;window.scrollTo({top:0,behavior:'smooth'});render();}}));
     root.querySelectorAll('[data-team-side-upload]').forEach(input=>input.addEventListener('change',async()=>{const file=input.files?.[0],side=input.dataset.teamSideUpload;if(!file)return;try{await startTeamCrop(file,side);}catch(err){showToast(err.message||'Could not read that image');}}));
-    root.querySelectorAll('[data-team-crop-aspect]').forEach(btn=>btn.addEventListener('click',()=>{if(!state.teamCrop)return;state.teamCrop.aspect=btn.dataset.teamCropAspect||'portrait';state.teamCrop.zoom=1;state.teamCrop.cx=.5;state.teamCrop.cy=.5;render();}));
-    const teamCropZoom=root.querySelector('[data-team-crop-zoom]');if(teamCropZoom)teamCropZoom.addEventListener('input',()=>{if(!state.teamCrop)return;state.teamCrop.zoom=Number(teamCropZoom.value||1);drawTeamCrop();});
-    const teamCropCanvas=root.querySelector('[data-team-crop-canvas]');if(teamCropCanvas&&state.teamCrop){drawTeamCrop();let drag=null;teamCropCanvas.addEventListener('pointerdown',e=>{if(!state.teamCrop)return;e.preventDefault();const r=teamCropRect(state.teamCrop),box=teamCropCanvas.getBoundingClientRect();drag={id:e.pointerId,startX:e.clientX,startY:e.clientY,startCx:r.cx,startCy:r.cy,sourceW:r.sw,sourceH:r.sh,box};try{teamCropCanvas.setPointerCapture(e.pointerId);}catch(_){}});teamCropCanvas.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId||!state.teamCrop)return;e.preventDefault();const c=state.teamCrop,iw=Math.max(1,Number(c.imageWidth||1)),ih=Math.max(1,Number(c.imageHeight||1)),halfW=drag.sourceW/2,halfH=drag.sourceH/2,dx=(e.clientX-drag.startX)/Math.max(1,drag.box.width)*drag.sourceW,dy=(e.clientY-drag.startY)/Math.max(1,drag.box.height)*drag.sourceH,cx=teamClamp(drag.startCx-dx,halfW,Math.max(halfW,iw-halfW)),cy=teamClamp(drag.startCy-dy,halfH,Math.max(halfH,ih-halfH));c.cx=cx/iw;c.cy=cy/ih;drawTeamCrop();});const end=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;};teamCropCanvas.addEventListener('pointerup',end);teamCropCanvas.addEventListener('pointercancel',end);}
+    bindTeamCrop();
     const teamCropOverlay=root.querySelector('[data-team-crop-overlay]');if(teamCropOverlay)teamCropOverlay.addEventListener('click',e=>{if(e.target===teamCropOverlay){state.teamCrop=null;render();}});
 
     root.querySelectorAll('[data-team-logo-upload]').forEach(input=>input.addEventListener('change',async()=>{const side=input.dataset.teamLogoUpload,files=[...(input.files||[])].filter(f=>f.type.startsWith('image/'));if(!files.length)return;try{const data=teamSide(side);for(const file of files){const [src,originalDataUrl]=await Promise.all([compressTeamArtwork(file,600,.7),teamFileDataUrl(file)]);data.layers.push({id:teamUid('logo'),type:'image',src,assetName:file.name,originalName:file.name,originalType:file.type||'',originalSize:Number(file.size||0),originalDataUrl,x:50,y:50,widthPct:24});}state.teamActiveLayer=data.layers[data.layers.length-1]?.id||'';render();}catch(err){showToast(err.message||'Could not add logo');}}));
@@ -730,7 +722,6 @@
       else if(a==='add-product'){if(requireCustomer('add-product'))addSelectedProductToCart();}
       else if(a==='team-add-row'){state.teamRows.push({name:'',number:'',size:'M'});render();}
       else if(a==='team-crop-cancel'){state.teamCrop=null;render();}
-      else if(a==='team-crop-reset'){if(state.teamCrop){state.teamCrop.zoom=1;state.teamCrop.cx=.5;state.teamCrop.cy=.5;render();}}
       else if(a==='team-crop-apply'){applyTeamCrop();}
       else if(a==='team-next-step'){if(state.teamStep===1&&(!state.teamFront.background||!state.teamBack.background)){showToast('Upload both front and back designs first');return;}state.teamActiveLayer='';const next=Math.min(4,state.teamStep+1);state.teamUnlockedStep=Math.max(state.teamUnlockedStep,next);state.teamStep=next;render();}
       else if(a==='team-prev-step'){state.teamActiveLayer='';if(state.teamStep>1){state.teamStep-=1;render();}else navigateBack('home');}
