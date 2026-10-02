@@ -1,4 +1,16 @@
-import { cors,json,cleanPhone,admin,hashToken } from '../_shared.ts'
+import { createClient } from 'npm:@supabase/supabase-js@2'
+
+const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-one-line-public","Access-Control-Allow-Methods":"POST, OPTIONS"}
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"content-type":"application/json"}})
+const secretKey=()=>{
+  const packed=Deno.env.get('SUPABASE_SECRET_KEYS');
+  if(packed){try{const obj=JSON.parse(packed);if(obj.default)return obj.default;const first=Object.values(obj)[0];if(first)return String(first)}catch{}}
+  return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''
+}
+const admin=()=>createClient(Deno.env.get('SUPABASE_URL')!,secretKey(),{auth:{persistSession:false,autoRefreshToken:false}})
+const hashToken=async(token:string)=>{const bytes=new TextEncoder().encode(token);const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+const cleanPhone=(v:unknown)=>{let n=String(v||'').replace(/\D/g,'');if(n.length===10)n='91'+n;return n}
+
 
 function decodeJwtPayload(token:string){
   try{const part=token.split('.')[1];if(!part)return null;const normalized=part.replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(part.length/4)*4,'=');return JSON.parse(atob(normalized))}catch(_){return null}
