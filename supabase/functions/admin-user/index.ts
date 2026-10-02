@@ -87,11 +87,48 @@ async function adminFeed(db:any){
 
 async function createUnitTransfer(db:any,portal:any,body:any){
   const sourceType=String(body.source_type||'').trim(),sourceId=String(body.source_id||'').trim()
-  if(!['ready_made','custom_catalog','order_item','enquiry'].includes(sourceType)||!sourceId)return json({error:'Invalid Unit Transfer item.'},400)
+  if(!['ready_made','custom_catalog','order','order_item','enquiry'].includes(sourceType)||!sourceId)return json({error:'Invalid Unit Transfer item.'},400)
   const sourceKey=sourceType+':'+sourceId
   const existing=await db.from('orders').select('id,order_code,metadata,created_at').contains('metadata',{unit_transfer:true,source_key:sourceKey}).order('created_at',{ascending:false}).limit(1).maybeSingle()
   if(existing.error)throw existing.error
   if(existing.data)return json({ok:true,already:true,transfer:transferSummary(existing.data)})
+
+  if(sourceType==='order'){
+    const sourceOrder=await db.from('orders').select('*').eq('id',sourceId).maybeSingle()
+    if(sourceOrder.error)throw sourceOrder.error
+    if(!sourceOrder.data)return json({error:'Customer order not found.'},404)
+    if(sourceOrder.data.metadata?.unit_transfer===true)return json({error:'A Unit Transfer cannot be transferred again.'},400)
+    const sourceLines=await db.from('order_items').select('*').eq('order_id',sourceId).order('created_at',{ascending:true}).order('id')
+    if(sourceLines.error)throw sourceLines.error
+    if(!(sourceLines.data||[]).length)return json({error:'This order has no items to transfer.'},400)
+
+    const random=crypto.randomUUID().replace(/-/g,'').slice(0,6).toUpperCase(),stamp=new Date().toISOString().replace(/\D/g,'').slice(2,14)
+    const orderCode='UNIT-'+stamp+'-'+random
+    const metadata={unit_transfer:true,source_type:'order',source_id:sourceId,source_key:sourceKey,source_label:'Customer Order',source_order_code:sourceOrder.data.order_code||'',transferred_by:portal.profile.id,transferred_by_name:portal.profile.name||portal.profile.username||'',transferred_at:new Date().toISOString()}
+    const inserted=await db.from('orders').insert({order_code:orderCode,customer_name:'Production Unit',phone:'',address:'',business:'',delivery:'Unit transfer',payment:'Internal',status:'Transferred',total:Number(sourceOrder.data.total||0),metadata}).select().single()
+    if(inserted.error)throw inserted.error
+
+    const copied:any[]=[]
+    for(const line of sourceLines.data||[]){
+      const original=(line.design_json&&typeof line.design_json==='object')?line.design_json:{}
+      let productSnapshot:any={}
+      if(line.product_id){
+        const product=await db.from('products').select('id,name,description,images,product_type,option_title').eq('id',line.product_id).maybeSingle()
+        if(!product.error&&product.data)productSnapshot={images:product.data.images||[],description:product.data.description||'',product_type:product.data.product_type||'',option_title:product.data.option_title||''}
+      }else if(line.subitem_id){
+        const subitem=await db.from('subitems').select('id,name,images,option_title').eq('id',line.subitem_id).maybeSingle()
+        if(!subitem.error&&subitem.data)productSnapshot={images:subitem.data.images||[],option_title:subitem.data.option_title||''}
+      }
+      copied.push({
+        order_id:inserted.data.id,product_id:line.product_id||null,subitem_id:line.subitem_id||null,item_type:line.item_type||'product',item_name:line.item_name||'Order item',item_code:line.item_code||'',color:line.color||'',size:line.size||'',qty:Math.max(1,Number(line.qty||1)),unit_price:Number(line.unit_price||0),
+        design_json:{...original,unit_snapshot:{...(original.unit_snapshot||{}),...productSnapshot,source_type:'order',source_order_id:sourceOrder.data.id,source_order_code:sourceOrder.data.order_code||'',customer_name:sourceOrder.data.customer_name||sourceOrder.data.business||'',phone:sourceOrder.data.phone||'',address:sourceOrder.data.address||'',delivery:sourceOrder.data.delivery||'',payment:sourceOrder.data.payment||'',color:line.color||'',size:line.size||''}},
+        group_key:sourceKey+':'+String(line.id||'')
+      })
+    }
+    const copiedInsert=await db.from('order_items').insert(copied)
+    if(copiedInsert.error){await db.from('orders').delete().eq('id',inserted.data.id);throw copiedInsert.error}
+    return json({ok:true,transfer:transferSummary(inserted.data)})
+  }
 
   let itemName='',itemCode='',qty=1,unitPrice=0,itemType='product',productId=null as string|null,subitemId=null as string|null,lineColor='',lineSize='',design:any={}
   let sourceLabel=''
