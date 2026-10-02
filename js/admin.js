@@ -475,10 +475,12 @@
           try{state.profiles=await B.listProfiles();}catch(_){state.profiles=[];}
           let feed=null;
           try{feed=await B.adminFeed?.();}catch(_){feed=null;}
-          const directEnquiries=await client.from('customer_activity').select('*,customers(id,name,phone,business_name,job_title,created_at,last_seen_at)').in('event_type',['custom_catalog_enquiry','team_design_enquiry']).order('created_at',{ascending:false}).limit(1000);
           if(feed?.orders&&feed?.orderItems){
-            state.enquiries=!directEnquiries.error?(directEnquiries.data||[]):(feed.enquiries||[]);state.orders=feed.orders||[];state.orderItems=feed.orderItems||[];
+            // admin-user uses the service role and is the authoritative admin feed.
+            // Do not overwrite it with a direct RLS query that can legitimately return [] without an error.
+            state.enquiries=Array.isArray(feed.enquiries)?feed.enquiries:[];state.orders=feed.orders||[];state.orderItems=feed.orderItems||[];
           }else{
+            const directEnquiries=await client.from('customer_activity').select('*,customers(id,name,phone,business_name,job_title,created_at,last_seen_at)').in('event_type',['custom_catalog_enquiry','team_design_enquiry']).order('created_at',{ascending:false}).limit(1000);
             const orderData=await loadOrders(client),{orders,items}=orderData;if(directEnquiries.error)throw directEnquiries.error;state.enquiries=directEnquiries.data||[];if(orders.error)throw orders.error;if(items.error)throw items.error;state.orders=orders.data||[];state.orderItems=items.data||[];
           }
         }
