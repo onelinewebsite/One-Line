@@ -36,8 +36,8 @@
   function makeImage(src,index){return{id:uid('image'),type:'image',src:src||'',size:82,rotation:0,position:{x:50+((index||0)%3-1)*7,y:58+((index||0)%4)*4},scale:38,pricingWidthPct:38};}
   function normalizeLayer(layer,index){
     if(!layer||!layer.type)return null;
-    if(layer.type==='text')return{id:layer.id||uid('text'),type:'text',value:String(layer.value??layer.text??'YOUR TEXT'),font:layer.font||'Impact',color:layer.color||layer.textColor||'#ffffff',size:normalizeTextSize(layer.size??layer.textSize??30),rotation:Number(layer.rotation??layer.textRotation??0),position:clone(layer.position||layer.positions?.text||{x:50,y:38}),scale:Number(layer.scale??layer.textScale??18),pricingWidthPct:Number(layer.pricingWidthPct??layer.scale??layer.textScale??18)};
-    if(layer.type==='image')return{id:layer.id||uid('image'),type:'image',src:layer.src||layer.uploadedImage||'',size:Math.max(10,Number(layer.size??layer.imageSize??82)),rotation:Number(layer.rotation??layer.imageRotation??0),position:clone(layer.position||layer.positions?.image||{x:50,y:62}),scale:Number(layer.scale??layer.imageScale??38),pricingWidthPct:Number(layer.pricingWidthPct??layer.scale??layer.imageScale??38)};
+    if(layer.type==='text')return{id:layer.id||uid('text'),type:'text',value:String(layer.value??layer.text??'YOUR TEXT'),font:layer.font||'Impact',color:layer.color||layer.textColor||'#ffffff',size:normalizeTextSize(layer.size??layer.textSize??30),rotation:Number(layer.rotation??layer.textRotation??0),position:clone(layer.position||layer.positions?.text||{x:50,y:38}),scale:Number(layer.scale??layer.textScale??18),pricingWidthPct:Number(layer.pricingWidthPct??layer.scale??layer.textScale??18),displaySizePct:Number(layer.displaySizePct||0)};
+    if(layer.type==='image')return{id:layer.id||uid('image'),type:'image',src:layer.src||layer.uploadedImage||'',size:Math.max(10,Number(layer.size??layer.imageSize??82)),rotation:Number(layer.rotation??layer.imageRotation??0),position:clone(layer.position||layer.positions?.image||{x:50,y:62}),scale:Number(layer.scale??layer.imageScale??38),pricingWidthPct:Number(layer.pricingWidthPct??layer.scale??layer.imageScale??38),displaySizePct:Number(layer.displaySizePct||0)};
     return null;
   }
   function normalizeSurface(raw,defaultText){
@@ -109,7 +109,7 @@
 
     function syncCurrentScale(){
       const area=root.querySelector('[data-print-area]')?.getBoundingClientRect(),garment=root.querySelector('.compact-garment')?.getBoundingClientRect();if(!area?.width)return;
-      current().layers.forEach(l=>{const el=root.querySelector('[data-layer-id="'+CSS.escape(l.id)+'"]');l.scale=Math.max(.1,l.size/area.width*100);if(el){const box=el.getBoundingClientRect();l.pricingWidthPct=Math.max(.1,box.width/Math.max(1,garment?.width||area.width)*100);}});saveDraft();refreshPricingUI();
+      current().layers.forEach(l=>{const el=root.querySelector('[data-layer-id="'+CSS.escape(l.id)+'"]');l.scale=Math.max(.1,l.size/area.width*100);l.displaySizePct=Math.max(.1,l.size/Math.max(1,garment?.width||area.width)*100);if(el){const box=el.getBoundingClientRect();l.pricingWidthPct=Math.max(.1,box.width/Math.max(1,garment?.width||area.width)*100);}});saveDraft();refreshPricingUI();
     }
     function darkPrintNote(){return '<p class="sublimation-help"><b>Sublimation:</b> available only on light garment colours. On dark colours the sublimation ink cannot be seen correctly, so the option is disabled automatically.</p>';}
     function handles(layer){return '<button class="layer-remove" data-action="remove-layer" data-layer-id="'+S.esc(layer.id)+'" aria-label="Delete selected item">'+I('close')+'</button><button class="layer-rotate" data-transform="'+S.esc(layer.id)+'" aria-label="Rotate and resize selected item">'+I('rotate')+'</button>';}

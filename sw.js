@@ -1,4 +1,4 @@
-const CACHE='one-line-kids-uniform-20261003f';
+const CACHE='one-line-print-size-20261003g';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',
