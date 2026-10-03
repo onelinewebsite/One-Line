@@ -891,10 +891,14 @@ on conflict(name) do nothing;
 
 -- ===== v77 Uniform Custom Catalogue =====
 -- Uniform items reuse custom_catalog_items.fabric_options to store highlighted features.
+update public.custom_catalog_categories
+set name='Kids Uniform', description='Kids uniform options with accurate stock by variant and size.'
+where lower(trim(name))='uniform'
+  and not exists(select 1 from public.custom_catalog_categories x where lower(trim(x.name))='kids uniform');
 insert into public.custom_catalog_categories(name,description,image_url,active,sort_order)
 values(
-  'Uniform',
-  'Custom uniforms with a starting price and simple highlighted features.',
+  'Kids Uniform',
+  'Kids uniform options with accurate stock by variant and size.',
   '',
   true,
   30
