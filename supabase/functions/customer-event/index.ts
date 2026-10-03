@@ -51,17 +51,29 @@ async function authoritativeCatalogPayload(db:any,payload:any){
   if(!String(category?.name||payload?.categoryName||'').toLowerCase().includes('uniform'))return out
 
   const cfg=normalizeUniformConfig(item),client=payload?.uniformSelection&&typeof payload.uniformSelection==='object'?payload.uniformSelection:{},topOptions=cfg.top.filter((v:any)=>v.enabled),bottomOptions=cfg.bottom.filter((v:any)=>v.enabled)
-  const topId=trim(client?.top?.id,100),bottomId=trim(client?.bottom?.id,100),size=trim(client?.size,80)
+  const topId=trim(client?.top?.id,100),bottomId=trim(client?.bottom?.id,100)
   const top=topOptions.find((v:any)=>v.id===topId)||null,bottom=bottomOptions.find((v:any)=>v.id===bottomId)||null
   if(topOptions.length&&!top)throw new Error('Selected Top option is no longer available. Please choose again.')
   if(bottomOptions.length&&!bottom)throw new Error('Selected Bottom option is no longer available. Please choose again.')
-  if(top&&stockOf(top)<=0)throw new Error(top.name+' is out of stock. Please choose another Top option.')
-  if(bottom&&stockOf(bottom)<=0)throw new Error(bottom.name+' is out of stock. Please choose another Bottom option.')
-  if(cfg.sizes.length&&!cfg.sizes.includes(size))throw new Error('Selected uniform size is no longer available. Please choose again.')
+
+  const rawQuantities=(client?.sizeQuantities&&typeof client.sizeQuantities==='object'&&!Array.isArray(client.sizeQuantities))?client.sizeQuantities:{}
+  const sizeQuantities:Record<string,number>={}
+  for(const [rawSize,rawQty] of Object.entries(rawQuantities)){
+    const size=trim(rawSize,80),qty=Math.max(0,Math.floor(num(rawQty)))
+    if(qty<=0)continue
+    if(!cfg.sizes.includes(size))throw new Error('Uniform size '+size+' is no longer available. Please review the quantities.')
+    sizeQuantities[size]=qty
+  }
+  const totalQty=Object.values(sizeQuantities).reduce((n:number,q:number)=>n+q,0)
+  if(cfg.sizes.length&&!totalQty)throw new Error('Enter quantity for at least one uniform size.')
+  if(totalQty>1000000)throw new Error('Uniform quantity is too large. Please contact us for this order.')
+
   const selectedStocks=[top&&stockOf(top),bottom&&stockOf(bottom)].filter((v:any)=>typeof v==='number') as number[]
   const completeSetStock=selectedStocks.length?Math.min(...selectedStocks):0
+  const readyNowQty=Math.min(totalQty,completeSetStock),productionQty=Math.max(0,totalQty-readyNowQty)
   const pack=(v:any)=>v?{id:v.id,name:v.name,availableStock:stockOf(v),images:cleanImages(v.images)}:null
-  const verifiedAt=new Date().toISOString(),selection={size,top:pack(top),bottom:pack(bottom),completeSetStock,stockVerifiedAt:verifiedAt}
+  const sizeSummary=Object.entries(sizeQuantities).map(([size,qty])=>`${size} × ${qty}`).join(', ')
+  const verifiedAt=new Date().toISOString(),selection={size:sizeSummary,sizeQuantities,sizes:Object.entries(sizeQuantities).map(([size,qty])=>({size,qty})),totalQty,top:pack(top),bottom:pack(bottom),completeSetStock,readyNowQty,productionQty,stockVerifiedAt:verifiedAt}
   const allImages=[...cleanImages(item.images),...cleanImages(top?.images),...cleanImages(bottom?.images)].filter((v,i,a)=>a.indexOf(v)===i).slice(0,20)
   return {...out,images:allImages,uniformSelection:selection,uniformDescriptionBlocks:cfg.descriptionBlocks,uniformFeatures:[`Top: ${topOptions.map((v:any)=>v.name).join(' / ')}`,`Bottom: ${bottomOptions.map((v:any)=>v.name).join(' / ')}`,`Sizes: ${cfg.sizes.join(' / ')}`].filter((v:string)=>!v.endsWith(': ')),uniformStockVerifiedAt:verifiedAt}
 }
@@ -94,12 +106,14 @@ async function saveCatalogEnquiry(db:any,s:any,payload:any){
   }).select('*').single()
   if(orderQ.error)throw orderQ.error
 
+  const uniformQty=Math.max(1,Math.floor(num(savedPayload?.uniformSelection?.totalQty)||1))
+  const uniformSizeSummary=savedPayload?.uniformSelection?.sizeQuantities&&typeof savedPayload.uniformSelection.sizeQuantities==='object'?Object.entries(savedPayload.uniformSelection.sizeQuantities).filter(([,q])=>num(q)>0).map(([size,q])=>`${size} × ${Math.floor(num(q))}`).join(', '):trim(savedPayload?.uniformSelection?.size,400)
   const lineQ=await db.from('order_items').insert({
     order_id:orderQ.data.id,
     product_id:null,
     item_type:'custom_catalog_enquiry',
     item_name:itemTitle||'Custom Catalogue enquiry',
-    item_code:'',color:[savedPayload?.uniformSelection?.top?.name,savedPayload?.uniformSelection?.bottom?.name].filter(Boolean).join(' + '),size:trim(savedPayload?.uniformSelection?.size,80),qty:1,unit_price:rate,
+    item_code:'',color:[savedPayload?.uniformSelection?.top?.name,savedPayload?.uniformSelection?.bottom?.name].filter(Boolean).join(' + '),size:trim(uniformSizeSummary,400),qty:uniformQty,unit_price:rate,
     design_json:savedPayload,
     group_key:'custom_catalog:'+itemId
   }).select('id').single()
