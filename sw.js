@@ -1,4 +1,4 @@
-const CACHE='one-line-print-size-20261003g';
+const CACHE='one-line-vneck-sportswear-20261004a';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',

@@ -7,7 +7,8 @@
   ];
   const models=[
     {name:"Crew T-Shirt",type:"T-Shirt",baseKey:"custom_tshirt_base_price",image:"assets/crew-tee.webp",backImage:"assets/crew-tee-back.webp",leftSleeveImage:"assets/crew-tee-left-sleeve-close.webp",rightSleeveImage:"assets/crew-tee-right-sleeve-close.webp"},
-    {name:"Polo",type:"Polo",baseKey:"custom_polo_base_price",image:"assets/polo-shirt.webp",backImage:"assets/polo-shirt-back.webp",leftSleeveImage:"assets/polo-shirt-left-sleeve-close.webp",rightSleeveImage:"assets/polo-shirt-right-sleeve-close.webp"}
+    {name:"Polo",type:"Polo",baseKey:"custom_polo_base_price",image:"assets/polo-shirt.webp",backImage:"assets/polo-shirt-back.webp",leftSleeveImage:"assets/polo-shirt-left-sleeve-close.webp",rightSleeveImage:"assets/polo-shirt-right-sleeve-close.webp"},
+    {name:"V-Neck Sportswear",type:"V-Neck Sportswear",baseKey:"custom_polo_base_price",image:"assets/sports-jersey.webp",backImage:"assets/sports-jersey-back.webp",leftSleeveImage:"assets/sleeve-side-neutral.webp",rightSleeveImage:"assets/sleeve-side-neutral.webp"}
   ];
   const materials=[
     {name:"Budget",extraKey:null,note:"Base cloth · no extra charge"},
