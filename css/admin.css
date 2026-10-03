@@ -612,3 +612,11 @@ html,body{background:#f6f2f7;color:#241c27}
 .kids-uniform-base-fields.single{grid-template-columns:1fr}
 .kids-uniform-size-row.simple{grid-template-columns:1.25fr 1fr 34px}
 @media(max-width:760px){.kids-uniform-stock-analysis.four{grid-template-columns:repeat(2,1fr)}.kids-uniform-admin-grid.four-items{grid-template-columns:1fr}.kids-uniform-size-row.simple{grid-template-columns:1fr 1fr 34px}.kids-uniform-size-row.simple button{grid-column:auto}}
+
+
+/* Kids Uniform v3: common size + multi-image Top/Bottom options */
+.kids-uniform-common-sizes{display:grid;gap:9px;padding:12px;border:1px solid #e5dce7;border-radius:11px;background:#fbf9fc}
+.kids-uniform-common-size-row{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:7px;align-items:center}.kids-uniform-common-size-row input{width:100%;min-width:0;border:1px solid #ded4e1;border-radius:8px;padding:9px;background:#fff;color:#251d27;font:inherit}.kids-uniform-common-size-row button{height:34px;border:0;border-radius:7px;background:#f6edf7;color:#73117f;cursor:pointer}
+.kids-uniform-stock-pill{padding:5px 8px;border-radius:999px;background:#f3edf5;color:#671572;font-size:8px;font-weight:900;white-space:nowrap}
+.kids-uniform-multi-images{display:grid;gap:8px}.kids-uniform-image-strip{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}.kids-uniform-image-chip{position:relative;width:74px;height:70px;flex:0 0 74px;border:1px solid #e7dfe8;border-radius:8px;overflow:hidden;background:#f8f5f9}.kids-uniform-image-chip img{width:100%;height:100%;object-fit:cover}.kids-uniform-image-chip button{position:absolute;right:4px;top:4px;width:22px;height:22px;border:0;border-radius:50%;background:rgba(25,18,27,.78);color:#fff;cursor:pointer}.kids-uniform-no-images{min-height:52px;display:grid;place-items:center;border:1px dashed #dfd5e1;border-radius:8px;color:#918494;font-size:9px}.kids-uniform-upload-images{justify-self:start}.kids-uniform-upload-images input{display:none}.kids-uniform-upload-images span{display:inline-flex;padding:8px 10px;border:1px solid #d9cedc;border-radius:8px;background:#fff;color:#64116f;font-size:9px;font-weight:800;cursor:pointer}
+@media(max-width:760px){.kids-uniform-admin-head{align-items:center}.kids-uniform-image-chip{width:66px;height:64px;flex-basis:66px}}
