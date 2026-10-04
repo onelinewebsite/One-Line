@@ -5439,3 +5439,14 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
   .b2b-back-categories{min-height:36px;padding:0 10px;font-size:10px}
   .b2b-category-items-grid .b2b-assigned-rate{gap:6px!important;margin-top:8px!important}
 }
+
+/* B2B category home uses the exact customer category-card sizing. */
+.b2b-category-home .b2b-category-section{margin:0 0 28px!important}
+.b2b-category-home .categories-only-grid{margin-top:0!important}
+@media(max-width:760px){
+  .b2b-category-home .categories-only-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important}
+  .b2b-category-home .categories-only-grid .real-category-card{min-width:0!important;width:100%!important;padding:8px!important;border-radius:16px!important}
+  .b2b-category-home .categories-only-grid .category-photo{width:100%!important;height:auto!important;aspect-ratio:3/4!important;margin:0!important;min-height:0!important}
+  .b2b-category-home .categories-only-grid .real-category-card>div:last-of-type{padding:10px!important;min-height:0!important}
+  .b2b-category-home .categories-only-grid .real-category-card h3{font-size:15px!important;line-height:1.2!important;margin:0!important}
+}
