@@ -1252,20 +1252,59 @@ alter table public.b2b_accounts
   add column if not exists whatsapp_number text;
 
 update public.b2b_accounts
-set brand_name=coalesce(nullif(trim(brand_name),''),name),
-    slug=coalesce(nullif(trim(slug),''),trim(both '-' from regexp_replace(lower(username),'[^a-z0-9]+','-','g')))
-where brand_name is null or trim(brand_name)='' or slug is null or trim(slug)='';
+set brand_name=coalesce(nullif(trim(brand_name),''),name)
+where brand_name is null or trim(brand_name)='';
+
+-- Public links are based only on the saved brand name, never the B2B login ID.
+-- Temporary unique values avoid collisions while existing accounts are re-slugged.
+update public.b2b_accounts
+set slug='store-'||replace(id::text,'-','');
+
+do $$
+declare
+  r record;
+  v_base text;
+  v_slug text;
+  v_n integer;
+begin
+  for r in select id,brand_name,name from public.b2b_accounts order by created_at,id loop
+    v_base:=trim(both '-' from regexp_replace(lower(coalesce(nullif(trim(r.brand_name),''),r.name,'store')),'[^a-z0-9]+','-','g'));
+    if v_base='' then v_base:='store'; end if;
+    v_slug:=v_base;
+    v_n:=1;
+    while exists(select 1 from public.b2b_accounts where lower(slug)=lower(v_slug) and id<>r.id) loop
+      v_n:=v_n+1;
+      v_slug:=v_base||'-'||v_n::text;
+    end loop;
+    update public.b2b_accounts set slug=v_slug where id=r.id;
+  end loop;
+end $$;
 
 create unique index if not exists b2b_accounts_slug_lower_idx
   on public.b2b_accounts(lower(slug)) where slug is not null and trim(slug)<>'';
 
 create or replace function public.b2b_account_storefront_defaults()
 returns trigger language plpgsql set search_path=public as $$
+declare
+  v_base text;
+  v_slug text;
+  v_n integer:=1;
 begin
   if new.brand_name is null or trim(new.brand_name)='' then new.brand_name:=new.name; end if;
-  if new.slug is null or trim(new.slug)='' then
-    new.slug:=trim(both '-' from regexp_replace(lower(coalesce(new.username,'')),'[^a-z0-9]+','-','g'));
+  if tg_op='INSERT' then
+    v_base:=trim(both '-' from regexp_replace(lower(coalesce(nullif(trim(new.brand_name),''),new.name,'store')),'[^a-z0-9]+','-','g'));
+  elsif new.slug is null or trim(new.slug)='' or lower(coalesce(new.brand_name,''))<>lower(coalesce(old.brand_name,'')) then
+    v_base:=trim(both '-' from regexp_replace(lower(coalesce(nullif(trim(new.brand_name),''),new.name,'store')),'[^a-z0-9]+','-','g'));
+  else
+    return new;
   end if;
+  if v_base='' then v_base:='store'; end if;
+  v_slug:=v_base;
+  while exists(select 1 from public.b2b_accounts where lower(slug)=lower(v_slug) and id<>new.id) loop
+    v_n:=v_n+1;
+    v_slug:=v_base||'-'||v_n::text;
+  end loop;
+  new.slug:=v_slug;
   return new;
 end $$;
 
@@ -1309,17 +1348,13 @@ begin
     raise exception 'Invalid profile photo';
   end if;
 
-  if lower(coalesce(v_account.brand_name,''))=lower(v_brand) and coalesce(v_account.slug,'')<>'' then
-    v_slug:=v_account.slug;
-  else
-    v_base:=trim(both '-' from regexp_replace(lower(v_brand),'[^a-z0-9]+','-','g'));
-    if v_base='' then v_base:=trim(both '-' from regexp_replace(lower(v_account.username),'[^a-z0-9]+','-','g')); end if;
-    if v_base='' then v_base:='store'; end if;
-    v_slug:=v_base;
-    while exists(select 1 from public.b2b_accounts where lower(slug)=lower(v_slug) and id<>v_account.id) loop
-      v_n:=v_n+1; v_slug:=v_base||'-'||v_n::text;
-    end loop;
-  end if;
+  v_base:=trim(both '-' from regexp_replace(lower(v_brand),'[^a-z0-9]+','-','g'));
+  if v_base='' then v_base:='store'; end if;
+  v_slug:=v_base;
+  while exists(select 1 from public.b2b_accounts where lower(slug)=lower(v_slug) and id<>v_account.id) loop
+    v_n:=v_n+1;
+    v_slug:=v_base||'-'||v_n::text;
+  end loop;
 
   update public.b2b_accounts
   set brand_name=v_brand,
@@ -1336,6 +1371,31 @@ begin
     'profilePhoto',coalesce(v_account.profile_photo_url,''),
     'whatsappNumber',coalesce(v_account.whatsapp_number,'')
   ));
+end $$;
+
+create or replace function public.b2b_public_strip_prices(p_value jsonb)
+returns jsonb
+language plpgsql
+immutable
+set search_path=public
+as $$
+declare
+  v_result jsonb;
+begin
+  if p_value is null then return '{}'::jsonb; end if;
+  if jsonb_typeof(p_value)='object' then
+    select coalesce(jsonb_object_agg(key,public.b2b_public_strip_prices(value)),'{}'::jsonb)
+      into v_result
+    from jsonb_each(p_value)
+    where lower(key) not in ('rate','price','pricing','mrp','premium_rate','standard_rate','budget_rate','price_adjustment','unit_price','amount','total');
+    return coalesce(v_result,'{}'::jsonb);
+  elsif jsonb_typeof(p_value)='array' then
+    select coalesce(jsonb_agg(public.b2b_public_strip_prices(value)),'[]'::jsonb)
+      into v_result
+    from jsonb_array_elements(p_value);
+    return coalesce(v_result,'[]'::jsonb);
+  end if;
+  return p_value;
 end $$;
 
 create or replace function public.b2b_public_catalog(p_slug text)
@@ -1371,7 +1431,8 @@ begin
       coalesce((select jsonb_agg(jsonb_build_object(
         'id',v.id,'color',v.color,'size',v.size,'image',v.image_url,'active',v.active
       ) order by v.color,v.size) from public.product_variants v
-      where v.product_id=p.id and v.active),'[]'::jsonb) as variants,
+      where v.product_id=p.id and v.active and coalesce(v.stock,0)>0),'[]'::jsonb) as variants,
+      '{}'::jsonb as fabric_options,
       p.updated_at
     from public.products p
     join public.categories c on c.id=p.category_id
@@ -1396,6 +1457,7 @@ begin
       'Custom Catalogue'::text,
       ''::text,
       '[]'::jsonb,
+      public.b2b_public_strip_prices(coalesce(i.fabric_options,'{}'::jsonb)),
       i.updated_at
     from public.custom_catalog_items i
     join public.custom_catalog_categories c on c.id=i.category_id
@@ -1413,7 +1475,8 @@ begin
       'name',name,'description',description,'category',category,'categoryId',category_id,
       'categoryImage',category_image,'categoryDescription',category_description,
       'subcategory',subcategory,'code',code,'images',images,
-      'productType',product_type,'optionTitle',option_title,'variants',variants,'updatedAt',updated_at
+      'productType',product_type,'optionTitle',option_title,'variants',variants,
+      'fabricOptions',fabric_options,'updatedAt',updated_at
     ) order by category,name),'[]'::jsonb)
   ) into v_result from catalog_items;
 
