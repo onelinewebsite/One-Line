@@ -5510,3 +5510,17 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
   .b2b-public-choice-grid button{min-height:35px;padding:0 10px;font-size:8.5px}
 }
 .b2b-public-brand b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;line-height:1.2}
+
+/* Public B2B item details intentionally reuse the main customer product/custom-item UI. */
+.b2b-public-product-page{background:#fff!important}
+.b2b-public-product-page .product-full-back{padding-top:2px!important}
+.b2b-public-product-page .b2b-public-product-back{border:0!important;background:transparent!important;color:var(--ink)!important;box-shadow:none!important}
+.b2b-public-product-page .b2b-public-action-row{grid-template-columns:1fr!important}
+.b2b-public-product-page .b2b-public-action-row .b2b-public-ask,.b2b-public-product-page .b2b-public-custom-ask{width:100%;min-height:50px;margin-top:0}
+.b2b-public-product-page .b2b-public-enquiry-note{width:100%}
+.b2b-public-product-page .custom-quality-choice b{font-size:9px!important;color:#7b6f7e!important;font-weight:800!important}
+.b2b-public-product-page .kids-uniform-option-button:not(.active){opacity:1!important;cursor:pointer!important}
+.b2b-public-product-page .kids-uniform-size-qty-row input{background:#fff!important}
+.b2b-public-product-page .bulk-size-row input{max-width:100%}
+.b2b-public-selection-summary strong{font-size:13px!important;letter-spacing:.02em}
+@media(max-width:560px){.b2b-public-product-page .product-full-back{width:calc(100vw - 20px)!important}}

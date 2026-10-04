@@ -1,4 +1,4 @@
-const CACHE='one-line-b2b-public-storefront-20261004o';
+const CACHE='one-line-b2b-public-storefront-20261004p';
 const CORE=[
   './index.html','./404.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',

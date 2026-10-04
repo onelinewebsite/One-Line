@@ -1431,7 +1431,7 @@ begin
       coalesce((select jsonb_agg(jsonb_build_object(
         'id',v.id,'color',v.color,'size',v.size,'image',v.image_url,'active',v.active
       ) order by v.color,v.size) from public.product_variants v
-      where v.product_id=p.id and v.active and coalesce(v.stock,0)>0),'[]'::jsonb) as variants,
+      where v.product_id=p.id and v.active),'[]'::jsonb) as variants,
       '{}'::jsonb as fabric_options,
       p.updated_at
     from public.products p
