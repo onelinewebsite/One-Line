@@ -99,7 +99,7 @@
   function customDesignPrice(design,qty,settings){
     const cfg=Object.assign({},designerPricingDefaults,settings||getSettings()),num=(k,f=0)=>{const v=Number(cfg[k]);return Number.isFinite(v)?v:Number(f||0);};
     const type=String(design?.garmentType||'T-Shirt'),material=String(design?.materialQuality||'Budget').toLowerCase(),print=String(design?.printType||'DTF Print').toLowerCase();
-    const base=type==='Polo'?num('custom_polo_base_price',400):num('custom_tshirt_base_price',350);
+    const base=(type==='Polo'||type==='V-Neck Sportswear')?num('custom_polo_base_price',400):num('custom_tshirt_base_price',350);
     const extra=material==='premium'?num('custom_premium_extra',100):material==='standard'?num('custom_standard_extra',50):0;
     const q=Math.max(1,Number(qty||design?.totalQty||1)),t2=Math.max(1,num('custom_qty_tier2_min',11)),t3=Math.max(t2+1,num('custom_qty_tier3_min',51)),t4=Math.max(t3+1,num('custom_qty_tier4_min',101));
     const discount=q>=t4?num('custom_qty_101_plus_discount',100):q>=t3?num('custom_qty_51_100_discount',60):q>=t2?num('custom_qty_11_50_discount',30):0;

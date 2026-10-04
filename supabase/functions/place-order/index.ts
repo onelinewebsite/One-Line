@@ -1,100 +1,73 @@
-import { cors,json,admin,resolveCustomerSession } from '../_shared.ts'
+import { createClient } from 'npm:@supabase/supabase-js@2'
+
+const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-one-line-public","Access-Control-Allow-Methods":"POST, OPTIONS"}
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"content-type":"application/json"}})
+const secretKey=()=>{const packed=Deno.env.get('SUPABASE_SECRET_KEYS');if(packed){try{const obj=JSON.parse(packed);if(obj.default)return obj.default;const first=Object.values(obj)[0];if(first)return String(first)}catch{}}return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}
+const admin=()=>createClient(Deno.env.get('SUPABASE_URL')!,secretKey(),{auth:{persistSession:false,autoRefreshToken:false}})
+const hashToken=async(token:string)=>{const bytes=new TextEncoder().encode(token);const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function resolveCustomerSession(token:string){const db=admin(),hash=await hashToken(token);const {data,error}=await db.from('customer_sessions').select('customer_id,expires_at,customers(id,phone,name,business_name,job_title)').eq('token_hash',hash).gt('expires_at',new Date().toISOString()).maybeSingle();if(error||!data)return null;return data}
 
 function decodeDataUrl(value:string){
   const m=value.match(/^data:(image\/(?:png|jpeg|webp));base64,(.+)$/);if(!m)return null;const bin=atob(m[2]),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return{type:m[1],bytes,ext:m[1].split('/')[1].replace('jpeg','jpg')};
 }
 function normalizeOrderItem(item:any){
   const type=String(item?.itemType||'product')
-  if(type==='team_design'||type==='custom_design'){
-    return {itemType:type,name:item?.name||'Custom design',code:item?.code||'CUSTOM',qty:Number(item?.qty||1),unitPrice:Number(item?.price||0),design:item?.design||item?.customDesign||{},groupKey:item?.key||''}
+  if(type==='team_design'||type==='custom_design'||type==='uniform_order'){
+    return {itemType:type,name:item?.name||(type==='uniform_order'?'Kids Uniform':'Custom design'),code:item?.code||(type==='uniform_order'?'UNIFORM':'CUSTOM'),qty:Number(item?.qty||1),unitPrice:Number(item?.price||item?.unitPrice||0),design:item?.design||item?.customDesign||item?.uniformOrder||{},groupKey:item?.key||''}
   }
-  if(item?.lines)return item // transition compatibility with v40 request shape
+  if(item?.lines)return item
   return {itemType:'product',productId:item?.productId,name:item?.name||'',code:item?.code||'',lines:Array.isArray(item?.bulkLines)?item.bulkLines:[],groupKey:item?.key||''}
 }
-
+function uniformStock(value:any){return Math.max(0,Math.floor(Number(value||0)))}
+function uniformSizeRows(rows:any){return (Array.isArray(rows)?rows:[]).map((r:any,i:number)=>({id:String(r?.id||('size-'+i)),size:String(r?.size||'').trim(),stock:uniformStock(r?.stock),rate:r?.rate!==undefined&&r?.rate!==null&&r?.rate!==''?Math.max(0,Number(r.rate)):null})).filter((r:any)=>r.size)}
+function uniformLegacySizes(v:any,common:any){const own=uniformSizeRows(v?.sizes);if(own.length)return own;const rows=uniformSizeRows(common),limit=uniformStock(v?.stock);if(!rows.length)return[];if(limit<=0)return rows.map((r:any)=>({...r,stock:0}));let left=limit;return rows.map((r:any)=>{const stock=Math.min(r.stock,left);left=Math.max(0,left-stock);return{...r,stock}})}
+function uniformConfig(raw:any){const src=raw?.fabric_options?.uniform_config&&typeof raw.fabric_options.uniform_config==='object'?raw.fabric_options.uniform_config:{top:[],bottom:[]},common=Array.isArray(src.sizes)?src.sizes:[];if(Array.isArray(src.top)||Array.isArray(src.bottom)){return{...src,top:(src.top||[]).map((v:any)=>({...v,sizes:uniformLegacySizes(v,common)})),bottom:(src.bottom||[]).map((v:any)=>({...v,sizes:uniformLegacySizes(v,common)}))}}if(Array.isArray(src.items)){const top=src.items.filter((v:any)=>['tshirt','woven'].includes(String(v?.id||''))).map((v:any)=>({...v,id:String(v.id)==='tshirt'?'top-tshirt':'top-woven',sizes:uniformLegacySizes(v,common)})),bottom=src.items.filter((v:any)=>['shorts','skirt','track-pant'].includes(String(v?.id||''))).map((v:any)=>({...v,id:String(v.id)==='shorts'?'bottom-shorts':String(v.id)==='skirt'?'bottom-skirt':'bottom-track-pant',sizes:uniformLegacySizes(v,common)}));return{...src,top,bottom}}return{top:[],bottom:[]}}
+function uniformVariantTotal(v:any){return (Array.isArray(v?.sizes)?v.sizes:[]).reduce((n:number,x:any)=>n+uniformStock(x?.stock),0)}
+function uniformRate(v:any,row:any,itemRate:any=null){const sr=row?.rate!==undefined&&row?.rate!==null&&row?.rate!==''?Number(row.rate):null,vr=v?.rate!==undefined&&v?.rate!==null&&v?.rate!==''?Number(v.rate):null,ir=itemRate!==undefined&&itemRate!==null&&itemRate!==''?Number(itemRate):null;return Number.isFinite(sr)?Math.max(0,sr):(Number.isFinite(vr)?Math.max(0,vr):(Number.isFinite(ir)?Math.max(0,ir):0))}
+async function validateUniformOrder(db:any,item:any){
+  const design=structuredClone(item?.design||{}),itemId=String(design.itemId||'');if(!itemId)throw new Error('Uniform item is missing. Add it to cart again.');
+  const q=await db.from('custom_catalog_items').select('*').eq('id',itemId).maybeSingle();if(q.error)throw q.error;if(!q.data||q.data.active===false)throw new Error('This uniform item is no longer available.');
+  const cfg=uniformConfig(q.data),available=[...(Array.isArray(cfg.top)?cfg.top:[]),...(Array.isArray(cfg.bottom)?cfg.bottom:[])].filter((v:any)=>v?.enabled===true&&uniformVariantTotal(v)>0),availableMap=new Map(available.map((v:any)=>[String(v.id),v]));
+  const requestedRaw=Array.isArray(design.selectedItems)?design.selectedItems:[],requestedIds:string[]=[...new Set<string>(requestedRaw.map((v:any)=>String(v?.id||'')).filter(Boolean))],selected=requestedIds.map((id:string)=>availableMap.get(id)).filter(Boolean) as any[];
+  if(!selected.length||selected.length!==requestedIds.length)throw new Error('One of the selected uniform items is no longer available.');
+  let totalPieces=0,totalAmount=0;const selectedItems=[] as any[];
+  for(const v of selected){const request=requestedRaw.find((x:any)=>String(x?.id||'')===String(v.id))||{},sizeRows=Array.isArray(v.sizes)?v.sizes:[],sizeMap=new Map(sizeRows.map((r:any)=>[String(r?.size||'').trim(),r])),cleanQty:any={};for(const [size,value] of Object.entries(request.sizeQuantities||design.itemQuantities?.[String(v.id)]||design.sizeQuantities||{})){const qty=Math.max(0,Math.floor(Number(value||0)));if(!qty)continue;const row=sizeMap.get(String(size).trim()) as any;if(!row)throw new Error(`${v.name||'Uniform item'} size ${size} is no longer available.`);const stock=uniformStock(row.stock);if(qty>stock)throw new Error(`${v.name||'Uniform item'} ${size} has only ${stock} in stock now.`);const rate=uniformRate(v,row,q.data.rate);cleanQty[String(size).trim()]=qty;totalPieces+=qty;totalAmount+=qty*rate;}const orderedQty=Object.values(cleanQty).reduce((n:number,q:any)=>n+Number(q||0),0);if(!orderedQty)continue;const sizeRates:any={};for(const r of sizeRows)sizeRates[String(r.size||'').trim()]=uniformRate(v,r,q.data.rate);const lineTotal=Object.entries(cleanQty).reduce((n:number,[size,q]:any)=>n+Number(q||0)*Number(sizeRates[size]||0),0);selectedItems.push({id:String(v.id),name:String(v.name||''),rate:v?.rate??null,availableStock:uniformVariantTotal(v),images:Array.isArray(v.images)?v.images.filter(Boolean):[],sizeQuantities:cleanQty,sizeRates,sizeStocks:sizeRows.map((r:any)=>({size:String(r?.size||'').trim(),stock:uniformStock(r?.stock),rate:uniformRate(v,r,q.data.rate)})).filter((r:any)=>r.size),orderedQty,lineTotal});}
+  if(!totalPieces||!selectedItems.length)throw new Error('Choose a size quantity before ordering.');
+  const aggregate:any={};for(const v of selectedItems)for(const [size,qty] of Object.entries(v.sizeQuantities||{}))aggregate[size]=(aggregate[size]||0)+Number(qty||0);
+  const cardImage=(q.data.images||[])[0]||'',images=[cardImage,...selectedItems.flatMap((v:any)=>v.images)].filter((v:string,i:number,a:string[])=>v&&a.indexOf(v)===i);
+  design.itemId=q.data.id;design.itemTitle=q.data.title||item.name||'Kids Uniform';design.cardImage=cardImage;design.images=images;design.selectedItems=selectedItems;design.itemQuantities=Object.fromEntries(selectedItems.map((v:any)=>[v.id,v.sizeQuantities]));design.sizeQuantities=aggregate;design.totalUnits=totalPieces;design.totalPieces=totalPieces;design.totalAmount=totalAmount;design.validatedAt=new Date().toISOString();
+  return {...item,name:q.data.title||item.name||'Kids Uniform',code:item.code||'UNIFORM',qty:totalPieces,unitPrice:totalPieces?totalAmount/totalPieces:0,lineTotal:totalAmount,design};
+}
 async function uploadOrderImage(db:any,customerId:string,value:any,label:string){
-  const decoded=decodeDataUrl(String(value||''));if(!decoded)return '';
-  const clean=String(label||'design').replace(/[^a-z0-9_-]+/gi,'-').slice(0,48)||'design';
-  const path=`orders/${customerId}/${crypto.randomUUID()}-${clean}.${decoded.ext}`;
-  const up=await db.storage.from('product-images').upload(path,decoded.bytes,{contentType:decoded.type,cacheControl:'31536000',upsert:false});if(up.error)throw up.error;
-  return db.storage.from('product-images').getPublicUrl(path).data.publicUrl;
+  const decoded=decodeDataUrl(String(value||''));if(!decoded)return '';const clean=String(label||'design').replace(/[^a-z0-9_-]+/gi,'-').slice(0,48)||'design';const path=`orders/${customerId}/${crypto.randomUUID()}-${clean}.${decoded.ext}`;const up=await db.storage.from('product-images').upload(path,decoded.bytes,{contentType:decoded.type,cacheControl:'31536000',upsert:false});if(up.error)throw up.error;return db.storage.from('product-images').getPublicUrl(path).data.publicUrl;
 }
 async function persistCustomDesignAssets(db:any,customerId:string,raw:any){
-  const design=structuredClone(raw||{}),surfaces=design?.surfaceDesigns||{};
-  for(const [surfaceName,surface] of Object.entries(surfaces)){
-    if(!surface||typeof surface!=='object')continue;
-    const layers=Array.isArray((surface as any).layers)?(surface as any).layers:[];
-    for(let i=0;i<layers.length;i++){
-      const layer=layers[i];if(!layer||layer.type!=='image')continue;
-      const original=layer.originalDataUrl||layer.src||layer.imageDataUrl||'';
-      const preview=layer.src||layer.imageDataUrl||original;
-      if(String(original).startsWith('data:'))layer.originalImageUrl=await uploadOrderImage(db,customerId,original,`${surfaceName}-artwork-${i+1}`);
-      else if(original)layer.originalImageUrl=String(original);
-      if(String(preview).startsWith('data:'))layer.imageUrl=await uploadOrderImage(db,customerId,preview,`${surfaceName}-artwork-preview-${i+1}`);
-      else if(preview)layer.imageUrl=String(preview);
-      if(!layer.originalImageUrl&&layer.imageUrl)layer.originalImageUrl=layer.imageUrl;
-      layer.src=layer.imageUrl||layer.originalImageUrl||'';
-      delete layer.originalDataUrl;delete layer.imageDataUrl;
-    }
-  }
-  if(design.frontCompositeDataUrl){design.frontCompositeUrl=await uploadOrderImage(db,customerId,design.frontCompositeDataUrl,'front-final');delete design.frontCompositeDataUrl;}
-  if(design.backCompositeDataUrl){design.backCompositeUrl=await uploadOrderImage(db,customerId,design.backCompositeDataUrl,'back-final');delete design.backCompositeDataUrl;}
-  if(design.uploadedImage&&String(design.uploadedImage).startsWith('data:')){design.uploadedImageUrl=await uploadOrderImage(db,customerId,design.uploadedImage,'front-artwork');design.uploadedImage=design.uploadedImageUrl;}
-  return design;
+  const design=structuredClone(raw||{}),surfaces=design?.surfaceDesigns||{};for(const [surfaceName,surface] of Object.entries(surfaces)){if(!surface||typeof surface!=='object')continue;const layers=Array.isArray((surface as any).layers)?(surface as any).layers:[];for(let i=0;i<layers.length;i++){const layer=layers[i];if(!layer||layer.type!=='image')continue;const original=layer.originalDataUrl||layer.src||layer.imageDataUrl||'',preview=layer.src||layer.imageDataUrl||original;if(String(original).startsWith('data:'))layer.originalImageUrl=await uploadOrderImage(db,customerId,original,`${surfaceName}-artwork-${i+1}`);else if(original)layer.originalImageUrl=String(original);if(String(preview).startsWith('data:'))layer.imageUrl=await uploadOrderImage(db,customerId,preview,`${surfaceName}-artwork-preview-${i+1}`);else if(preview)layer.imageUrl=String(preview);if(!layer.originalImageUrl&&layer.imageUrl)layer.originalImageUrl=layer.imageUrl;layer.src=layer.imageUrl||layer.originalImageUrl||'';delete layer.originalDataUrl;delete layer.imageDataUrl;}}
+  if(design.frontCompositeDataUrl){design.frontCompositeUrl=await uploadOrderImage(db,customerId,design.frontCompositeDataUrl,'front-final');delete design.frontCompositeDataUrl;}if(design.backCompositeDataUrl){design.backCompositeUrl=await uploadOrderImage(db,customerId,design.backCompositeDataUrl,'back-final');delete design.backCompositeDataUrl;}if(design.uploadedImage&&String(design.uploadedImage).startsWith('data:')){design.uploadedImageUrl=await uploadOrderImage(db,customerId,design.uploadedImage,'front-artwork');design.uploadedImage=design.uploadedImageUrl;}return design;
 }
-
 async function persistTeamDesignAssets(db:any,customerId:string,raw:any){
-  const design=structuredClone(raw||{}),sides=design?.design||design;
-  for(const sideName of ['front','back']){
-    const side=sides?.[sideName];if(!side)continue;
-    if(side.backgroundDataUrl){side.backgroundUrl=await uploadOrderImage(db,customerId,side.backgroundDataUrl,sideName+'-original');delete side.backgroundDataUrl;}
-    if(side.compositeDataUrl){side.compositeUrl=await uploadOrderImage(db,customerId,side.compositeDataUrl,sideName+'-final');delete side.compositeDataUrl;}
-    if(Array.isArray(side.layers))for(let i=0;i<side.layers.length;i++){
-      const layer=side.layers[i];if(!layer||layer.type!=='image')continue;
-      if(layer.originalDataUrl){layer.originalImageUrl=await uploadOrderImage(db,customerId,layer.originalDataUrl,sideName+'-logo-original-'+(i+1));delete layer.originalDataUrl;}
-      if(layer.imageDataUrl){layer.imageUrl=await uploadOrderImage(db,customerId,layer.imageDataUrl,sideName+'-logo-preview-'+(i+1));delete layer.imageDataUrl;}
-      if(!layer.originalImageUrl&&layer.imageUrl)layer.originalImageUrl=layer.imageUrl;
-    }
-  }
-  return design;
+  const design=structuredClone(raw||{}),sides=design?.design||design;for(const sideName of ['front','back']){const side=sides?.[sideName];if(!side)continue;if(side.backgroundDataUrl){side.backgroundUrl=await uploadOrderImage(db,customerId,side.backgroundDataUrl,sideName+'-original');delete side.backgroundDataUrl;}if(side.compositeDataUrl){side.compositeUrl=await uploadOrderImage(db,customerId,side.compositeDataUrl,sideName+'-final');delete side.compositeDataUrl;}if(Array.isArray(side.layers))for(let i=0;i<side.layers.length;i++){const layer=side.layers[i];if(!layer||layer.type!=='image')continue;if(layer.originalDataUrl){layer.originalImageUrl=await uploadOrderImage(db,customerId,layer.originalDataUrl,sideName+'-logo-original-'+(i+1));delete layer.originalDataUrl;}if(layer.imageDataUrl){layer.imageUrl=await uploadOrderImage(db,customerId,layer.imageDataUrl,sideName+'-logo-preview-'+(i+1));delete layer.imageDataUrl;}if(!layer.originalImageUrl&&layer.imageUrl)layer.originalImageUrl=layer.imageUrl;}}return design;
 }
+function makeOrderCode(){const d=new Date(),stamp=String(d.getUTCFullYear()).slice(-2)+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0'),random=crypto.randomUUID().replace(/-/g,'').slice(0,6).toUpperCase();return`OL-${stamp}-${random}`}
 
 Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:cors});
   try{
-    const body=await req.json(),s=await resolveCustomerSession(String(body.token||''));if(!s)return json({error:'Session expired. Verify your number again.'},401);const db=admin();
-    const customer=(s as any).customers||{},details=body.details||body;
-
-    // v41: the server cart is canonical. The browser request is only a legacy fallback
-    // while an older cached tab is being upgraded.
-    const cartQ=await db.from('customer_carts').select('items').eq('customer_id',s.customer_id).maybeSingle();if(cartQ.error)throw cartQ.error;
-    const serverCart=Array.isArray(cartQ.data?.items)?cartQ.data.items:[];
-    const directOrder=body.directOrder===true;
-    const browserItems=Array.isArray(body.items)?body.items:[];
-    const sourceItems=directOrder?browserItems:(serverCart.length?serverCart:browserItems);
-    const items=sourceItems.map(normalizeOrderItem);
-    if(!directOrder&&browserItems.length){
-      const prepared=browserItems.map(normalizeOrderItem);
-      for(let i=0;i<items.length;i++){const item=items[i];if(item?.itemType!=='custom_design')continue;const match=prepared.find((x:any)=>x?.itemType==='custom_design'&&String(x.groupKey||'')&&String(x.groupKey)===String(item.groupKey||''))||prepared.filter((x:any)=>x?.itemType==='custom_design')[i];if(match?.design)item.design=match.design;}
-    }
-
-    for(const item of items){
-      if(item?.itemType==='team_design')item.design=await persistTeamDesignAssets(db,s.customer_id,item.design||{});
-      else if(item?.itemType==='custom_design')item.design=await persistCustomDesignAssets(db,s.customer_id,item.design||{});
-      else if(item?.design?.artworkDataUrl){const decoded=decodeDataUrl(String(item.design.artworkDataUrl));if(decoded){const path=`orders/${s.customer_id}/${crypto.randomUUID()}.${decoded.ext}`;const up=await db.storage.from('product-images').upload(path,decoded.bytes,{contentType:decoded.type,cacheControl:'31536000',upsert:false});if(up.error)throw up.error;item.design.artworkUrl=db.storage.from('product-images').getPublicUrl(path).data.publicUrl;delete item.design.artworkDataUrl;}}
-    }
-    const customerName=String(details.customerName||details.name||customer.name||'').trim().slice(0,120);
-    const business=String(details.business||customer.business_name||'').trim().slice(0,160);
-    const q=await db.rpc('place_bulk_order',{p_customer_id:s.customer_id,p_customer_name:customerName,p_phone:String(customer.phone||details.phone||''),p_address:String(details.address||''),p_business:business,p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:items});if(q.error)throw q.error;
+    const body=await req.json(),s=await resolveCustomerSession(String(body.token||''));if(!s)return json({error:'Session expired. Verify your number again.'},401);const db=admin(),customer=(s as any).customers||{},details=body.details||body;
+    const cartQ=await db.from('customer_carts').select('items').eq('customer_id',s.customer_id).maybeSingle();if(cartQ.error)throw cartQ.error;const serverCart=Array.isArray(cartQ.data?.items)?cartQ.data.items:[],directOrder=body.directOrder===true,browserItems=Array.isArray(body.items)?body.items:[],sourceItems=directOrder?browserItems:(serverCart.length?serverCart:browserItems);let items=sourceItems.map(normalizeOrderItem);
+    if(!directOrder&&browserItems.length){const prepared=browserItems.map(normalizeOrderItem);for(let i=0;i<items.length;i++){const item=items[i];if(item?.itemType==='custom_design'||item?.itemType==='uniform_order'){const match=prepared.find((x:any)=>x?.itemType===item.itemType&&String(x.groupKey||'')&&String(x.groupKey)===String(item.groupKey||''))||prepared.filter((x:any)=>x?.itemType===item.itemType)[i];if(match?.design)item.design=match.design;}}}
+    const checked=[] as any[];for(const item of items){if(item?.itemType==='uniform_order')checked.push(await validateUniformOrder(db,item));else checked.push(item);}items=checked;
+    for(const item of items){if(item?.itemType==='team_design')item.design=await persistTeamDesignAssets(db,s.customer_id,item.design||{});else if(item?.itemType==='custom_design')item.design=await persistCustomDesignAssets(db,s.customer_id,item.design||{});}
+    const customerName=String(details.customerName||details.name||customer.name||'').trim().slice(0,120),business=String(details.business||customer.business_name||'').trim().slice(0,160),uniformItems=items.filter((x:any)=>x.itemType==='uniform_order'),normalItems=items.filter((x:any)=>x.itemType!=='uniform_order');let order:any;
+    if(normalItems.length){const q=await db.rpc('place_bulk_order',{p_customer_id:s.customer_id,p_customer_name:customerName,p_phone:String(customer.phone||details.phone||''),p_address:String(details.address||''),p_business:business,p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:normalItems});if(q.error)throw q.error;order=q.data;}
+    else{const id=crypto.randomUUID(),orderCode=makeOrderCode(),insert=await db.from('orders').insert({id,order_code:orderCode,customer_id:s.customer_id,customer_name:customerName,phone:String(customer.phone||details.phone||''),address:String(details.address||''),business,delivery:String(body.delivery||''),payment:String(body.payment||''),status:'Confirmed',total:uniformItems.reduce((n:any,x:any)=>n+Number(x.lineTotal||0),0),metadata:{uniform_order:true}}).select('id,order_code,total,status').single();if(insert.error)throw insert.error;order={id:insert.data.id,orderCode:insert.data.order_code,total:Number(insert.data.total||0),status:insert.data.status||'Confirmed'};}
+    for(const item of uniformItems){const ins=await db.from('order_items').insert({order_id:order.id,item_type:'uniform_order',item_name:item.name||'Kids Uniform',item_code:item.code||'UNIFORM',qty:Math.max(1,Number(item.qty||1)),unit_price:Number(item.unitPrice||0),design_json:item.design||{},group_key:item.groupKey||''});if(ins.error)throw ins.error;}
+    if(normalItems.length&&uniformItems.length){const extra=uniformItems.reduce((n:number,x:any)=>n+Number(x.lineTotal||0),0),current=Number(order?.total||0),updated=await db.from('orders').update({total:current+extra}).eq('id',order.id).select('total').single();if(updated.error)throw updated.error;order.total=Number(updated.data?.total||current+extra);}
     await db.from('customers').update({name:customerName||customer.name||'',business_name:business||customer.business_name||'',updated_at:new Date().toISOString(),last_seen_at:new Date().toISOString()}).eq('id',s.customer_id);
     if(!directOrder){const cleared=await db.rpc('customer_cart_mutate',{p_customer_id:s.customer_id,p_operation:'clear',p_item_key:null,p_item:null});if(cleared.error)console.error('Order placed but cart clear failed:',cleared.error.message);}
-    const verify=await db.from('order_items').select('id,item_type,design_json').eq('order_id',q.data.id);if(verify.error)throw verify.error;
-    const teamItems=(verify.data||[]).filter((x:any)=>x.item_type==='team_design');
-    for(const saved of teamItems){const d=saved.design_json||{},front=d?.design?.front||d?.front||{},back=d?.design?.back||d?.back||{};if(!front.compositeUrl||!back.compositeUrl||!Array.isArray(d.roster))throw new Error('Team enquiry was not fully saved. Please try again.');for(const side of [front,back])for(const layer of side.layers||[]){if(layer?.type==='image'&&(!layer.imageUrl||!layer.originalImageUrl))throw new Error('One of the uploaded logo files was not fully saved. Please try again.');}}
-    const customItems=(verify.data||[]).filter((x:any)=>x.item_type==='custom_design');
-    for(const saved of customItems){const d=saved.design_json||{};if(!d.frontCompositeUrl||!d.backCompositeUrl)throw new Error('The final front/back design images were not fully saved. Please try again.');for(const surface of Object.values(d.surfaceDesigns||{}))for(const layer of ((surface as any)?.layers||[])){if(layer?.type==='image'&&!layer.originalImageUrl)throw new Error('One of the customer artwork files was not fully saved. Please try again.');}}
-    await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'order_placed',payload:{order:q.data,directOrder}});
-    for(const item of items.filter((x:any)=>x.itemType==='team_design')){const a=await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'team_design_enquiry',payload:{...item.design,orderId:q.data.id,orderCode:q.data.orderCode}});if(a.error)console.error('Team enquiry activity log failed:',a.error.message);}
-    return json({ok:true,order:q.data,verified:true});
+    const verify=await db.from('order_items').select('id,item_type,design_json').eq('order_id',order.id);if(verify.error)throw verify.error;const teamItems=(verify.data||[]).filter((x:any)=>x.item_type==='team_design');for(const saved of teamItems){const d=saved.design_json||{},front=d?.design?.front||d?.front||{},back=d?.design?.back||d?.back||{};if(!front.compositeUrl||!back.compositeUrl||!Array.isArray(d.roster))throw new Error('Team enquiry was not fully saved. Please try again.');}
+    const customItems=(verify.data||[]).filter((x:any)=>x.item_type==='custom_design');for(const saved of customItems){const d=saved.design_json||{};if(!d.frontCompositeUrl||!d.backCompositeUrl)throw new Error('The final front/back design images were not fully saved. Please try again.');}
+    await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'order_placed',payload:{order,directOrder}});for(const item of items.filter((x:any)=>x.itemType==='team_design')){const a=await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'team_design_enquiry',payload:{...item.design,orderId:order.id,orderCode:order.orderCode}});if(a.error)console.error('Team enquiry activity log failed:',a.error.message);}
+    return json({ok:true,order,verified:true});
   }catch(e){return json({error:e instanceof Error?e.message:'Order could not be placed.'},400)}
 })

@@ -5287,3 +5287,166 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 @media(max-width:620px){.order-submit-loader{border-radius:18px;padding:26px 18px 23px}.order-submit-loader strong{font-size:18px}.order-submit-spinner{width:38px;height:38px}}
 .design-surface-gallery figure>img{display:block;width:100%;height:73px;object-fit:contain;border-radius:6px;background:#f5f1f6}
 @media(max-width:760px){.design-surface-gallery figure>img{height:52px}}
+
+
+/* Kids Uniform customer selector */
+.kids-uniform-picker{display:grid;gap:22px;margin:18px 0}.kids-uniform-part{display:grid;gap:12px}.kids-uniform-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.kids-uniform-choice{display:flex;align-items:center;gap:10px;min-width:0;padding:9px;border:1px solid #ddd3df;border-radius:13px;background:#fff;text-align:left;color:var(--ink);cursor:pointer}.kids-uniform-choice.active{border-color:#74157d;box-shadow:0 0 0 1px #74157d;background:#fbf5fc}.kids-uniform-choice.out{opacity:.48;cursor:not-allowed}.kids-uniform-choice-image{width:58px;height:66px;flex:0 0 58px;border-radius:9px;overflow:hidden;background:#f5f1f6}.kids-uniform-choice-image img{width:100%;height:100%;object-fit:cover}.kids-uniform-choice-copy{display:grid;gap:3px;min-width:0}.kids-uniform-choice-copy b{font-size:13px}.kids-uniform-choice-copy small{font-size:9px;color:var(--muted)}.kids-uniform-choice-copy strong{font-size:11px;color:#6d1777}
+.kids-uniform-size-picker{display:grid;gap:8px}.kids-uniform-size-picker>span{font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#8a768e}.kids-uniform-size-picker>div{display:flex;flex-wrap:wrap;gap:7px}.kids-uniform-size-picker button{min-width:76px;padding:8px 10px;border:1px solid #ddd3df;border-radius:9px;background:#fff;display:grid;gap:2px;text-align:left;cursor:pointer}.kids-uniform-size-picker button.active{background:#64116f;color:#fff;border-color:#64116f}.kids-uniform-size-picker button.out{opacity:.42;cursor:not-allowed}.kids-uniform-size-picker b{font-size:11px}.kids-uniform-size-picker small{font-size:8px;color:inherit;opacity:.72}
+.kids-uniform-selected{border-radius:14px;background:#211b22;color:#fff;padding:14px;display:grid;gap:8px}.kids-uniform-selected span{display:grid;grid-template-columns:62px 1fr auto;gap:8px;align-items:center;font-size:10px}.kids-uniform-selected span b{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:#c8bacb}.kids-uniform-selected strong{font-size:11px}.kids-uniform-selected em{font-style:normal;font-weight:900;font-size:15px;text-align:right;border-top:1px solid rgba(255,255,255,.12);padding-top:8px}
+.kids-uniform-description{display:grid;gap:14px;margin:20px 0}.kids-uniform-description section{display:grid;gap:8px}.kids-uniform-description h3{margin:0;font-size:13px;font-weight:900;color:#4f1756}.kids-uniform-description section>div{display:grid;gap:6px}.kids-uniform-description span{display:flex;align-items:flex-start;gap:7px;font-size:11px;line-height:1.45;color:#514a53}.kids-uniform-description .icon{width:14px;height:14px;flex:0 0 14px;color:#6f1478}.kids-uniform-description i{font-style:normal}
+@media(max-width:560px){.kids-uniform-choice-grid{grid-template-columns:1fr 1fr}.kids-uniform-choice{display:grid;grid-template-columns:48px 1fr;padding:8px;gap:8px}.kids-uniform-choice-image{width:48px;height:58px}.kids-uniform-choice-copy b{font-size:11px}.kids-uniform-selected span{grid-template-columns:54px 1fr}.kids-uniform-selected strong{grid-column:2;text-align:left}}
+
+
+/* Simplified Kids Uniform item cards */
+.kids-uniform-picker.simple-garments{gap:14px}.kids-uniform-garment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.kids-uniform-garment-card{border:1px solid #ded5e0;border-radius:14px;background:#fff;overflow:hidden;display:grid}.kids-uniform-garment-card.out{opacity:.58}.kids-uniform-garment-image{aspect-ratio:4/3;background:#f6f2f7;overflow:hidden}.kids-uniform-garment-image img{width:100%;height:100%;object-fit:cover}.kids-uniform-garment-copy{padding:12px;display:grid;gap:10px}.kids-uniform-garment-copy>div:first-child{display:grid;gap:2px}.kids-uniform-garment-copy>div:first-child b{font-size:14px}.kids-uniform-garment-copy>div:first-child small{font-size:9px;color:var(--muted)}
+@media(max-width:560px){.kids-uniform-garment-grid{grid-template-columns:1fr 1fr;gap:9px}.kids-uniform-garment-copy{padding:9px}.kids-uniform-garment-copy>div:first-child b{font-size:12px}.kids-uniform-size-picker>div{gap:5px}.kids-uniform-size-picker button{min-width:58px;padding:7px 8px}}
+
+
+/* Kids Uniform v3: button-only choices; selected option controls main gallery */
+.uniform-button-picker{gap:16px!important}.kids-uniform-option-part{display:grid;gap:8px}.kids-uniform-option-part>span{font-size:9px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:#87778b}.kids-uniform-option-part>div{display:flex;flex-wrap:wrap;gap:8px}.kids-uniform-option-button,.kids-uniform-size-button{min-width:98px;min-height:44px;padding:9px 14px;border:1px solid #ddd3df;border-radius:10px;background:#fff;color:#2a222c;display:grid;place-items:center;gap:2px;text-align:center;cursor:pointer;font:inherit}.kids-uniform-option-button b,.kids-uniform-size-button b{font-size:11px}.kids-uniform-option-button small{font-size:7px;color:#968a99}.kids-uniform-option-button.active,.kids-uniform-size-button.active{border-color:#74157d;background:#74157d;color:#fff;box-shadow:0 6px 16px rgba(100,17,111,.13)}.kids-uniform-option-button.active small{color:#fff}.kids-uniform-option-button.out{opacity:.45;cursor:not-allowed}.uniform-common-size .kids-uniform-size-button{min-width:56px}.kids-uniform-selected-summary{display:flex;flex-wrap:wrap;gap:7px;padding-top:3px}.kids-uniform-selected-summary span{display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:8px;background:#f6f0f7;color:#5f1768}.kids-uniform-selected-summary b{font-size:7px;text-transform:uppercase;letter-spacing:.08em;color:#8c6d90}.kids-uniform-selected-summary strong{font-size:9px}
+@media(max-width:560px){.kids-uniform-option-part>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.uniform-common-size>div{display:flex;flex-wrap:wrap}.kids-uniform-option-button{width:100%;min-width:0}.kids-uniform-selected-summary{display:grid;grid-template-columns:1fr 1fr}.kids-uniform-selected-summary span:last-child:nth-child(odd){grid-column:1/3}}
+
+/* Kids Uniform live inventory */
+.kids-uniform-live-stock{display:grid;gap:3px;padding:11px 12px;border:1px solid #d9cedb;border-radius:10px;background:#faf7fb}.kids-uniform-live-stock>span{font-size:8px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#8a768e}.kids-uniform-live-stock>strong{font-size:13px;color:#4f1756}.kids-uniform-live-stock>small{font-size:8px;color:#8c818e}.kids-uniform-live-stock.low{border-color:#e1b8b8;background:#fff8f8}.kids-uniform-live-stock.low>strong{color:#a33333}
+
+
+/* Kids Uniform size-quantity ordering */
+.kids-uniform-option-button.made-to-order{border-style:dashed}.kids-uniform-option-button.made-to-order small{color:#9a6a30}.kids-uniform-option-button.active.made-to-order small{color:#fff}
+.kids-uniform-size-qty{display:grid;gap:9px}.kids-uniform-size-qty-head{display:grid;gap:2px}.kids-uniform-size-qty-head>span{font-size:9px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:#87778b}.kids-uniform-size-qty-head>small{font-size:8px;color:#938696}.kids-uniform-size-qty-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kids-uniform-size-qty-row{display:grid;grid-template-columns:1fr 72px auto;gap:8px;align-items:center;padding:9px 10px;border:1px solid #ddd3df;border-radius:10px;background:#fff}.kids-uniform-size-qty-row>span{display:grid;gap:1px}.kids-uniform-size-qty-row b{font-size:11px}.kids-uniform-size-qty-row small{font-size:7px;color:#918594}.kids-uniform-size-qty-row input{width:100%;min-width:0;height:36px;border:1px solid #d9cedb;border-radius:8px;background:#faf8fb;padding:0 8px;text-align:center;font:800 13px/1 inherit;color:#2a222c;outline:none}.kids-uniform-size-qty-row input:focus{border-color:#74157d;box-shadow:0 0 0 2px rgba(116,21,125,.08)}.kids-uniform-size-qty-row em{font-style:normal;font-size:8px;color:#8c818e}.kids-uniform-size-qty-empty{padding:10px 12px;border:1px dashed #d7cbd9;border-radius:10px;font-size:9px;color:#847788}
+@media(max-width:560px){.kids-uniform-size-qty-grid{grid-template-columns:1fr}.kids-uniform-size-qty-row{grid-template-columns:1fr 80px auto}}
+
+/* V-Neck Sportswear garment option */
+.stage-garment-type .garment-type-cards{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.stage-garment-type .garment-type-cards button b{white-space:normal!important;text-overflow:clip!important;line-height:1.15!important}
+@media(max-width:390px){.stage-garment-type .garment-type-cards{grid-template-columns:repeat(3,minmax(0,1fr))!important}.stage-garment-type .garment-type-cards button{padding:7px 4px!important}.stage-garment-type .garment-type-cards button b{font-size:9px!important}.stage-garment-type .garment-type-cards button small{font-size:7px!important}}
+
+/* Kids Uniform multi-item ordering */
+.uniform-multi-options>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.uniform-multi-options .kids-uniform-option-button{width:100%;min-width:0}.uniform-multi-options .kids-uniform-option-button.out{opacity:.42;cursor:not-allowed}.kids-uniform-size-qty-row.stock-aware{grid-template-columns:1fr;align-items:stretch;gap:7px}.kids-uniform-size-qty-row.stock-aware>span{display:flex;align-items:center;justify-content:space-between;gap:10px}.kids-uniform-size-qty-row.stock-aware>span small{font-size:8px;font-weight:800;color:#6d1777}.kids-uniform-size-qty-row.stock-aware>label{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:8px}.kids-uniform-size-qty-row.stock-aware>label small{font-size:8px;font-weight:800;color:#8a768e}.kids-uniform-size-qty-row.stock-aware>label input{width:100%;height:38px}.kids-uniform-size-qty-row.stock-aware.out{opacity:.62;background:#faf8fa}.kids-uniform-size-qty-row.stock-aware>em{font-style:normal;font-size:8px;color:#928696}.uniform-order-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.uniform-order-actions .wide{width:100%;margin:0}.ordered-uniform-item small{display:block;margin-top:4px;color:var(--muted);font-size:9px}
+@media(max-width:560px){.uniform-multi-options>div{grid-template-columns:repeat(2,minmax(0,1fr))}.uniform-order-actions{grid-template-columns:1fr 1fr;gap:8px}.uniform-order-actions button{padding-inline:8px}.kids-uniform-size-qty-grid{grid-template-columns:1fr 1fr}.kids-uniform-size-qty-row.stock-aware{padding:9px}}
+
+
+/* Kids Uniform size-stock-only quantity controls */
+.kids-uniform-item-size-groups{display:grid;gap:14px;margin-top:14px}.kids-uniform-item-size-group{display:grid;gap:10px;padding:12px;border:1px solid #e4dbe7;border-radius:14px;background:#fff}.kids-uniform-item-size-group .kids-uniform-size-qty-head{margin:0}.uniform-qty-stepper{display:grid;grid-template-columns:38px 58px 38px;align-items:center;border:1px solid #d9cedd;border-radius:10px;overflow:hidden;background:#fff}.uniform-qty-stepper button{height:40px;border:0;background:#f7f2f8;color:#64116f;font-size:20px;font-weight:800;cursor:pointer}.uniform-qty-stepper input{width:100%;height:40px;border:0;border-left:1px solid #e4dbe7;border-right:1px solid #e4dbe7;text-align:center;font:inherit;font-weight:800;outline:none;-moz-appearance:textfield}.uniform-qty-stepper input::-webkit-outer-spin-button,.uniform-qty-stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.kids-uniform-size-qty-row.stock-aware{grid-template-columns:minmax(0,1fr) auto}.kids-uniform-option-button.out{opacity:.45}.kids-uniform-description{margin-top:24px}
+@media(max-width:520px){.uniform-qty-stepper{grid-template-columns:36px 52px 36px}.uniform-qty-stepper button,.uniform-qty-stepper input{height:38px}}
+.kids-uniform-description p{margin:0;color:var(--muted);font-size:11px;line-height:1.65;white-space:pre-line}
+
+/* Kids Uniform — simple size selector */
+.kids-uniform-item-size-groups{display:grid;gap:18px;margin-top:16px}
+.kids-uniform-item-size-group{padding:0;border:0;border-radius:0;background:transparent;display:grid;gap:8px}
+.kids-uniform-item-size-group+.kids-uniform-item-size-group{padding-top:16px;border-top:1px solid #eee7f0}
+.kids-uniform-item-size-group .kids-uniform-size-qty-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0}
+.kids-uniform-item-size-group .kids-uniform-size-qty-head>span{font-size:12px;font-weight:800;letter-spacing:0;text-transform:none;color:#2e2730}
+.kids-uniform-item-size-group .kids-uniform-size-qty-head>small{font-size:9px;color:#847788}
+.kids-uniform-item-size-group .kids-uniform-size-qty-grid{display:grid;grid-template-columns:1fr;gap:7px}
+.kids-uniform-item-size-group .kids-uniform-size-qty-row.stock-aware{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border:0;border-bottom:1px solid #f1ecf2;border-radius:0;background:transparent}
+.kids-uniform-item-size-group .kids-uniform-size-qty-row.stock-aware:last-child{border-bottom:0}
+.kids-uniform-item-size-group .kids-uniform-size-qty-row.stock-aware>span{display:grid;gap:2px;min-width:0}
+.kids-uniform-item-size-group .kids-uniform-size-qty-row.stock-aware>span b{font-size:12px;font-weight:800;color:#2f2831}
+.kids-uniform-item-size-group .kids-uniform-size-qty-row.stock-aware>span small{font-size:9px;font-weight:600;color:#7f7182}
+.kids-uniform-item-size-group .uniform-qty-stepper{display:grid;grid-template-columns:32px 48px 32px;border:1px solid #dfd6e1;border-radius:8px;overflow:hidden;background:#fff;flex:0 0 auto}
+.kids-uniform-item-size-group .uniform-qty-stepper button{height:34px;padding:0;border:0;background:#fff;color:#64116f;font-size:18px;font-weight:700;line-height:1;cursor:pointer}
+.kids-uniform-item-size-group .uniform-qty-stepper button:active{background:#f6f1f7}
+.kids-uniform-item-size-group .uniform-qty-stepper input{width:48px;height:34px;padding:0;border:0;border-left:1px solid #eee7f0;border-right:1px solid #eee7f0;background:#fff;text-align:center;font-size:12px;font-weight:800;color:#2f2831;outline:none}
+.kids-uniform-item-size-group .kids-uniform-size-qty-empty{padding:10px 0;border:0;border-radius:0;background:transparent;font-size:9px;color:#8b808d}
+@media(max-width:520px){
+  .kids-uniform-item-size-groups{gap:15px}
+  .kids-uniform-item-size-group+.kids-uniform-item-size-group{padding-top:14px}
+  .kids-uniform-item-size-group .kids-uniform-size-qty-row.stock-aware{padding:8px 0}
+  .kids-uniform-item-size-group .uniform-qty-stepper{grid-template-columns:30px 44px 30px}
+  .kids-uniform-item-size-group .uniform-qty-stepper button,.kids-uniform-item-size-group .uniform-qty-stepper input{height:32px}
+  .kids-uniform-item-size-group .uniform-qty-stepper input{width:44px}
+}
+
+
+/* Kids Uniform rates + clearer size/stock row */
+.kids-uniform-item-size-group .kids-uniform-size-qty-row.stock-aware{padding:10px 0!important}
+.kids-uniform-item-size-group .uniform-size-stock-inline{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:9px!important;min-width:0!important}
+.kids-uniform-item-size-group .uniform-size-stock-inline>b{font-size:15px!important;font-weight:850!important;line-height:1!important;color:#251f27!important;min-width:28px!important}
+.kids-uniform-item-size-group .uniform-size-stock-inline>small{font-size:9px!important;font-weight:750!important;color:#77697a!important;white-space:nowrap!important}
+.kids-uniform-item-size-group .uniform-size-stock-inline>em{font-style:normal!important;font-size:9px!important;font-weight:850!important;color:#64116f!important;white-space:nowrap!important}
+@media(max-width:420px){.kids-uniform-item-size-group .uniform-size-stock-inline{gap:7px!important}.kids-uniform-item-size-group .uniform-size-stock-inline>b{font-size:14px!important}}
+
+/* Kids Uniform live selected total */
+.kids-uniform-selected-summary .uniform-selected-price{background:#64116f!important;color:#fff!important;padding:10px 14px!important;min-height:44px!important;border-radius:10px!important;gap:8px!important}
+.kids-uniform-selected-summary .uniform-selected-price b{color:rgba(255,255,255,.76)!important;font-size:8px!important}
+.kids-uniform-selected-summary .uniform-selected-price strong{color:#fff!important;font-size:14px!important;line-height:1!important}
+
+/* Named B2B account pricing */
+.b2b-assigned-rate strong{font-size:1rem;color:#6b1c77}
+.b2b-assigned-rate span{font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b2b-account-rate{display:inline-flex;align-items:center;min-height:46px;padding:10px 16px;border-radius:14px;background:#f5edf7;color:#6b1c77;font-size:1.35rem;font-weight:900;letter-spacing:-.02em}
+.b2b-login-card p{line-height:1.55}
+
+/* Full B2B product detail */
+.b2b-detail-rate{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.b2b-detail-rate small{font-size:.78rem;font-weight:700;color:#6b1c77;background:#f5edf7;padding:5px 8px;border-radius:999px}
+.b2b-rate-missing{color:#6b1c77;background:#f5edf7}
+.b2b-product .custom-enquiry-btn{margin-top:18px}
+
+/* B2B catalogue categories mirror the customer catalogue. */
+.b2b-category-section{margin-top:18px;margin-bottom:24px}
+.b2b-category-section .section-heading{margin-bottom:14px}
+.b2b-category-grid{margin-top:0}
+.b2b-category-card{cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.b2b-category-card:hover{transform:translateY(-2px)}
+.b2b-category-card.active{border-color:#6b1c77!important;box-shadow:0 0 0 2px rgba(107,28,119,.12)}
+.b2b-category-card.active .category-code{color:#6b1c77}
+.b2b-catalog .catalog-code-search{margin-bottom:18px}
+@media(max-width:720px){.b2b-category-section{margin-top:12px;margin-bottom:18px}.b2b-category-section .section-heading-copy p{display:none}.b2b-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.b2b-actions button{min-width:0;padding-left:7px!important;padding-right:7px!important}}
+
+
+/* B2B category-first catalogue: clean main page, stable refresh and responsive grids. */
+.b2b-clean-toolbar,.b2b-category-page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0 24px}
+.b2b-account-chip{display:flex;align-items:center;gap:9px;min-width:0}
+.b2b-account-chip span{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 9px;border-radius:999px;background:#f4eaf6;color:#6b1c77;font-size:9px;font-weight:900;letter-spacing:.08em}
+.b2b-account-chip b{font-size:15px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b2b-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.b2b-toolbar-actions button{min-height:38px;padding:0 13px}
+.b2b-category-section{margin:0 0 28px!important}
+.b2b-category-heading{margin:0 0 15px}
+.b2b-category-heading .eyebrow{display:block;margin-bottom:4px}
+.b2b-category-heading h1{margin:0;font-size:clamp(28px,3vw,42px);line-height:1;letter-spacing:-.04em}
+.b2b-category-grid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important;border:0!important;background:transparent!important}
+.b2b-category-grid .b2b-category-card,.b2b-category-grid .b2b-category-card:first-child{grid-column:auto!important;transform:none!important;min-width:0!important}
+.b2b-category-page-head{align-items:flex-end}
+.b2b-category-title{min-width:0;flex:1}
+.b2b-category-title h1{margin:3px 0 0;font-size:clamp(30px,4vw,52px);line-height:.98;letter-spacing:-.045em}
+.b2b-back-categories{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 12px;border:1px solid #d8cedb;border-radius:10px;background:#fff;color:#211a23;font-weight:800;cursor:pointer}
+.b2b-back-categories svg{width:15px;height:15px;transform:rotate(180deg)}
+.b2b-category-search{margin:0 0 18px!important}
+.b2b-category-items-grid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important;align-items:start!important}
+.b2b-category-items-grid .wellone-card.product-card{height:auto!important;min-height:0!important}
+.b2b-category-items-grid .b2b-assigned-rate{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;gap:7px!important;margin-top:10px!important}
+.b2b-category-items-grid .b2b-assigned-rate strong{line-height:1.1!important}
+.b2b-category-items-grid .b2b-assigned-rate span{display:block!important;line-height:1.25!important}
+@media(max-width:1399px){
+  .b2b-category-grid,.b2b-category-items-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media(max-width:899px){
+  .b2b-category-grid,.b2b-category-items-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:11px!important}
+  .b2b-category-page-head{align-items:flex-start;flex-wrap:wrap}
+  .b2b-category-title{order:-1;flex-basis:100%}
+}
+@media(max-width:599px){
+  .b2b-clean-toolbar{margin-top:2px;margin-bottom:17px;align-items:flex-start}
+  .b2b-toolbar-actions{gap:5px}
+  .b2b-toolbar-actions button{min-height:35px;padding:0 9px!important;font-size:9px!important}
+  .b2b-category-grid,.b2b-category-items-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  .b2b-category-grid .b2b-category-card,.b2b-category-grid .b2b-category-card:first-child{grid-column:auto!important;min-height:0!important}
+  .b2b-category-grid .b2b-category-card .category-photo,.b2b-category-grid .b2b-category-card:first-child .category-photo{min-height:0!important;aspect-ratio:1/1!important}
+  .b2b-category-page-head{gap:10px;margin-bottom:15px}
+  .b2b-category-title h1{font-size:32px}
+  .b2b-back-categories{min-height:36px;padding:0 10px;font-size:10px}
+  .b2b-category-items-grid .b2b-assigned-rate{gap:6px!important;margin-top:8px!important}
+}
+
+/* B2B category home uses the exact customer category-card sizing. */
+.b2b-category-home .b2b-category-section{margin:0 0 28px!important}
+.b2b-category-home .categories-only-grid{margin-top:0!important}
+@media(max-width:760px){
+  .b2b-category-home .categories-only-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important}
+  .b2b-category-home .categories-only-grid .real-category-card{min-width:0!important;width:100%!important;padding:8px!important;border-radius:16px!important}
+  .b2b-category-home .categories-only-grid .category-photo{width:100%!important;height:auto!important;aspect-ratio:3/4!important;margin:0!important;min-height:0!important}
+  .b2b-category-home .categories-only-grid .real-category-card>div:last-of-type{padding:10px!important;min-height:0!important}
+  .b2b-category-home .categories-only-grid .real-category-card h3{font-size:15px!important;line-height:1.2!important;margin:0!important}
+}
