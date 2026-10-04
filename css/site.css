@@ -5365,3 +5365,8 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 .kids-uniform-item-size-group .uniform-size-stock-inline>small{font-size:9px!important;font-weight:750!important;color:#77697a!important;white-space:nowrap!important}
 .kids-uniform-item-size-group .uniform-size-stock-inline>em{font-style:normal!important;font-size:9px!important;font-weight:850!important;color:#64116f!important;white-space:nowrap!important}
 @media(max-width:420px){.kids-uniform-item-size-group .uniform-size-stock-inline{gap:7px!important}.kids-uniform-item-size-group .uniform-size-stock-inline>b{font-size:14px!important}}
+
+/* Kids Uniform live selected total */
+.kids-uniform-selected-summary .uniform-selected-price{background:#64116f!important;color:#fff!important}
+.kids-uniform-selected-summary .uniform-selected-price b{color:rgba(255,255,255,.72)!important}
+.kids-uniform-selected-summary .uniform-selected-price strong{color:#fff!important;font-size:12px!important}

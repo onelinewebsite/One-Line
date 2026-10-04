@@ -1,4 +1,4 @@
-const CACHE='one-line-uniform-card-points-20261004f';
+const CACHE='one-line-uniform-live-price-20261004g';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',
