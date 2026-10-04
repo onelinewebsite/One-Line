@@ -1,4 +1,4 @@
-const CACHE='one-line-b2b-uniform-price-ui-20261004j';
+const CACHE='one-line-b2b-category-sync-20261004k';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',

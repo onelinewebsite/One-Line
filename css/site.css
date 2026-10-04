@@ -5382,3 +5382,14 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 .b2b-detail-rate small{font-size:.78rem;font-weight:700;color:#6b1c77;background:#f5edf7;padding:5px 8px;border-radius:999px}
 .b2b-rate-missing{color:#6b1c77;background:#f5edf7}
 .b2b-product .custom-enquiry-btn{margin-top:18px}
+
+/* B2B catalogue categories mirror the customer catalogue. */
+.b2b-category-section{margin-top:18px;margin-bottom:24px}
+.b2b-category-section .section-heading{margin-bottom:14px}
+.b2b-category-grid{margin-top:0}
+.b2b-category-card{cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.b2b-category-card:hover{transform:translateY(-2px)}
+.b2b-category-card.active{border-color:#6b1c77!important;box-shadow:0 0 0 2px rgba(107,28,119,.12)}
+.b2b-category-card.active .category-code{color:#6b1c77}
+.b2b-catalog .catalog-code-search{margin-bottom:18px}
+@media(max-width:720px){.b2b-category-section{margin-top:12px;margin-bottom:18px}.b2b-category-section .section-heading-copy p{display:none}.b2b-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.b2b-actions button{min-width:0;padding-left:7px!important;padding-right:7px!important}}
