@@ -932,10 +932,14 @@ create table if not exists public.b2b_item_prices (
   account_id uuid not null references public.b2b_accounts(id) on delete cascade,
   item_type text not null check (item_type in ('ready_made','custom_catalog')),
   item_id uuid not null,
-  rate numeric(12,2) not null check(rate >= 0),
+  rate numeric(12,2) check(rate >= 0),
+  pricing jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now(),
   primary key(account_id,item_type,item_id)
 );
+
+alter table public.b2b_item_prices add column if not exists pricing jsonb not null default '{}'::jsonb;
+alter table public.b2b_item_prices alter column rate drop not null;
 
 create index if not exists b2b_item_prices_item_idx
   on public.b2b_item_prices(item_type,item_id);
@@ -1119,6 +1123,25 @@ begin
       p.code,
       p.images,
       bp.rate,
+      coalesce(bp.pricing,'{}'::jsonb) as pricing,
+      p.product_type,
+      p.option_title,
+      p.stock,
+      p.mrp,
+      null::jsonb as fabric_options,
+      coalesce((
+        select jsonb_agg(jsonb_build_object(
+          'id',v.id,
+          'color',v.color,
+          'size',v.size,
+          'stock',v.stock,
+          'barcode',v.barcode,
+          'image',v.image_url,
+          'active',v.active
+        ) order by v.color,v.size)
+        from public.product_variants v
+        where v.product_id=p.id and v.active
+      ),'[]'::jsonb) as variants,
       p.updated_at
     from public.products p
     join public.categories c on c.id=p.category_id
@@ -1141,6 +1164,13 @@ begin
       ''::text as code,
       i.images,
       bp.rate,
+      coalesce(bp.pricing,'{}'::jsonb) as pricing,
+      'Custom Catalogue'::text as product_type,
+      ''::text as option_title,
+      0::integer as stock,
+      0::numeric as mrp,
+      coalesce(i.fabric_options,'{}'::jsonb) as fabric_options,
+      '[]'::jsonb as variants,
       i.updated_at
     from public.custom_catalog_items i
     join public.custom_catalog_categories c on c.id=i.category_id
@@ -1162,6 +1192,13 @@ begin
       'code',code,
       'images',images,
       'rate',rate,
+      'pricing',pricing,
+      'productType',product_type,
+      'optionTitle',option_title,
+      'stock',stock,
+      'mrp',mrp,
+      'fabricOptions',fabric_options,
+      'variants',variants,
       'updatedAt',updated_at
     ) order by category,name),'[]'::jsonb)
   ) into v_result

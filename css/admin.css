@@ -669,3 +669,23 @@ html,body{background:#f6f2f7;color:#241c27}
 .b2b-account-avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#f3eaf5;color:#6b1c77;font-size:18px;font-weight:900}
 .b2b-account-form{display:grid;gap:18px}
 @media(max-width:720px){.b2b-account-rate-row{grid-template-columns:minmax(0,1fr) 124px}.b2b-account-admin-row{grid-template-columns:44px minmax(0,1fr);gap:10px}.b2b-account-admin-row .admin-product-meta,.b2b-account-admin-row .row-actions{grid-column:2}}
+
+/* B2B per-account option pricing */
+.advanced-b2b-rates{gap:12px}
+.b2b-account-price-card{border:1px solid rgba(15,23,42,.12);border-radius:14px;background:#fff;overflow:hidden}
+.b2b-account-price-card>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;cursor:pointer;background:#fafafa}
+.b2b-account-price-card>summary::-webkit-details-marker{display:none}
+.b2b-account-price-card>summary>span{display:grid;gap:2px;min-width:0}
+.b2b-account-price-card>summary b{font-size:15px}
+.b2b-account-price-card>summary small{color:#64748b}
+.b2b-account-price-card>summary em{font-style:normal;font-size:12px;font-weight:800;color:#6b1c77}
+.b2b-account-price-body{display:grid;gap:12px;padding:14px 16px;border-top:1px solid rgba(15,23,42,.08)}
+.b2b-base-rate-row,.b2b-option-rate-grid>label{display:grid;grid-template-columns:minmax(0,1fr) 150px;align-items:center;gap:14px;padding:10px 12px;border:1px solid rgba(15,23,42,.09);border-radius:11px;background:#fff}
+.b2b-base-rate-row>span,.b2b-option-rate-grid>label>span{display:grid;gap:2px;min-width:0}
+.b2b-base-rate-row b,.b2b-option-rate-grid b{font-size:13px}
+.b2b-base-rate-row small,.b2b-option-rate-grid small{color:#64748b;font-size:11px}
+.b2b-base-rate-row>div,.b2b-option-rate-grid>label>div{display:flex;align-items:center;gap:6px;border:1px solid rgba(107,28,119,.18);border-radius:9px;padding:0 8px;background:#fff}
+.b2b-base-rate-row>div>span,.b2b-option-rate-grid>label>div>span{font-weight:800;color:#6b1c77}
+.b2b-base-rate-row input,.b2b-option-rate-grid input{width:100%;border:0!important;box-shadow:none!important;padding:9px 2px!important;background:transparent!important;font-weight:700}
+.b2b-option-rate-grid{display:grid;gap:8px;max-height:440px;overflow:auto;padding-right:2px}
+@media(max-width:720px){.b2b-base-rate-row,.b2b-option-rate-grid>label{grid-template-columns:minmax(0,1fr) 120px}.b2b-account-price-body{padding:12px}}

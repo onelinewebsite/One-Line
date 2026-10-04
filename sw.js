@@ -1,4 +1,4 @@
-const CACHE='one-line-b2b-account-rates-20261004h';
+const CACHE='one-line-b2b-full-product-rates-20261004i';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',

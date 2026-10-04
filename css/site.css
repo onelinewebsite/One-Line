@@ -5376,3 +5376,9 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 .b2b-assigned-rate span{font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .b2b-account-rate{display:inline-flex;align-items:center;min-height:46px;padding:10px 16px;border-radius:14px;background:#f5edf7;color:#6b1c77;font-size:1.35rem;font-weight:900;letter-spacing:-.02em}
 .b2b-login-card p{line-height:1.55}
+
+/* Full B2B product detail */
+.b2b-detail-rate{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.b2b-detail-rate small{font-size:.78rem;font-weight:700;color:#6b1c77;background:#f5edf7;padding:5px 8px;border-radius:999px}
+.b2b-rate-missing{color:#6b1c77;background:#f5edf7}
+.b2b-product .custom-enquiry-btn{margin-top:18px}
