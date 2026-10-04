@@ -689,3 +689,27 @@ html,body{background:#f6f2f7;color:#241c27}
 .b2b-base-rate-row input,.b2b-option-rate-grid input{width:100%;border:0!important;box-shadow:none!important;padding:9px 2px!important;background:transparent!important;font-weight:700}
 .b2b-option-rate-grid{display:grid;gap:8px;max-height:440px;overflow:auto;padding-right:2px}
 @media(max-width:720px){.b2b-base-rate-row,.b2b-option-rate-grid>label{grid-template-columns:minmax(0,1fr) 120px}.b2b-account-price-body{padding:12px}}
+
+/* B2B Kids Uniform pricing: grouped, account-friendly editor */
+.b2b-uniform-pricing-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.b2b-uniform-rate-box{display:grid;gap:10px;padding:13px;border:1px solid rgba(15,23,42,.10);border-radius:13px;background:#fbfbfc;min-width:0}
+.b2b-uniform-rate-box>header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:9px;border-bottom:1px solid rgba(15,23,42,.08)}
+.b2b-uniform-rate-box>header>div{display:grid;gap:2px;min-width:0}
+.b2b-uniform-rate-box>header b{font-size:14px}
+.b2b-uniform-rate-box>header small{font-size:11px;color:#64748b}
+.b2b-uniform-rate-box>header>span{font-size:10px;font-weight:800;color:#6b1c77;background:rgba(107,28,119,.08);padding:5px 8px;border-radius:999px;white-space:nowrap}
+.b2b-uniform-item-rate{display:grid;grid-template-columns:minmax(0,1fr) 140px;align-items:center;gap:10px;padding:10px;border:1px solid rgba(107,28,119,.16);border-radius:10px;background:#fff}
+.b2b-uniform-item-rate>span{display:grid;gap:2px;min-width:0}
+.b2b-uniform-item-rate b{font-size:13px}
+.b2b-uniform-item-rate small{font-size:10px;line-height:1.35;color:#64748b}
+.b2b-uniform-item-rate>div,.b2b-uniform-size-rate-row>div{display:flex;align-items:center;gap:5px;border:1px solid rgba(107,28,119,.18);border-radius:9px;background:#fff;padding:0 7px}
+.b2b-uniform-item-rate>div>span,.b2b-uniform-size-rate-row>div>span{font-weight:800;color:#6b1c77}
+.b2b-uniform-item-rate input,.b2b-uniform-size-rate-row input{width:100%;min-width:0;border:0!important;box-shadow:none!important;background:transparent!important;padding:8px 2px!important;font-weight:750}
+.b2b-uniform-size-rate-list{display:grid;gap:6px}
+.b2b-uniform-size-rate-row{display:grid;grid-template-columns:minmax(0,1fr) 140px;align-items:center;gap:10px;padding:8px 10px;border:1px solid rgba(15,23,42,.08);border-radius:9px;background:#fff}
+.b2b-uniform-size-rate-row>span{display:flex;align-items:baseline;gap:8px;min-width:0}
+.b2b-uniform-size-rate-row b{font-size:13px}
+.b2b-uniform-size-rate-row small{font-size:10px;color:#64748b}
+.b2b-uniform-no-sizes{padding:9px 10px;border:1px dashed rgba(15,23,42,.12);border-radius:9px;color:#64748b;font-size:11px;background:#fff}
+@media(max-width:900px){.b2b-uniform-pricing-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.b2b-uniform-item-rate,.b2b-uniform-size-rate-row{grid-template-columns:minmax(0,1fr) 116px}.b2b-uniform-rate-box{padding:10px}.b2b-uniform-rate-box>header>span{display:none}}
