@@ -5649,3 +5649,76 @@ html,body{max-width:100%;overflow-x:hidden}
   .custom-catalog-main-share{width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important}
   .b2b-public-footer{padding:12px!important;gap:5px!important;margin:0!important}
 }
+
+/* Public B2B footer alignment polish — footer only. */
+.b2b-public-footer{
+  min-height:64px!important;
+  padding:18px max(18px,calc((100vw - 1320px)/2))!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-direction:row!important;
+  flex-wrap:wrap!important;
+  gap:10px 18px!important;
+  text-align:center!important;
+  border-top:1px solid #ece7ed!important;
+  background:#fff!important;
+  color:#766d78!important;
+  box-sizing:border-box!important;
+}
+.b2b-public-footer>span,
+.b2b-public-footer>small{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:0!important;
+  margin:0!important;
+  line-height:1.45!important;
+}
+.b2b-public-footer>span{
+  gap:4px!important;
+  font-size:10px!important;
+  font-weight:650!important;
+}
+.b2b-public-footer>small{
+  gap:4px!important;
+  font-size:9px!important;
+  font-weight:750!important;
+  letter-spacing:.07em!important;
+  text-transform:uppercase!important;
+  color:#928796!important;
+}
+.b2b-public-footer>small::before{
+  content:"•";
+  margin-right:8px;
+  color:#c6bcc9;
+  font-size:12px;
+  line-height:1;
+}
+.b2b-public-footer a.b2b-public-developer-link{
+  display:inline-flex!important;
+  align-items:center!important;
+  color:#6b1c77!important;
+  font-weight:900!important;
+  text-decoration:none!important;
+}
+.b2b-public-footer a.b2b-public-developer-link:hover{
+  text-decoration:underline!important;
+}
+.b2b-public-footer small b{
+  color:#2c242e!important;
+  font-weight:900!important;
+  font-size:inherit!important;
+  letter-spacing:.08em!important;
+}
+@media(max-width:560px){
+  .b2b-public-footer{
+    min-height:0!important;
+    padding:15px 14px 16px!important;
+    gap:5px!important;
+    flex-direction:column!important;
+  }
+  .b2b-public-footer>span{font-size:9.5px!important}
+  .b2b-public-footer>small{font-size:8.5px!important}
+  .b2b-public-footer>small::before{display:none!important}
+}
