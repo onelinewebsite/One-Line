@@ -5393,3 +5393,49 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 .b2b-category-card.active .category-code{color:#6b1c77}
 .b2b-catalog .catalog-code-search{margin-bottom:18px}
 @media(max-width:720px){.b2b-category-section{margin-top:12px;margin-bottom:18px}.b2b-category-section .section-heading-copy p{display:none}.b2b-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.b2b-actions button{min-width:0;padding-left:7px!important;padding-right:7px!important}}
+
+
+/* B2B category-first catalogue: clean main page, stable refresh and responsive grids. */
+.b2b-clean-toolbar,.b2b-category-page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0 24px}
+.b2b-account-chip{display:flex;align-items:center;gap:9px;min-width:0}
+.b2b-account-chip span{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 9px;border-radius:999px;background:#f4eaf6;color:#6b1c77;font-size:9px;font-weight:900;letter-spacing:.08em}
+.b2b-account-chip b{font-size:15px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b2b-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.b2b-toolbar-actions button{min-height:38px;padding:0 13px}
+.b2b-category-section{margin:0 0 28px!important}
+.b2b-category-heading{margin:0 0 15px}
+.b2b-category-heading .eyebrow{display:block;margin-bottom:4px}
+.b2b-category-heading h1{margin:0;font-size:clamp(28px,3vw,42px);line-height:1;letter-spacing:-.04em}
+.b2b-category-grid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important;border:0!important;background:transparent!important}
+.b2b-category-grid .b2b-category-card,.b2b-category-grid .b2b-category-card:first-child{grid-column:auto!important;transform:none!important;min-width:0!important}
+.b2b-category-page-head{align-items:flex-end}
+.b2b-category-title{min-width:0;flex:1}
+.b2b-category-title h1{margin:3px 0 0;font-size:clamp(30px,4vw,52px);line-height:.98;letter-spacing:-.045em}
+.b2b-back-categories{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 12px;border:1px solid #d8cedb;border-radius:10px;background:#fff;color:#211a23;font-weight:800;cursor:pointer}
+.b2b-back-categories svg{width:15px;height:15px;transform:rotate(180deg)}
+.b2b-category-search{margin:0 0 18px!important}
+.b2b-category-items-grid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important;align-items:start!important}
+.b2b-category-items-grid .wellone-card.product-card{height:auto!important;min-height:0!important}
+.b2b-category-items-grid .b2b-assigned-rate{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;gap:7px!important;margin-top:10px!important}
+.b2b-category-items-grid .b2b-assigned-rate strong{line-height:1.1!important}
+.b2b-category-items-grid .b2b-assigned-rate span{display:block!important;line-height:1.25!important}
+@media(max-width:1399px){
+  .b2b-category-grid,.b2b-category-items-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media(max-width:899px){
+  .b2b-category-grid,.b2b-category-items-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:11px!important}
+  .b2b-category-page-head{align-items:flex-start;flex-wrap:wrap}
+  .b2b-category-title{order:-1;flex-basis:100%}
+}
+@media(max-width:599px){
+  .b2b-clean-toolbar{margin-top:2px;margin-bottom:17px;align-items:flex-start}
+  .b2b-toolbar-actions{gap:5px}
+  .b2b-toolbar-actions button{min-height:35px;padding:0 9px!important;font-size:9px!important}
+  .b2b-category-grid,.b2b-category-items-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  .b2b-category-grid .b2b-category-card,.b2b-category-grid .b2b-category-card:first-child{grid-column:auto!important;min-height:0!important}
+  .b2b-category-grid .b2b-category-card .category-photo,.b2b-category-grid .b2b-category-card:first-child .category-photo{min-height:0!important;aspect-ratio:1/1!important}
+  .b2b-category-page-head{gap:10px;margin-bottom:15px}
+  .b2b-category-title h1{font-size:32px}
+  .b2b-back-categories{min-height:36px;padding:0 10px;font-size:10px}
+  .b2b-category-items-grid .b2b-assigned-rate{gap:6px!important;margin-top:8px!important}
+}

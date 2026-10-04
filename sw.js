@@ -1,4 +1,4 @@
-const CACHE='one-line-b2b-category-sync-20261004k';
+const CACHE='one-line-b2b-category-flow-20261004m';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',
