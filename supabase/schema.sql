@@ -1428,8 +1428,9 @@ begin
       p.images,
       p.product_type,
       p.option_title,
+      greatest(coalesce(p.stock,0),0)::integer as stock,
       coalesce((select jsonb_agg(jsonb_build_object(
-        'id',v.id,'color',v.color,'size',v.size,'image',v.image_url,'active',v.active
+        'id',v.id,'color',v.color,'size',v.size,'image',v.image_url,'stock',greatest(coalesce(v.stock,0),0),'active',v.active
       ) order by v.color,v.size) from public.product_variants v
       where v.product_id=p.id and v.active),'[]'::jsonb) as variants,
       '{}'::jsonb as fabric_options,
@@ -1456,6 +1457,7 @@ begin
       i.images,
       'Custom Catalogue'::text,
       ''::text,
+      0::integer,
       '[]'::jsonb,
       public.b2b_public_strip_prices(coalesce(i.fabric_options,'{}'::jsonb)),
       i.updated_at
@@ -1475,7 +1477,7 @@ begin
       'name',name,'description',description,'category',category,'categoryId',category_id,
       'categoryImage',category_image,'categoryDescription',category_description,
       'subcategory',subcategory,'code',code,'images',images,
-      'productType',product_type,'optionTitle',option_title,'variants',variants,
+      'productType',product_type,'optionTitle',option_title,'stock',stock,'variants',variants,
       'fabricOptions',fabric_options,'updatedAt',updated_at
     ) order by category,name),'[]'::jsonb)
   ) into v_result from catalog_items;
