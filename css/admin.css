@@ -629,3 +629,20 @@ html,body{background:#f6f2f7;color:#241c27}
 /* Kids Uniform per-item size stock */
 .kids-uniform-variant-sizes{display:grid;gap:8px;padding-top:2px}.kids-uniform-variant-sizes .kids-uniform-size-list{gap:7px}.kids-uniform-size-row.simple{grid-template-columns:minmax(0,1fr) 100px 34px}.kids-uniform-size-row.simple input{width:100%;min-width:0;border:1px solid #ded4e1;border-radius:8px;padding:9px;background:#fff;color:#251d27;font:inherit}.kids-uniform-size-row.simple button{height:36px;border:0;border-radius:7px;background:#f6edf7;color:#73117f;cursor:pointer}
 @media(max-width:560px){.kids-uniform-size-row.simple{grid-template-columns:minmax(0,1fr) 90px 34px}}
+
+
+/* Larger portal scale + Kids Uniform rate controls */
+.admin-head{height:82px!important;padding-left:clamp(18px,3vw,42px)!important;padding-right:clamp(18px,3vw,42px)!important}
+.admin-logo img{width:42px!important;height:42px!important}.admin-logo b{font-size:20px!important}.admin-logo small{font-size:9px!important}
+.admin-menu button{height:43px!important;padding:0 15px!important;font-size:12px!important}
+.status-card,.admin-main{max-width:1440px!important}.admin-main{padding:0 24px!important;margin-top:18px!important}.status-card{padding:0 24px!important}
+.clean-card{padding:27px!important;border-radius:24px!important}.panel-head{margin-bottom:21px!important}.panel-head h1{font-size:31px!important}.tag{font-size:10px!important}
+.submit-small,.primary-btn,.ghost-btn,.danger-btn{min-height:46px!important;padding:0 16px!important;font-size:12px!important}
+.admin-product{grid-template-columns:80px minmax(0,1.4fr) minmax(145px,.55fr) minmax(145px,.5fr) auto!important;padding:12px!important;gap:15px!important}.admin-product>img,.admin-list-image{width:80px!important}.admin-product-copy b,.admin-product-price b{font-size:15px!important}.admin-product-copy small,.admin-product-meta small{font-size:11px!important}.row-actions button{height:41px!important;font-size:10px!important}
+.field>span,.section-label{font-size:11px!important}.field small{font-size:10px!important}.field input,.field select,.field textarea{min-height:50px!important;font-size:13px!important}.editor-box-head b{font-size:15px!important}.editor-box-head small{font-size:11px!important}
+.portal-edit-section header b{font-size:15px!important}.portal-edit-section header small{font-size:10px!important}
+.kids-uniform-editor fieldset{padding:19px!important;gap:21px!important}.kids-uniform-admin-grid{gap:13px!important}.kids-uniform-admin-card{padding:15px!important;gap:13px!important}.kids-uniform-toggle b{font-size:15px!important}.kids-uniform-toggle small{font-size:10px!important}.kids-uniform-stock-pill{font-size:10px!important}
+.kids-uniform-option-rate{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr);align-items:end;gap:10px;padding:10px 0;border-top:1px solid #eee8ef;border-bottom:1px solid #eee8ef}.kids-uniform-option-rate label{display:grid;gap:5px}.kids-uniform-option-rate label>span{font-size:10px;font-weight:900;color:#594c5c}.kids-uniform-option-rate input{width:100%;min-height:40px;border:1px solid #ded4e1;border-radius:9px;padding:0 10px;background:#fff;color:#251d27}.kids-uniform-option-rate small{font-size:9px;color:#918493;padding-bottom:9px}
+.kids-uniform-size-row.simple.rate-enabled{grid-template-columns:minmax(100px,1.2fr) minmax(90px,.8fr) minmax(100px,.9fr) 38px!important}.kids-uniform-size-row.simple.rate-enabled input{min-height:40px!important;font-size:12px!important}.kids-uniform-size-row.simple.rate-enabled button{height:40px!important}
+@media(max-width:760px){.admin-main,.status-card{padding-left:14px!important;padding-right:14px!important}.clean-card{padding:20px!important}.admin-product{grid-template-columns:72px minmax(0,1fr) auto!important}.kids-uniform-option-rate{grid-template-columns:1fr}.kids-uniform-option-rate small{padding-bottom:0}.kids-uniform-size-row.simple.rate-enabled{grid-template-columns:1fr 82px 90px 36px!important}}
+@media(max-width:520px){.kids-uniform-size-row.simple.rate-enabled{grid-template-columns:1fr 1fr 1fr 34px!important}.kids-uniform-size-row.simple.rate-enabled input{padding:8px!important}}

@@ -5356,3 +5356,12 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
   .kids-uniform-item-size-group .uniform-qty-stepper button,.kids-uniform-item-size-group .uniform-qty-stepper input{height:32px}
   .kids-uniform-item-size-group .uniform-qty-stepper input{width:44px}
 }
+
+
+/* Kids Uniform rates + clearer size/stock row */
+.kids-uniform-item-size-group .kids-uniform-size-qty-row.stock-aware{padding:10px 0!important}
+.kids-uniform-item-size-group .uniform-size-stock-inline{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:9px!important;min-width:0!important}
+.kids-uniform-item-size-group .uniform-size-stock-inline>b{font-size:15px!important;font-weight:850!important;line-height:1!important;color:#251f27!important;min-width:28px!important}
+.kids-uniform-item-size-group .uniform-size-stock-inline>small{font-size:9px!important;font-weight:750!important;color:#77697a!important;white-space:nowrap!important}
+.kids-uniform-item-size-group .uniform-size-stock-inline>em{font-style:normal!important;font-size:9px!important;font-weight:850!important;color:#64116f!important;white-space:nowrap!important}
+@media(max-width:420px){.kids-uniform-item-size-group .uniform-size-stock-inline{gap:7px!important}.kids-uniform-item-size-group .uniform-size-stock-inline>b{font-size:14px!important}}
