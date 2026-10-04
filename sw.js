@@ -1,4 +1,4 @@
-const CACHE='one-line-uniform-size-style-20261004d';
+const CACHE='one-line-uniform-card-copy-20261004e';
 const CORE=[
   './index.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',
