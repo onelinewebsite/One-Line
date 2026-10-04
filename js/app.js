@@ -697,7 +697,7 @@
   }
   function publicB2BPage(){
     const p=state.b2bPublic;if(p.loading)return '<main class="b2b-public-page"><div class="b2b-public-loading"><span></span><span></span><span></span><b>Opening catalogue…</b></div></main>';if(p.error||!p.store)return '<main class="b2b-public-page"><div class="empty-state"><h2>Catalogue unavailable</h2><p>'+S.esc(p.error||'This catalogue is not available right now.')+'</p></div></main>';
-    const store=p.store,brand=store.brandName||'Catalogue',items=p.items||[],header=publicB2BStoreHeader(),foot='<footer class="b2b-public-footer"><span>Catalogue by <b>'+S.esc(brand)+'</b></span><small>Powered by One-Line</small></footer>';
+    const store=p.store,brand=store.brandName||'Catalogue',items=p.items||[],header=publicB2BStoreHeader(),foot='<footer class="b2b-public-footer"><span>Developed by <a class="b2b-public-developer-link" href="'+QUARTZ_SITE+'" target="_blank" rel="noopener noreferrer">Quartz Web Solutions</a></span><small>Powered by <b>ONE-LINE</b></small></footer>';
     if(p.sourceType&&p.itemId){
       const item=items.find(x=>x.sourceType===p.sourceType&&String(x.sourceId)===String(p.itemId));if(!item)return header+'<main class="b2b-public-page"><div class="empty-state"><h2>Item not found</h2><button data-public-store-home>View catalogue</button></div></main>'+foot;
       return header+(item.sourceType==='ready_made'?publicB2BReadyDetail(item,brand):publicB2BCustomDetail(item,brand))+foot;
