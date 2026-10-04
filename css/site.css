@@ -5370,3 +5370,9 @@ h1,h2,h3{letter-spacing:-.035em!important}.eyebrow{letter-spacing:.12em!importan
 .kids-uniform-selected-summary .uniform-selected-price{background:#64116f!important;color:#fff!important;padding:10px 14px!important;min-height:44px!important;border-radius:10px!important;gap:8px!important}
 .kids-uniform-selected-summary .uniform-selected-price b{color:rgba(255,255,255,.76)!important;font-size:8px!important}
 .kids-uniform-selected-summary .uniform-selected-price strong{color:#fff!important;font-size:14px!important;line-height:1!important}
+
+/* Named B2B account pricing */
+.b2b-assigned-rate strong{font-size:1rem;color:#6b1c77}
+.b2b-assigned-rate span{font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b2b-account-rate{display:inline-flex;align-items:center;min-height:46px;padding:10px 16px;border-radius:14px;background:#f5edf7;color:#6b1c77;font-size:1.35rem;font-weight:900;letter-spacing:-.02em}
+.b2b-login-card p{line-height:1.55}

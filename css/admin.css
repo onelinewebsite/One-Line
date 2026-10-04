@@ -646,3 +646,26 @@ html,body{background:#f6f2f7;color:#241c27}
 .kids-uniform-size-row.simple.rate-enabled{grid-template-columns:minmax(100px,1.2fr) minmax(90px,.8fr) minmax(100px,.9fr) 38px!important}.kids-uniform-size-row.simple.rate-enabled input{min-height:40px!important;font-size:12px!important}.kids-uniform-size-row.simple.rate-enabled button{height:40px!important}
 @media(max-width:760px){.admin-main,.status-card{padding-left:14px!important;padding-right:14px!important}.clean-card{padding:20px!important}.admin-product{grid-template-columns:72px minmax(0,1fr) auto!important}.kids-uniform-option-rate{grid-template-columns:1fr}.kids-uniform-option-rate small{padding-bottom:0}.kids-uniform-size-row.simple.rate-enabled{grid-template-columns:1fr 82px 90px 36px!important}}
 @media(max-width:520px){.kids-uniform-size-row.simple.rate-enabled{grid-template-columns:1fr 1fr 1fr 34px!important}.kids-uniform-size-row.simple.rate-enabled input{padding:8px!important}}
+
+/* B2B account access + per-account pricing */
+.b2b-access-panel{display:grid;gap:14px}
+.b2b-access-toggle{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid rgba(15,23,42,.12);border-radius:14px;background:#fff;cursor:pointer}
+.b2b-access-toggle input{width:20px;height:20px;accent-color:#6b1c77}
+.b2b-access-toggle span{display:grid;gap:2px}
+.b2b-access-toggle b{font-size:15px}
+.b2b-access-toggle small{color:#64748b}
+.b2b-account-rate-list{display:grid;gap:8px}
+.b2b-account-rate-row{display:grid;grid-template-columns:minmax(0,1fr) 150px;align-items:center;gap:14px;padding:11px 13px;border:1px solid rgba(15,23,42,.1);border-radius:12px;background:#fafafa}
+.b2b-account-rate-row>span{display:grid;gap:2px;min-width:0}
+.b2b-account-rate-row>span b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b2b-account-rate-row>span small{color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b2b-account-rate-row>div{display:flex;align-items:center;gap:6px;border:1px solid rgba(107,28,119,.18);border-radius:10px;padding:0 9px;background:#fff}
+.b2b-account-rate-row>div>span{font-weight:800;color:#6b1c77}
+.b2b-account-rate-row input{width:100%;border:0!important;box-shadow:none!important;padding:10px 2px!important;background:transparent!important;font-weight:700}
+.b2b-rate-empty{padding:13px 14px;border-radius:12px;background:#f8f5fa;color:#6b1c77;font-weight:700}
+.custom-b2b-access-section .b2b-item-rate-save{margin-top:12px}
+.b2b-account-admin-list{gap:8px}
+.b2b-account-admin-row{grid-template-columns:52px minmax(0,1fr) minmax(110px,.45fr) auto}
+.b2b-account-avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#f3eaf5;color:#6b1c77;font-size:18px;font-weight:900}
+.b2b-account-form{display:grid;gap:18px}
+@media(max-width:720px){.b2b-account-rate-row{grid-template-columns:minmax(0,1fr) 124px}.b2b-account-admin-row{grid-template-columns:44px minmax(0,1fr);gap:10px}.b2b-account-admin-row .admin-product-meta,.b2b-account-admin-row .row-actions{grid-column:2}}
