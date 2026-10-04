@@ -624,3 +624,8 @@ html,body{background:#f6f2f7;color:#241c27}
 /* Kids Uniform exact size stock */
 .kids-uniform-common-size-row.with-stock{grid-template-columns:minmax(0,1fr) 110px auto}.kids-uniform-common-size-row.with-stock input[type="number"]{text-align:center}@media(max-width:560px){.kids-uniform-common-size-row.with-stock{grid-template-columns:minmax(0,1fr) 86px auto}}
 .uniform-order-size-admin{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.uniform-order-size-admin span{display:grid;gap:2px;min-width:96px;padding:9px 11px;border:1px solid #e1d9e3;border-radius:10px;background:#faf7fb}.uniform-order-size-admin b{font-size:9px}.uniform-order-size-admin strong{font-size:13px;color:#64116f}.uniform-order-size-admin small{font-size:8px;color:#8b7e8f}.uniform-order-images{margin-top:12px}
+
+
+/* Kids Uniform per-item size stock */
+.kids-uniform-variant-sizes{display:grid;gap:8px;padding-top:2px}.kids-uniform-variant-sizes .kids-uniform-size-list{gap:7px}.kids-uniform-size-row.simple{grid-template-columns:minmax(0,1fr) 100px 34px}.kids-uniform-size-row.simple input{width:100%;min-width:0;border:1px solid #ded4e1;border-radius:8px;padding:9px;background:#fff;color:#251d27;font:inherit}.kids-uniform-size-row.simple button{height:36px;border:0;border-radius:7px;background:#f6edf7;color:#73117f;cursor:pointer}
+@media(max-width:560px){.kids-uniform-size-row.simple{grid-template-columns:minmax(0,1fr) 90px 34px}}
