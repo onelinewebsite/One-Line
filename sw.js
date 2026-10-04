@@ -1,6 +1,6 @@
-const CACHE='one-line-b2b-category-flow-20261004m';
+const CACHE='one-line-b2b-public-storefront-20261004n';
 const CORE=[
-  './index.html','./admin.html','./staff.html','./management.html','./b2b.html',
+  './index.html','./404.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',
   './js/config.js','./js/data.js','./js/msg91-widget.js','./js/backend.js','./js/designer.js','./js/app.js','./js/admin.js',
   './one-line-logo.webp','./favicon.png','./icon-192.png','./icon-512.png','./manifest.webmanifest',
