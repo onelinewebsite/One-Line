@@ -398,7 +398,7 @@
     const c=customCategoryForItem(item),busy=state.enquiryBusyId===String(item.id),sent=state.enquirySuccessId===String(item.id),logged=!!B?.customerSession?.()?.token,tshirt=isTshirtCustomItem(item),sportswear=isSportswearCustomItem(item),uniform=isUniformCustomItem(item),tshirtOptions=tshirt?customAvailableFabrics(item):[],sportsTypes=sportswear?sportswearTypes(item):[],sportsFabrics=sportswear?sportswearFabrics(item):[],selectedType=sportswear?sportsTypes.find(t=>String(t.id)===String(state.customSportswearTypeId)):null,selected=tshirt?tshirtOptions.find(x=>String(x.fabric.id)===String(state.customFabricId)):sportswear?sportsFabrics.find(x=>String(x.fabric.id)===String(state.customFabricId)):null,validQuality=!!selected&&selected.qualities.includes(state.customQuality),uniformSel=uniform?uniformSelection(item):null,images=uniform?uniformGalleryImages(item,uniformSel):(item.images||[]).filter(Boolean);
     const selectedRate=tshirt?(validQuality?customFabricRate(selected.fabric,state.customQuality):customItemFromRate(item)):sportswear?(selectedType&&validQuality?sportswearRate(selected.fabric,state.customQuality,selectedType):customItemFromRate(item)):uniform?uniformDisplayedSetRate(item,uniformSel):customItemFromRate(item);
     const ready=tshirt?validQuality:sportswear?!!selectedType&&validQuality:uniform?!!uniformSel?.ready:true,picker=tshirt?tshirtFabricPicker(item):sportswear?sportswearPicker(item):uniform?uniformPicker(item):'',needsChoice=tshirt?'Choose fabric and quality':sportswear?'Choose type, fabric and quality':'',choiceHelp=tshirt?'Select one fabric, then select its quality to continue.':sportswear?'Select the sportswear type first, then fabric and quality.':'',ratePrefix=uniform?'Set ':(((tshirt||sportswear)&&!ready)?'From ':'');
-    const actionArea=uniform?'<div class="uniform-actions-anchor" data-uniform-actions-anchor aria-hidden="true"></div><div class="uniform-order-actions" data-uniform-order-actions><button class="secondary wide uniform-add-cart-button" data-action="uniform-add-cart" data-item-id="'+S.esc(item.id)+'">Add to cart '+I('cart')+'</button><button class="primary wide" data-action="uniform-buy-now" data-item-id="'+S.esc(item.id)+'">Buy now '+I('arrow')+'</button></div>':'<div class="custom-enquiry-note"><b>'+(ready?(logged?'Send this enquiry':'Create account to enquire'):needsChoice)+'</b><span>'+(ready?(logged?'Your selected option and verified contact details will be sent with this item.':'Verify your mobile number and add your name once. Then this enquiry will be sent automatically.'):choiceHelp)+'</span></div><button class="primary wide custom-catalog-enquiry-button '+(sent?'sent':'')+'" data-action="custom-catalog-enquiry" data-item-id="'+S.esc(item.id)+'" '+(busy||sent||!ready?'disabled':'')+'>'+(sent?'Enquiry sent '+I('check'):busy?'Sending…':'Enquire '+I('arrow'))+'</button>';
+    const actionArea=uniform?'<div class="uniform-actions-anchor" data-uniform-actions-anchor><div class="uniform-order-actions" data-uniform-order-actions><button class="secondary wide uniform-add-cart-button" data-action="uniform-add-cart" data-item-id="'+S.esc(item.id)+'">Add to cart '+I('cart')+'</button><button class="primary wide" data-action="uniform-buy-now" data-item-id="'+S.esc(item.id)+'">Buy now '+I('arrow')+'</button></div></div>':'<div class="custom-enquiry-note"><b>'+(ready?(logged?'Send this enquiry':'Create account to enquire'):needsChoice)+'</b><span>'+(ready?(logged?'Your selected option and verified contact details will be sent with this item.':'Verify your mobile number and add your name once. Then this enquiry will be sent automatically.'):choiceHelp)+'</span></div><button class="primary wide custom-catalog-enquiry-button '+(sent?'sent':'')+'" data-action="custom-catalog-enquiry" data-item-id="'+S.esc(item.id)+'" '+(busy||sent||!ready?'disabled':'')+'>'+(sent?'Enquiry sent '+I('check'):busy?'Sending…':'Enquire '+I('arrow'))+'</button>';
     const uniformDisplayId=uniform?String(uniformConfig(item).display_id||'').trim():'',shareButton='<button type="button" class="inline-share-button item-title-share custom-item-title-share" data-share-kind="custom-item" data-share-value="'+S.esc(item.id)+'" data-share-label="'+S.esc(item.title||'Customization idea')+'" aria-label="Share item">'+I('share')+'<span>Share</span></button>',titleAction=uniform?'<div class="custom-uniform-title-actions">'+(uniformDisplayId?'<div class="custom-uniform-item-id"><span>ID</span><b>'+S.esc(uniformDisplayId)+'</b></div>':'')+shareButton+'</div>':shareButton;
     return '<main class="product-fullscreen custom-item-page '+(uniform?'uniform-custom-item-page ':'')+'screen screen-enter"><div class="product-full-inner custom-item-inner"><section class="product-full-media">'+detailSlider(images,item.title||'Customization idea')+'</section><section class="product-full-info custom-item-info"><span class="eyebrow">CUSTOM CATALOGUE'+(c?' / '+S.esc(c.name):'')+'</span><div class="item-detail-title-row custom-item-title-row"><h1>'+S.esc(item.title||'Customization idea')+'</h1>'+titleAction+'</div>'+(selectedRate!==null?'<div class="custom-item-rate" '+(uniform?'data-uniform-live-rate':'')+'>'+ratePrefix+S.money(selectedRate)+'</div>':'')+(uniform?'':'<p>'+S.esc(item.description||'Ask us to customize this reference for your team, business or event.')+'</p>')+picker+(uniform?uniformDescriptionHtml(item):'')+actionArea+'</section></div></main>';
   }
@@ -1008,15 +1008,29 @@
       window.removeEventListener('resize',uniformActionDockHandler);
       uniformActionDockHandler=null;
     }
-    const actions=root.querySelector('[data-uniform-order-actions]');
-    if(!actions)return;
-    actions.style.removeProperty('position');
-    actions.style.removeProperty('top');
-    actions.style.removeProperty('bottom');
-    actions.style.removeProperty('left');
-    actions.style.removeProperty('width');
-    actions.style.removeProperty('transform');
-    actions.style.removeProperty('margin');
+    const anchor=root.querySelector('[data-uniform-actions-anchor]'),actions=root.querySelector('[data-uniform-order-actions]');
+    if(!anchor||!actions)return;
+    let raf=0;
+    const sync=()=>{
+      raf=0;
+      const mobile=window.matchMedia('(max-width: 820px)').matches;
+      if(!mobile){
+        actions.classList.add('docked');
+        anchor.style.removeProperty('height');
+        return;
+      }
+      const h=Math.ceil(actions.getBoundingClientRect().height||52);
+      anchor.style.height=h+'px';
+      const fixedBottom=10;
+      const fixedTop=Math.round(window.innerHeight-fixedBottom-h);
+      const anchorTop=anchor.getBoundingClientRect().top;
+      const shouldDock=anchorTop<=fixedTop+1;
+      if(shouldDock!==actions.classList.contains('docked'))actions.classList.toggle('docked',shouldDock);
+    };
+    uniformActionDockHandler=()=>{if(!raf)raf=requestAnimationFrame(sync);};
+    window.addEventListener('scroll',uniformActionDockHandler,{passive:true});
+    window.addEventListener('resize',uniformActionDockHandler);
+    requestAnimationFrame(sync);
   }
   function bind(){
     root.querySelectorAll('[data-go]').forEach(x=>x.addEventListener('click',async()=>{if(x.dataset.go==='b2b'){resetFilters();go('b2b');if(state.b2bAuthed){await refreshB2BCatalog(false);if(state.screen==='b2b')render();}return;}go(x.dataset.go);}));
