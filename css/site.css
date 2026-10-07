@@ -5722,3 +5722,80 @@ html,body{max-width:100%;overflow-x:hidden}
   .b2b-public-footer>small{font-size:8.5px!important}
   .b2b-public-footer>small::before{display:none!important}
 }
+
+
+/* ===== v104 custom detail polish: square galleries + fixed Kids Uniform actions ===== */
+/* Every customer-facing product/details gallery is 1:1, regardless of catalogue section. */
+.product-full-media .detail-slider-frame{
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:1/1!important;
+  max-height:none!important;
+  position:relative!important;
+  overflow:hidden!important;
+  background:#f4f1f4!important;
+}
+.product-full-media .detail-slide-track,
+.product-full-media .detail-slide,
+.product-full-media .detail-zoom-target{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+}
+.product-full-media .detail-slide{position:relative!important;flex:0 0 100%!important}
+.product-full-media .detail-zoom-target{display:block!important;position:relative!important;padding:0!important;border:0!important;background:transparent!important}
+.product-full-media .detail-slide img{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  display:block!important;
+}
+
+.custom-uniform-item-id{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  width:max-content!important;
+  max-width:100%!important;
+  margin:1px 0 9px!important;
+  padding:5px 8px!important;
+  border:1px solid #e2d9e4!important;
+  border-radius:8px!important;
+  background:#faf7fb!important;
+}
+.custom-uniform-item-id span{font-size:8px!important;font-weight:900!important;letter-spacing:.10em!important;color:#8c7e90!important}
+.custom-uniform-item-id b{font-size:10px!important;font-weight:850!important;color:#4d3052!important;overflow-wrap:anywhere!important}
+
+/* Kids Uniform cart actions stay visible at the viewport bottom while sizes scroll. */
+.uniform-custom-item-page .custom-item-info{padding-bottom:128px!important}
+.uniform-custom-item-page .uniform-order-actions{
+  position:fixed!important;
+  left:50%!important;
+  bottom:16px!important;
+  transform:translateX(-50%)!important;
+  z-index:1002!important;
+  width:min(560px,calc(100vw - 28px))!important;
+  margin:0!important;
+  padding:9px!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:8px!important;
+  border:1px solid rgba(77,48,82,.13)!important;
+  border-radius:15px!important;
+  background:rgba(255,255,255,.97)!important;
+  box-shadow:0 -8px 28px rgba(44,25,48,.14)!important;
+  backdrop-filter:blur(14px)!important;
+  -webkit-backdrop-filter:blur(14px)!important;
+}
+.uniform-custom-item-page .uniform-order-actions button{min-height:48px!important;margin:0!important}
+@media(max-width:820px){
+  .uniform-custom-item-page .custom-item-info{padding-bottom:182px!important}
+  .uniform-custom-item-page .uniform-order-actions{
+    bottom:calc(78px + env(safe-area-inset-bottom))!important;
+    width:calc(100vw - 20px)!important;
+    border-radius:14px!important;
+  }
+}
