@@ -13,7 +13,7 @@
       el.id='portalActionLoader';
       el.className='portal-action-loader';
       el.setAttribute('aria-hidden','true');
-      el.innerHTML='<div class="portal-action-loader-pill" role="status" aria-label="Processing"><span></span><span></span><span></span></div>';
+      el.innerHTML='<div class="one-line-loader" role="status" aria-label="Processing"><img src="one-line-logo.webp" alt=""></div>';
       document.body.appendChild(el);
     }
     return el;
@@ -56,7 +56,7 @@
   }
   const sb=()=>B?.supa?.();
   const img=(src,alt='')=>'<img src="'+esc(src||'assets/product-placeholder.svg')+'" alt="'+esc(alt)+'" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src=\'assets/product-placeholder.svg\'">';
-  const adminLoader=(label='Loading')=>'<div class="admin-loading"><div class="portal-inline-dots" role="status" aria-label="'+esc(label)+'"><span></span><span></span><span></span></div></div>';
+  const adminLoader=(label='Loading')=>'<div class="admin-loading"><div class="one-line-loader" role="status" aria-label="'+esc(label)+'"><img src="one-line-logo.webp" alt=""></div></div>';
   function canonicalEnquiry(row){
     if(!row||typeof row!=='object')return null;
     const p=row.payload&&typeof row.payload==='object'?row.payload:{};
@@ -144,7 +144,7 @@
       :requested==='management'
         ?readyCount+' Ready Made · '+state.customCatalogItems.length+' Custom · '+b2bCount+' B2B accounts'
         :requested==='staff'?'Search exact item/variant and mark quantity sold':'';
-    return '<div class="admin-shell portal-'+requested+'"><header class="admin-head"><a class="admin-logo" href="index.html">'+img('one-line-logo.webp','One-Line')+'<span><b>ONE-LINE</b><small>'+esc(labels[requested])+'</small></span></a><button class="menu-toggle" data-action="menu" aria-label="Open menu">☰</button><nav class="admin-menu '+(state.menu?'open':'')+'">'+roleNav+'</nav><button class="portal-profile-button" data-view="settings" aria-label="Open portal settings">'+profileIcon+'</button></header><div class="status-card simple-status-card"><span>'+esc(summary)+'</span></div><main class="admin-main">'+(state.error?'<div class="portal-error portal-data-error" role="alert">'+esc(state.error)+' <button data-action="refresh-data">Retry</button></div>':'')+view()+'</main><div class="portal-credit">Developed by <a href="https://quartzsolution.netlify.app/" target="_blank" rel="noopener noreferrer">Quartz Web Solutions</a></div><div class="toast" id="adminToast"></div></div>';
+    return '<div class="admin-shell portal-'+requested+'"><header class="admin-head"><a class="admin-logo" href="index.html">'+img('one-line-logo.webp','One-Line')+'<span><b>ONE-LINE</b><small>'+esc(labels[requested])+'</small></span></a><button class="menu-toggle" data-action="menu" aria-label="Open menu">☰</button><nav class="admin-menu '+(state.menu?'open':'')+'">'+roleNav+'</nav><button class="portal-profile-button" data-view="settings" aria-label="Open portal settings">'+profileIcon+'</button></header><div class="status-card simple-status-card"><span>'+esc(summary)+'</span></div><main class="admin-main">'+(state.error?'<div class="portal-error portal-data-error" role="alert">'+esc(state.error)+' <button data-action="refresh-data">Retry</button></div>':'')+view()+'</main><div class="portal-credit">Developed by <a href="https://quartzwebsolutions.com" target="_blank" rel="noopener noreferrer">Quartz Web Solutions</a></div><div class="toast" id="adminToast"></div></div>';
   }
   function view(){return({dashboard:dashboardView,products:productsView,categories:categoriesView,customCatalog:customCatalogView,customOptions:customOptionsView,b2b:b2bView,customisable:customisableView,catalogEnquiries:catalogEnquiriesView,stock:stockView,orders:ordersView,customers:customersView,carts:cartsView,activity:activityView,accounts:accountsView,settings:settingsView})[state.view]?.()||((requested==='admin'||requested==='management')?productsView():stockView());}
   function dashboardView(){

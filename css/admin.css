@@ -63,7 +63,7 @@ html,body{background:#f6f2f7;color:#241c27}
 .portal-switcher a{color:#625266!important}.portal-switcher a:hover{background:#f4edf6!important}
 
 /* v30 Supabase production portals */
-.admin-loading{min-height:100vh;display:grid;place-items:center;font:14px/1.4 system-ui;color:#6c6070;background:#f7f5f7}
+.admin-loading{min-height:100dvh;display:grid;place-items:center;font:14px/1.4 system-ui;color:#6c6070;background:transparent}
 .portal-gate{min-height:100vh;display:grid;place-items:center;padding:20px;background:#f6f3f7}.portal-gate-card{width:min(430px,100%);background:#fff;border:1px solid #e8e1ea;border-radius:24px;padding:28px;box-shadow:0 22px 70px rgba(42,20,45,.09)}.portal-gate-card>img{width:58px;height:58px;object-fit:contain}.portal-kicker{display:block;margin-top:17px;color:#7d6f80;font-size:10px;letter-spacing:.16em}.portal-gate-card h1{margin:5px 0 8px;font-size:27px}.portal-gate-card>p{color:#746a77;font-size:13px;line-height:1.55}.portal-gate-card form{display:grid;gap:13px;margin-top:20px}.portal-gate-card label{display:grid;gap:6px;font-size:11px;color:#746a77}.portal-gate-card input,.portal-gate-card select{height:48px;border:1px solid #ded5e0;border-radius:11px;padding:0 12px;font:inherit}.portal-error{color:#b72943!important;background:#fff0f2;padding:9px 11px;border-radius:10px;margin:0!important}.portal-back{display:block;margin-top:16px;color:#6d5c71;text-decoration:none;font-size:12px}.setup-list{display:grid;gap:10px;margin:20px 0}.setup-list b{font-weight:500;font-size:12px;line-height:1.45;padding:10px 12px;border-radius:10px;background:#f8f5f9}.setup-list code{font-size:11px}.portal-role-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0}.portal-role-links a{padding:11px;border:1px solid #ded5e0;border-radius:10px;text-decoration:none;color:#4d4050;text-align:center;font-size:12px}
 .portal-overview{display:grid;gap:18px}.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric-grid article{padding:18px;border:1px solid #e9e2ea;border-radius:17px;background:#fff;display:grid;gap:5px}.metric-grid span{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#8b7f8d}.metric-grid b{font-size:30px;color:#2b202e}.metric-grid small{color:#7c7080}.compact-table{display:grid}.compact-table>div{display:grid;grid-template-columns:1fr 1fr 70px;gap:12px;padding:10px 4px;border-top:1px solid #eee8ef;align-items:center}.compact-table span{color:#776a79;font-size:12px}.compact-table strong{text-align:right}
 .panel-head p{margin:4px 0 0;color:#7f7282;font-size:12px}.list-controls span{font-size:11px;color:#877b89}.danger-link{color:#a82742!important}.admin-product-meta b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}.admin-product-meta small{overflow-wrap:anywhere}
@@ -501,7 +501,7 @@ html,body{background:#f6f2f7;color:#241c27}
   .fabric-pricing-admin{margin:14px -4px 20px;padding:13px;border-radius:14px}.fabric-admin-card{grid-template-columns:1fr}.fabric-admin-main{grid-template-columns:1fr 1fr}.fabric-admin-main>label:first-child{grid-column:1/-1}.fabric-budget-control{grid-column:1/-1}.fabric-admin-card>.field-edit-button{width:100%}.new-fabric-form{grid-template-columns:1fr 1fr}.new-fabric-form input[name="name"]{grid-column:1/-1}.new-fabric-form .submit-small{grid-column:1/-1}.item-fabric-qualities{gap:5px}.item-fabric-qualities span{padding:8px 6px}.enquiry-selected-option{grid-template-columns:1fr auto}.enquiry-selected-option span{grid-column:1/-1}
 }
 
-/* ===== v67 portal action loading: Admin / Management / Staff ===== */
+/* ===== v107 One-Line logo loading: Admin / Management / Staff ===== */
 .portal-action-loader{
   position:fixed;
   inset:0;
@@ -509,49 +509,44 @@ html,body{background:#f6f2f7;color:#241c27}
   display:grid;
   place-items:center;
   padding:20px;
-  background:rgba(250,248,250,.46);
-  -webkit-backdrop-filter:blur(1.5px);
-  backdrop-filter:blur(1.5px);
+  background:transparent;
   opacity:0;
   visibility:hidden;
   pointer-events:none;
   transition:opacity .14s ease,visibility .14s ease;
 }
 .portal-action-loader.active{opacity:1;visibility:visible;pointer-events:auto}
-.portal-action-loader-pill,
-.portal-inline-dots{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
+.one-line-loader{
+  width:82px;
+  height:82px;
+  position:relative;
+  display:grid;
+  place-items:center;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
 }
-.portal-action-loader-pill{
-  min-width:66px;
-  height:44px;
-  padding:0 17px;
-  border:1px solid rgba(100,17,111,.14);
-  border-radius:999px;
-  background:rgba(255,255,255,.96);
-  box-shadow:0 10px 34px rgba(44,23,48,.14);
-}
-.portal-action-loader-pill span,
-.portal-inline-dots span{
-  width:7px;
-  height:7px;
+.one-line-loader::before{
+  content:"";
+  position:absolute;
+  inset:0;
   border-radius:50%;
-  background:#64116f;
-  animation:portal-three-dot .9s ease-in-out infinite;
+  border:3px solid rgba(100,17,111,.14);
+  border-top-color:#8a2a98;
+  border-right-color:#64116f;
+  animation:oneLineLogoLoadSpin .78s linear infinite;
 }
-.portal-action-loader-pill span:nth-child(2),.portal-inline-dots span:nth-child(2){animation-delay:.14s}
-.portal-action-loader-pill span:nth-child(3),.portal-inline-dots span:nth-child(3){animation-delay:.28s}
-.portal-inline-dots span{width:6px;height:6px}
-@keyframes portal-three-dot{
-  0%,70%,100%{transform:translateY(0);opacity:.34}
-  35%{transform:translateY(-5px);opacity:1}
+.one-line-loader img{
+  width:54px!important;
+  height:54px!important;
+  object-fit:contain;
+  border-radius:50%;
+  background:transparent!important;
+  box-shadow:none!important;
+  filter:none!important;
 }
-@media(prefers-reduced-motion:reduce){
-  .portal-action-loader-pill span,.portal-inline-dots span{animation:none;opacity:.75}
-}
+@keyframes oneLineLogoLoadSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.one-line-loader::before{animation-duration:1.8s}}
 
 /* ===== v70 Sportswear pricing manager ===== */
 .sportswear-pricing-admin{margin-top:20px}
