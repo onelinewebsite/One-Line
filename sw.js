@@ -1,4 +1,4 @@
-const CACHE='one-line-custom-uniform-20261007a';
+const CACHE='one-line-custom-uniform-20261007b';
 const CORE=[
   './index.html','./404.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',
