@@ -6090,3 +6090,105 @@ html,body{max-width:100%;overflow-x:hidden}
   .uniform-custom-item-page .kids-uniform-order-total strong{font-size:20px!important}
   .uniform-custom-item-page .custom-uniform-title-actions{gap:6px}
 }
+
+/* ===== v108 Kids Uniform plain detail + docked actions ===== */
+/* Keep the uniform details page visually plain: no outer section rules/cards. */
+.uniform-custom-item-page{
+  padding-bottom:0!important;
+  background:#fff!important;
+}
+.uniform-custom-item-page .product-full-inner{
+  border:0!important;
+  background:#fff!important;
+  padding-bottom:0!important;
+}
+.uniform-custom-item-page .product-full-media{
+  border:0!important;
+  border-right:0!important;
+  border-bottom:0!important;
+  background:#fff!important;
+}
+.uniform-custom-item-page .product-full-info{
+  border:0!important;
+  background:#fff!important;
+  padding-bottom:24px!important;
+}
+.uniform-custom-item-page .kids-uniform-description{
+  border-top:0!important;
+  padding-top:0!important;
+}
+.uniform-custom-item-page .kids-uniform-item-size-group+.kids-uniform-item-size-group{
+  border-top:0!important;
+}
+.uniform-custom-item-page .kids-uniform-saved-item,
+.uniform-custom-item-page .kids-uniform-order-total,
+.uniform-custom-item-page .custom-uniform-item-id{
+  border:0!important;
+}
+
+/* Fixed while choosing. Once the final information section is reached, JS docks it here
+   and it scrolls away naturally with the rest of the page. */
+.uniform-custom-item-page .uniform-actions-anchor{
+  width:100%;
+  height:1px;
+  margin:24px 0 0;
+  pointer-events:none;
+}
+.uniform-custom-item-page .uniform-order-actions{
+  position:fixed!important;
+  left:50%!important;
+  bottom:12px!important;
+  transform:translateX(-50%)!important;
+  z-index:1002!important;
+  width:min(560px,calc(100vw - 28px))!important;
+  margin:0!important;
+  padding:0!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:8px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.uniform-custom-item-page .uniform-order-actions.docked{
+  position:relative!important;
+  left:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+  z-index:auto!important;
+  width:100%!important;
+  margin:0!important;
+}
+.uniform-custom-item-page .uniform-order-actions button{
+  min-height:50px!important;
+  margin:0!important;
+  border-radius:12px!important;
+}
+/* “Add to cart” uses a zero-opacity fill while keeping its label and tap target visible. */
+.uniform-custom-item-page .uniform-order-actions .uniform-add-cart-button{
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+/* There is no mobile bottom nav on this page, so do not reserve its blank safe-area block. */
+@media(max-width:760px){
+  body:has(.uniform-custom-item-page){
+    padding-bottom:0!important;
+    margin-bottom:0!important;
+  }
+  body:has(.uniform-custom-item-page) footer{
+    margin-bottom:0!important;
+    padding-bottom:18px!important;
+  }
+  .uniform-custom-item-page .uniform-order-actions{
+    bottom:calc(10px + env(safe-area-inset-bottom))!important;
+    width:calc(100vw - 20px)!important;
+  }
+  .uniform-custom-item-page .uniform-order-actions.docked{
+    bottom:auto!important;
+    width:100%!important;
+  }
+}

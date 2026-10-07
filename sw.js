@@ -1,4 +1,4 @@
-const CACHE='one-line-logo-loader-20261007-v107';
+const CACHE='one-line-kids-uniform-20261007-v108';
 const CORE=[
   './index.html','./404.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',
