@@ -1003,27 +1003,20 @@
     sv.addEventListener('pointermove',e=>{if(e.buttons)pick(e);});
   }
   function bindUniformActionDock(){
-    if(uniformActionDockHandler){window.removeEventListener('scroll',uniformActionDockHandler);window.removeEventListener('resize',uniformActionDockHandler);uniformActionDockHandler=null;}
-    const anchor=root.querySelector('[data-uniform-actions-anchor]'),actions=root.querySelector('[data-uniform-order-actions]');if(!anchor||!actions)return;
-    let raf=0;
-    const syncNow=()=>{
-      raf=0;
-      const rect=anchor.getBoundingClientRect(),h=Math.max(1,Math.ceil(actions.getBoundingClientRect().height||actions.offsetHeight||50));
-      anchor.style.height=h+'px';
-      const mobile=window.matchMedia('(max-width:820px)').matches;
-      const gap=mobile?Math.max(10,Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom'))||10):12;
-      const restingTop=Math.max(8,window.innerHeight-gap-h);
-      const top=Math.min(restingTop,rect.top);
-      actions.style.position='fixed';
-      actions.style.top=Math.round(top)+'px';
-      actions.style.bottom='auto';
-      actions.style.left=Math.round(rect.left)+'px';
-      actions.style.width=Math.round(rect.width)+'px';
-      actions.style.transform='none';
-      actions.style.margin='0';
-    };
-    const sync=()=>{if(!raf)raf=requestAnimationFrame(syncNow);};
-    uniformActionDockHandler=sync;window.addEventListener('scroll',sync,{passive:true});window.addEventListener('resize',sync,{passive:true});requestAnimationFrame(syncNow);
+    if(uniformActionDockHandler){
+      window.removeEventListener('scroll',uniformActionDockHandler);
+      window.removeEventListener('resize',uniformActionDockHandler);
+      uniformActionDockHandler=null;
+    }
+    const actions=root.querySelector('[data-uniform-order-actions]');
+    if(!actions)return;
+    actions.style.removeProperty('position');
+    actions.style.removeProperty('top');
+    actions.style.removeProperty('bottom');
+    actions.style.removeProperty('left');
+    actions.style.removeProperty('width');
+    actions.style.removeProperty('transform');
+    actions.style.removeProperty('margin');
   }
   function bind(){
     root.querySelectorAll('[data-go]').forEach(x=>x.addEventListener('click',async()=>{if(x.dataset.go==='b2b'){resetFilters();go('b2b');if(state.b2bAuthed){await refreshB2BCatalog(false);if(state.screen==='b2b')render();}return;}go(x.dataset.go);}));
