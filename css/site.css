@@ -6756,3 +6756,22 @@ html body .b2b-public-item-card .product-image-wrap.ratio-3x4 img{
   object-position:center center!important;
   background:#fff!important;
 }
+
+
+/* v126: a cleaner MRP/price hierarchy and slightly larger custom item cards. */
+.uniform-price-stack {column-gap:14px!important;row-gap:7px!important;}
+.custom-idea-info>.uniform-price-stack {column-gap:13px!important;row-gap:7px!important;}
+.uniform-final-group {gap:5px!important;}
+@media (min-width:761px) {
+  .custom-idea-grid {gap:16px!important;}
+  .custom-idea-grid .custom-idea-card .product-info {padding:15px 15px 18px!important;}
+  .custom-idea-grid .custom-idea-card .product-info h3 {font-size:15px!important;}
+}
+@media (max-width:760px) {
+  .custom-idea-grid .custom-idea-card .product-info,
+  .custom-idea-masonry .custom-idea-card .product-info {padding:11px 11px 14px!important;}
+  .custom-idea-grid .custom-idea-card .product-info h3,
+  .custom-idea-masonry .custom-idea-card .product-info h3 {font-size:13px!important;}
+  .custom-idea-masonry {gap:7px!important;}
+  .custom-idea-masonry-column {gap:7px!important;}
+}
