@@ -708,3 +708,37 @@ html,body{background:#f6f2f7;color:#241c27}
 .b2b-uniform-no-sizes{padding:9px 10px;border:1px dashed rgba(15,23,42,.12);border-radius:9px;color:#64748b;font-size:11px;background:#fff}
 @media(max-width:900px){.b2b-uniform-pricing-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.b2b-uniform-item-rate,.b2b-uniform-size-rate-row{grid-template-columns:minmax(0,1fr) 116px}.b2b-uniform-rate-box{padding:10px}.b2b-uniform-rate-box>header>span{display:none}}
+
+/* ===== v114 Custom Catalogue grouping + reliable Kids Uniform controls ===== */
+.custom-catalog-head{align-items:center}
+.custom-catalog-head-actions{display:flex;align-items:center;gap:8px}
+.custom-catalog-search-toggle{width:42px;height:42px;display:grid;place-items:center;padding:0;border:1px solid #ded6e0;border-radius:12px;background:#fff;color:#5d1766;cursor:pointer}
+.custom-catalog-search-toggle .icon{width:18px;height:18px}
+.custom-catalog-search-toggle.active{border-color:#b99ac0;background:#faf4fb}
+.custom-catalog-search-row{height:46px;display:grid;grid-template-columns:22px minmax(0,1fr);align-items:center;gap:8px;margin:-3px 0 16px;padding:0 12px;border:1px solid #ded6e0;border-radius:13px;background:#fff}
+.custom-catalog-search-row>span{display:grid;place-items:center;color:#7c657f}
+.custom-catalog-search-row .icon{width:17px;height:17px}
+.custom-catalog-search-row input{width:100%;height:42px;border:0;outline:0;background:transparent;color:#241d26;font:inherit}
+.custom-catalog-groups{display:grid;gap:20px}
+.custom-catalog-category-group{display:grid;gap:9px}
+.custom-catalog-category-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 2px 6px;border-bottom:1px solid #eee8ef}
+.custom-catalog-category-head>div{display:flex;align-items:baseline;gap:8px;min-width:0}
+.custom-catalog-category-head b{font-size:15px;color:#2b222d}
+.custom-catalog-category-head span{font-size:9px;font-weight:800;color:#8a7c8d}
+.custom-category-empty{padding:16px;border-radius:12px;background:#faf9fa;color:#8d808f;font-size:10px;text-align:center}
+.kids-uniform-add-size{position:relative;z-index:2;pointer-events:auto!important;touch-action:manipulation}
+.kids-uniform-size-row.simple.rate-enabled{grid-template-columns:minmax(0,1fr) 92px 92px 34px}
+@media(max-width:700px){
+  .custom-catalog-head{align-items:flex-start}
+  .custom-catalog-head-actions{flex-shrink:0}
+  .custom-catalog-search-toggle{width:40px;height:40px}
+  .custom-catalog-category-head b{font-size:14px}
+  .kids-uniform-size-row.simple.rate-enabled{grid-template-columns:minmax(0,1fr) 76px 76px 34px}
+}
+@media(max-width:430px){
+  .custom-catalog-head{display:grid;grid-template-columns:minmax(0,1fr) auto}
+  .custom-catalog-head-actions .submit-small{padding:0 10px;white-space:nowrap}
+  .custom-catalog-search-row{margin-top:0}
+  .kids-uniform-size-row.simple.rate-enabled{grid-template-columns:minmax(0,1fr) 66px 66px 32px;gap:5px}
+  .kids-uniform-size-row.simple.rate-enabled input{padding-left:7px;padding-right:7px}
+}
