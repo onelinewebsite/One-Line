@@ -1,17 +1,29 @@
 {
   "id": "./",
-  "name": "One-Line Custom Apparel",
+  "name": "One-Line Touch Shoping",
   "short_name": "One-Line",
-  "description": "Custom apparel design and ready-made product ordering.",
+  "description": "One-Line Touch Shoping \u2014 personalized products, custom catalogue and ready-made orders.",
   "start_url": "./index.html",
   "display": "standalone",
-  "display_override": ["standalone"],
+  "display_override": [
+    "standalone"
+  ],
   "orientation": "portrait-primary",
   "scope": "./",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }

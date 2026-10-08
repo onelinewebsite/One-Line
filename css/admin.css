@@ -975,3 +975,41 @@ html,body{background:#f6f2f7;color:#241c27}
 .uniform-variant-inline-edit button {flex:0 0 auto;padding:9px 12px;background:#f5f3fc;color:#423880;border:0;border-radius:9px;cursor:pointer;font-weight:700;}
 .uniform-variant-inline-edit button.uniform-inline-delete {color:#b52f39;background:#fff1f1;}
 @media(max-width:480px){.uniform-inline-create>div{gap:7px}.uniform-inline-create button{padding:0 10px}.uniform-variant-inline-edit{gap:6px}.uniform-variant-inline-edit button{padding:9px 10px}}
+
+/* v123: persistent Up/Down category ordering, shared across manager and Custom Catalogue */
+.category-order-controls{display:inline-flex;align-items:center;gap:5px;flex:none}
+.category-order-controls button,
+.row-actions .category-order-controls button{
+  display:grid!important;place-items:center!important;
+  width:36px!important;min-width:36px!important;height:36px!important;
+  padding:0!important;border:1px solid #ded0e3!important;border-radius:9px!important;
+  background:#fff!important;color:#61206b!important;font-size:19px!important;font-weight:800!important;
+  cursor:pointer;line-height:1!important;
+}
+.category-order-controls button:disabled{opacity:.30!important;cursor:default!important}
+.custom-catalog-category-only-shell>.category-order-controls{display:flex;justify-content:flex-end;padding:5px 10px 6px}
+.category-admin-grid .row-actions,.custom-admin-category-card .row-actions{align-items:center;flex-wrap:wrap}
+@media(max-width:650px){
+ .custom-catalog-category-only-shell>.category-order-controls{padding:3px 8px 6px}
+ .category-admin-grid .row-actions{grid-column:1/-1;justify-content:flex-end}
+}
+
+/* v124 — consolidated order inbox */
+.unified-order-inbox .new-orders-card{width:100%;display:flex;align-items:center;gap:16px;text-align:left;padding:18px 20px;margin:18px 0;border:1px solid #ddd4e6;border-radius:16px;background:#f9f7fb;color:#35233d;cursor:pointer;flex-wrap:wrap}
+.unified-order-inbox .new-orders-card .new-orders-label{font-weight:800;font-size:16px}
+.unified-order-inbox .new-orders-card strong{font-size:26px;border-radius:30px;background:#69308b;color:#fff;line-height:1;min-width:46px;text-align:center;padding:11px 13px}
+.unified-order-inbox .new-orders-card small{font-size:12px;color:#6a5d70;flex:1 1 160px}
+.unified-order-inbox .new-orders-card.active{outline:2px solid #69308b;outline-offset:0}
+.unified-order-inbox .order-search-label{display:flex;flex-direction:column;gap:7px;flex:1 1 100%;font-weight:700;font-size:12px}
+.unified-order-inbox .order-search-label input{width:100%;min-height:43px;border-radius:10px;padding:9px 12px}
+.unified-order-inbox .order-toolbar{display:flex;flex-wrap:wrap;gap:13px;align-items:flex-start}
+.unified-order-inbox .order-type-filters,.unified-order-inbox .order-status-filters{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+.unified-order-inbox .order-type-filters button,.unified-order-inbox .order-status-filters button{border-radius:10px;padding:10px 12px;display:inline-flex;align-items:center;gap:7px;justify-content:center;min-height:42px;white-space:normal}
+.unified-order-inbox .order-type-filters button small{font-size:11px;font-weight:800;border-radius:12px;padding:2px 6px;background:#ece6ef}
+.unified-order-inbox .order-type-filters button.active small{color:#322539}
+.unified-order-inbox .order-result-count{padding:14px 0 10px;font-size:12px;color:#716778;font-weight:700}
+.unified-order-inbox .order-inbox-card .order-type-tag{font-weight:700;color:#69308b}
+@media(max-width:700px){.unified-order-inbox .new-orders-card{padding:14px}.unified-order-inbox .order-type-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.unified-order-inbox .order-type-filters button{font-size:12px;min-width:0;line-height:1.3;padding:9px 6px}.unified-order-inbox .order-status-filters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px}.unified-order-inbox .order-status-filters button{font-size:12px;flex:0 0 auto}}
+
+.unified-order-inbox .order-toolbar>.order-type-filters{overflow:visible;padding:0}
+.unified-order-inbox .order-toolbar>.order-status-filters{overflow-x:auto;overflow-y:hidden}

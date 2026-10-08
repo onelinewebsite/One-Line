@@ -79,7 +79,7 @@
     if(!configured())return{configured:false};
     const sb=supa();
     const queries=await Promise.all([
-      sb.from('categories').select('*').order('sort_order'),
+      sb.from('categories').select('*').order('sort_order').order('created_at',{ascending:true}),
       sb.from('subcategories').select('*').order('sort_order'),
       sb.from('products').select('*'),
       sb.from('product_variants').select('*'),
@@ -99,7 +99,7 @@
     let customCategories=[],customItems=[],customFabrics=[],customSportswearFabrics=[],customSportswearTypes=[],customSchemaReady=false,sportswearSchemaReady=false;
     try{
       const cq=await Promise.all([
-        sb.from('custom_catalog_categories').select('*').order('sort_order'),
+        sb.from('custom_catalog_categories').select('*').order('sort_order').order('created_at',{ascending:true}),
         sb.from('custom_catalog_items').select('*').order('sort_order'),
         sb.from('custom_catalog_fabrics').select('*').order('sort_order'),
         sb.from('custom_sportswear_fabrics').select('*').order('sort_order'),

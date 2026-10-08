@@ -6697,3 +6697,62 @@ html,body{max-width:100%;overflow-x:hidden}
 
 /* Per-uniform-variant description keeps actual prose instead of checklist formatting. */
 .uniform-custom-item-page .kids-uniform-description p.uniform-variant-detail-copy{font-size:14px;line-height:1.7;white-space:pre-line;color:#48404a;font-weight:450}
+
+
+/* v125: product cards have square, uncropped media at every breakpoint. */
+.product-card .product-image-wrap,
+.custom-idea-card .product-image-wrap.ratio-3x4,
+.b2b-public-item-card .product-image-wrap.ratio-3x4{
+  aspect-ratio:1 / 1!important;
+  width:100%!important;height:auto!important;min-height:0!important;
+  background:#fff!important;
+}
+.product-card .product-image-wrap .product-slide,.product-card .product-image-wrap img{
+  width:100%!important;height:100%!important;object-fit:contain!important;
+  object-position:center!important;background:#fff!important;
+}
+/* One clean progress track with a moving thumb, not a set of broken bars. */
+.product-slide-progress,.product-slide-progress.single{
+  display:block!important;position:relative!important;overflow:hidden!important;
+  height:3px!important;min-height:3px!important;max-height:3px!important;
+  padding:0!important;margin:9px 12px 0!important;gap:0!important;
+  background:#e8dfe9!important;border-radius:999px!important;opacity:1!important;
+}
+.product-slide-progress i{display:none!important}
+.product-slide-progress::after{
+  content:"";display:block;position:absolute;top:0;left:0;height:100%;
+  width:calc(100% / var(--gallery-count,1));border-radius:999px;
+  background:#64116f;transform:translateX(calc(100% * var(--gallery-index,0)));
+  transition:transform .16s ease;
+}
+.product-slide-track.gallery-mouse-dragging{scroll-snap-type:none!important;scroll-behavior:auto!important;cursor:grabbing!important;user-select:none!important}
+.product-slide-track{cursor:grab}
+.product-slide-track .product-slide img{-webkit-user-drag:none;user-select:none}
+/* Strikethrough applies to the number only. Prices have consistent, readable spacing. */
+.uniform-price-stack{gap:6px 14px!important;align-items:baseline!important}
+.uniform-price-mrp{display:inline-flex;gap:4px;align-items:baseline;white-space:nowrap;text-decoration:none!important}
+.uniform-mrp-label{text-decoration:none!important;color:#807481;font-weight:600}
+.uniform-mrp-value{text-decoration:none!important}
+.uniform-price-mrp del.uniform-mrp-value{text-decoration:line-through!important;text-decoration-thickness:1.3px!important}
+.uniform-final-group{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
+.uniform-rate-unit{font-size:.73em;color:#827384;font-weight:600;white-space:nowrap}
+.custom-idea-info>.uniform-price-stack{gap:6px 12px!important}
+/* Desktop photo inspection: fill viewer's available area, containing whole image. */
+.zoom-image-stage{position:relative!important;min-width:0!important;min-height:0!important;overflow:hidden!important;display:block!important}
+.zoom-image-stage img[data-zoom-view]{
+  position:absolute!important;inset:0!important;
+  display:block!important;width:100%!important;height:100%!important;
+  min-width:0!important;min-height:0!important;max-width:100%!important;max-height:100%!important;
+  object-fit:contain!important;object-position:center center!important;
+  margin:0!important;padding:0!important;
+}
+@media(min-width:821px){.image-zoom-shell .zoom-image-stage{padding:16px 42px!important}}
+
+/* v125 mobile precedence: show the ENTIRE photograph inside the square item card. */
+html body .product-card .product-image-wrap .product-slide img,
+html body .custom-idea-card .product-image-wrap.ratio-3x4 img,
+html body .b2b-public-item-card .product-image-wrap.ratio-3x4 img{
+  object-fit:contain!important;
+  object-position:center center!important;
+  background:#fff!important;
+}
