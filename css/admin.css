@@ -1013,3 +1013,264 @@ html,body{background:#f6f2f7;color:#241c27}
 
 .unified-order-inbox .order-toolbar>.order-type-filters{overflow:visible;padding:0}
 .unified-order-inbox .order-toolbar>.order-status-filters{overflow-x:auto;overflow-y:hidden}
+
+/* v129 — Responsive Admin / Management editors.
+   Keep the viewport layout in-flow; only thumbnail strips and true data tables scroll.
+   Older uniform grids used min-content widths that cut controls off on phones. */
+.admin-shell,.admin-main,.status-card,.clean-card,.simple-workspace,
+.editor-page,.editor-page form,.portal-edit-section,.portal-edit-section fieldset,
+.kids-uniform-editor,.kids-uniform-part-block,.kids-uniform-admin-grid,
+.kids-uniform-admin-card,.kids-uniform-variant-sizes,.kids-uniform-size-list,
+.kids-uniform-multi-images,.uniform-variant-details,.custom-field-grid,
+.custom-media-section,.custom-image-preview-grid,.image-preview-grid {
+  min-width:0;
+  max-width:100%;
+}
+.admin-main img,.admin-main video{max-width:100%}
+.editor-page .portal-edit-section>header>div,
+.kids-uniform-section-title>*,
+.kids-uniform-admin-head>*,
+.kids-uniform-toggle,.kids-uniform-toggle span,
+.uniform-variant-inline-edit,.kids-uniform-option-rate label,
+.kids-uniform-admin-card>*,.kids-uniform-multi-images>*{
+  min-width:0;
+}
+.editor-page .portal-edit-section fieldset,
+.kids-uniform-editor fieldset,
+.kids-uniform-admin-card {width:100%;box-sizing:border-box}
+.kids-uniform-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kids-uniform-part-block,.kids-uniform-description-editor,
+.kids-uniform-variant-sizes,.kids-uniform-multi-images{
+  grid-template-columns:minmax(0,1fr);
+}
+.kids-uniform-image-strip{
+  display:flex;
+  width:100%;max-width:100%;min-width:0;
+  overflow-x:auto;overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x;
+  scrollbar-width:thin;
+  padding-bottom:8px;
+}
+.kids-uniform-image-chip{flex-shrink:0}
+.kids-uniform-no-images{width:100%}
+.kids-uniform-option-rate.uniform-price-pair{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.kids-uniform-option-rate.uniform-price-pair small{grid-column:1/-1}
+.kids-uniform-size-row.simple.rate-enabled{
+  grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1fr) 38px!important;
+  width:100%;min-width:0;
+}
+.kids-uniform-size-row.simple.rate-enabled input{width:100%;max-width:100%;min-width:0}
+.kids-uniform-size-row.simple.rate-enabled button{min-width:0}
+.kids-uniform-section-title{flex-wrap:wrap;align-items:flex-start;gap:5px 12px}
+.kids-uniform-section-title small{overflow-wrap:anywhere}
+.kids-uniform-admin-head{flex-wrap:wrap;overflow-wrap:anywhere}
+.kids-uniform-toggle b,.kids-uniform-toggle small{overflow-wrap:anywhere}
+.uniform-variant-inline-edit input{min-width:0}
+.kids-uniform-desc-row{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr) 34px}
+.kids-uniform-desc-row input{min-width:0;width:100%}
+.image-preview-grid,.portal-admin .editor-page .image-preview-grid,
+.portal-management .editor-page .image-preview-grid{
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,76px),1fr));
+  justify-content:stretch;
+}
+.portal-admin .editor-page .image-preview-grid .image-chip,
+.portal-management .editor-page .image-preview-grid .image-chip{
+  width:100%;max-width:100%;
+}
+/* Images must never increase the width of their card. */
+.upload-zone,.colour-image-control,.variant-image-picker{
+  min-width:0;max-width:100%;
+}
+.editor-grid,.category-admin-grid,.custom-catalog-groups,
+.custom-catalog-category-only-grid{min-width:0;max-width:100%}
+.custom-catalog-category-only-grid{
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));
+}
+/* Two editor cards become too narrow for 3 inputs before tablet width. */
+@media(max-width:1100px){
+  .kids-uniform-admin-grid,.kids-uniform-admin-grid.four-items{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+}
+@media(max-width:760px){
+  .admin-main,.status-card{padding-inline:12px!important}
+  .clean-card{padding:14px!important}
+  .editor-page .portal-edit-section fieldset,
+  .kids-uniform-editor fieldset{padding:12px!important}
+  .kids-uniform-admin-card{padding:12px!important;gap:12px!important}
+  .kids-uniform-option-rate.uniform-price-pair{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .kids-uniform-option-rate.uniform-price-pair label{min-width:0}
+  .kids-uniform-stock-analysis.four{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kids-uniform-stock-analysis span{min-width:0;padding:8px}
+  .kids-uniform-stock-analysis small{font-size:9px;overflow-wrap:anywhere}
+  .kids-uniform-section-title{flex-direction:column;align-items:flex-start}
+  .kids-uniform-image-strip{padding-bottom:10px}
+  .kids-uniform-desc-row{grid-template-columns:minmax(0,1fr)}
+  .kids-uniform-desc-row input:nth-child(2),
+  .kids-uniform-desc-row button{grid-column:auto;grid-row:auto}
+  .kids-uniform-desc-row>span:empty{display:none}
+  /* Never fit four form fields into the width of a narrow phone. */
+  .kids-uniform-size-row.simple.rate-enabled{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) 38px!important;
+    gap:7px;
+  }
+  .kids-uniform-size-row.simple.rate-enabled input:first-child{
+    grid-column:1/-1;grid-row:1;
+  }
+  .kids-uniform-size-row.simple.rate-enabled input:nth-child(2){grid-column:1;grid-row:2}
+  .kids-uniform-size-row.simple.rate-enabled input:nth-child(3){grid-column:2;grid-row:2}
+  .kids-uniform-size-row.simple.rate-enabled button{grid-column:3;grid-row:2}
+  .uniform-inline-create>div{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto}
+  .uniform-inline-create input{min-width:0;width:100%}
+  .uniform-inline-create button{min-height:44px;white-space:nowrap}
+  .uniform-variant-inline-edit{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .uniform-variant-inline-edit input{grid-column:1/-1;min-width:0}
+  .uniform-variant-inline-edit button{width:100%;min-width:0;padding:10px 4px}
+  .uniform-variant-inline-edit button.uniform-inline-delete{white-space:normal}
+}
+@media(max-width:380px){
+  .admin-main,.status-card{padding-inline:9px!important}
+  .clean-card{padding:11px!important}
+  .editor-page .portal-edit-section fieldset,
+  .kids-uniform-editor fieldset{padding:9px!important}
+  .kids-uniform-admin-card{padding:9px!important}
+  .uniform-inline-create>div{grid-template-columns:minmax(0,1fr)}
+  .uniform-inline-create button{min-height:42px;padding:8px 12px}
+  .kids-uniform-size-row.simple.rate-enabled input{padding:8px!important}
+  .kids-uniform-option-rate.uniform-price-pair{grid-template-columns:minmax(0,1fr)}
+  .kids-uniform-option-rate.uniform-price-pair small{grid-column:auto}
+  .kids-uniform-stock-analysis b{font-size:18px}
+}
+
+/* v130 — Spacious, borderless Admin workspace and focused category editing */
+.admin-shell {background:#fff;}
+.admin-main {width:100%;max-width:1860px!important;padding:0 clamp(14px,2.4vw,46px)!important;margin-top:25px!important;}
+.admin-main .simple-workspace {width:100%;max-width:none!important;margin-inline:auto;}
+.admin-main .clean-card {background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:clamp(16px,2.1vw,34px)!important;}
+.admin-main .panel-head h1 {font-size:clamp(28px,2.4vw,40px)!important;letter-spacing:-.03em;line-height:1.16;}
+.admin-main .panel-head {margin-bottom:25px!important;gap:16px;}
+.admin-main .tag {font-size:11px!important;letter-spacing:.1em;}
+.admin-main input,.admin-main textarea,.admin-main select,.admin-main button {font-family:inherit;}
+.admin-main .primary-btn,.admin-main .ghost-btn,.admin-main .submit-small {font-size:14px!important;min-height:46px!important;}
+.admin-main .empty-admin {font-size:14px;padding:23px;}
+
+/* Three category cards per row on large screens, with large media and just one Edit action. */
+.custom-catalog-category-only-grid {display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:22px!important;align-items:stretch;}
+.custom-catalog-category-only-shell,
+.custom-catalog-category-only-shell.public-hidden {display:flex;flex-direction:column;min-width:0;border:0!important;border-radius:18px!important;background:#f7f5f9!important;overflow:hidden;box-shadow:none!important;}
+.custom-catalog-category-only-shell:hover{background:#f2eef5!important;}
+.custom-catalog-category-only-shell .custom-catalog-category-only-card {flex:1;display:grid!important;grid-template-columns:112px minmax(0,1fr) 22px!important;gap:18px!important;min-height:148px!important;padding:16px 16px 9px!important;background:transparent!important;border:0!important;box-shadow:none!important;transform:none!important;align-items:center;}
+.custom-catalog-category-only-image {width:112px!important;height:112px!important;border-radius:14px!important;}
+.custom-catalog-category-only-copy b {font-size:20px!important;line-height:1.3!important;white-space:normal!important;overflow-wrap:anywhere;}
+.custom-catalog-category-only-copy span {font-size:13px!important;line-height:1.35;font-weight:650;}
+.custom-catalog-category-chevron {font-size:30px;align-self:center;}
+.custom-catalog-category-edit-text {align-self:flex-end;min-width:80px;min-height:40px;margin:0 16px 14px;padding:0 14px;border:0;border-radius:10px;background:#fff;color:#672177;font-size:14px;font-weight:800;cursor:pointer;}
+.custom-catalog-category-edit-text:hover,.custom-catalog-category-edit-text:focus-visible{background:#ead9ee;outline:2px solid transparent;}
+
+/* Open one category: roomy item cards; no nested outline around the list. */
+.custom-catalog-category-items-view {border:0!important;border-radius:0!important;background:transparent!important;overflow:visible!important;}
+.custom-catalog-category-items-view .custom-catalog-mini-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:17px!important;padding:0!important;}
+.custom-catalog-mini-item {min-width:0;min-height:122px!important;grid-template-columns:88px minmax(0,1fr)!important;gap:14px!important;padding:14px!important;border:0!important;border-radius:15px!important;background:#f8f6fa!important;align-items:center;}
+.custom-catalog-mini-image {width:88px!important;height:88px!important;border-radius:12px!important;}
+.custom-catalog-mini-copy b {font-size:16px!important;white-space:normal!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.custom-catalog-mini-copy small,.custom-catalog-mini-copy span {font-size:12px!important;line-height:1.35!important;}
+.custom-catalog-mini-edit {grid-column:1/-1;justify-self:end;height:40px!important;padding:0 16px!important;border:0!important;border-radius:10px!important;background:white!important;color:#672177!important;font-size:13px!important;}
+.custom-catalog-mini-edit .icon{width:17px!important;height:17px!important;}
+
+/* Item editor: genuine plain-white continuous page; keep input outlines for accessibility. */
+.editor-page {background:#fff!important;}
+.editor-page .portal-edit-section,
+.editor-page .kids-uniform-editor,
+.editor-page .kids-uniform-part-block,
+.editor-page .kids-uniform-admin-card,
+.editor-page .kids-uniform-description-editor,
+.editor-page .kids-uniform-variant-sizes,
+.editor-page .uniform-variant-details,
+.editor-page .custom-field-section,
+.editor-page .custom-media-section {background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important;}
+.editor-page .portal-edit-section {margin:18px 0 28px!important;border-radius:0!important;overflow:visible!important;}
+.editor-page .portal-edit-section>header {background:transparent!important;border:0!important;border-bottom:0!important;box-shadow:none!important;padding:12px 0!important;min-height:auto!important;}
+.editor-page .portal-edit-section>header b {font-size:clamp(18px,1.7vw,23px)!important;}
+.editor-page .portal-edit-section>header small {font-size:13px!important;line-height:1.5!important;}
+.editor-page .portal-edit-section fieldset {background:transparent!important;border:0!important;padding:12px 0 20px!important;}
+.editor-page .custom-field-grid {gap:20px!important;}
+.editor-page .editor-grid label,.editor-page .custom-field-label,.editor-page .uniform-variant-details label,.editor-page .kids-uniform-option-rate label {font-size:14px!important;}
+.editor-page input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.editor-page textarea,.editor-page select {font-size:15px!important;min-height:48px;}
+.editor-page textarea{padding:12px!important;line-height:1.5;}
+.editor-page .kids-uniform-admin-grid{gap:24px!important;}
+.editor-page .kids-uniform-admin-card{padding:22px!important;gap:16px!important;border-radius:0!important;}
+.editor-page .kids-uniform-stock-analysis span{border:0!important;border-radius:13px;background:#f6f2f8;padding:15px;}
+.editor-page .kids-uniform-section-title{border:0!important;}
+.editor-page .kids-uniform-no-sizes,.editor-page .uniform-inline-empty{border:0!important;background:#f7f4f9!important;}
+.editor-page .kids-uniform-multi-images{background:transparent!important;}
+.editor-page .upload-zone{background:#faf8fb!important;border:0!important;border-radius:16px!important;}
+.editor-page .image-chip,.editor-page .kids-uniform-image-chip{border:0!important;}
+.editor-page .uniform-variant-inline-edit{border:0!important;}
+.editor-page .editor-savebar.editor-floating-close {box-shadow:none!important;border:0!important;}
+.editor-page .admin-editor-delete-footer {border:0!important;}
+
+/* Focused category settings — only visible after clicking Edit. */
+.custom-category-settings-page {max-width:1000px!important;margin-inline:auto!important;}
+.custom-category-settings-form {display:grid;gap:24px;}
+.custom-category-settings-form>label {display:grid;gap:10px;font-size:15px;font-weight:750;color:#423747;min-width:0;}
+.custom-category-settings-form input:not([type="checkbox"]),.custom-category-settings-form textarea {width:100%;min-height:52px;padding:13px 15px;font:inherit;font-size:16px;border:1px solid #ded4e1;border-radius:12px;background:#fff;min-width:0;}
+.custom-category-settings-form input[type="file"] {border:0;padding:12px 0;}
+.custom-category-settings-image {width:min(100%,250px);aspect-ratio:1;border-radius:17px;overflow:hidden;background:#f7f3f9;}
+.custom-category-settings-image img{width:100%;height:100%;object-fit:cover;display:block;}
+.custom-category-settings-visibility {display:flex!important;align-items:center;justify-content:space-between;gap:20px;}
+.custom-category-settings-visibility span {display:grid;gap:5px;}
+.custom-category-settings-visibility small {font-size:13px;font-weight:450;color:#776b79;line-height:1.5;}
+.custom-category-settings-visibility input {width:21px;height:21px;accent-color:#742084;flex:none;}
+.custom-category-settings-link,.custom-category-settings-order{display:grid;gap:10px;font-size:15px;font-weight:750;color:#423747;}
+.custom-category-settings-link .custom-category-share-link{padding:0;}
+.custom-category-settings-link .custom-category-share-link input{font-size:14px;}
+.custom-category-settings-link .custom-category-share-link button{width:51px;font-size:17px;}
+.custom-category-settings-actions {display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:16px 0;flex-wrap:wrap;}
+.custom-category-settings-order .category-order-controls{justify-self:start;}
+
+@media(max-width:1200px){
+ .custom-catalog-category-only-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+ .custom-catalog-category-items-view .custom-catalog-mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+ .custom-catalog-category-only-shell .custom-catalog-category-only-card{grid-template-columns:94px minmax(0,1fr) 20px!important;min-height:128px!important;}
+ .custom-catalog-category-only-image{width:94px!important;height:94px!important;}
+}
+@media(max-width:680px){
+ .admin-main{padding:0 14px!important;margin-top:14px!important;}
+ .admin-main .clean-card {padding:10px 0 20px!important;}
+ .admin-main .panel-head h1{font-size:29px!important;}
+ .custom-catalog-category-only-grid{grid-template-columns:1fr!important;gap:12px!important;}
+ .custom-catalog-category-only-shell .custom-catalog-category-only-card{grid-template-columns:84px minmax(0,1fr) 16px!important;min-height:105px!important;gap:12px!important;padding:12px 12px 2px!important;}
+ .custom-catalog-category-only-image{width:84px!important;height:84px!important;}
+ .custom-catalog-category-only-copy b{font-size:17px!important;}
+ .custom-catalog-category-edit-text{margin:0 12px 10px;min-height:38px;}
+ .custom-catalog-category-items-view .custom-catalog-mini-grid {grid-template-columns:1fr!important;gap:10px!important;}
+ .custom-catalog-mini-item {grid-template-columns:76px minmax(0,1fr)!important;gap:12px!important;padding:12px!important;min-height:100px!important;}
+ .custom-catalog-mini-image{width:76px!important;height:76px!important;}
+ .editor-page .portal-edit-section fieldset {padding:10px 0 14px!important;}
+ .editor-page .kids-uniform-admin-card{padding:16px 0!important;}
+ .editor-page .kids-uniform-admin-grid{grid-template-columns:1fr!important;gap:18px!important;}
+ .custom-category-settings-form{gap:17px;}
+ .custom-category-settings-actions>*{flex:1;}
+}
+@media(max-width:350px){.custom-catalog-category-only-copy b{font-size:15px!important}.custom-catalog-category-only-image{width:68px!important;height:68px!important}.custom-catalog-category-only-shell .custom-catalog-category-only-card{grid-template-columns:68px minmax(0,1fr) 12px!important;gap:9px!important}}
+
+/* Comfortable global Admin control sizing without changing customers' storefront. */
+.admin-head .admin-menu button{font-size:13px!important;min-height:45px!important;padding-inline:13px!important;}
+.admin-main .panel-head p:not(.tag){font-size:14px!important;line-height:1.55;}
+.admin-main .admin-product-copy b{font-size:16px!important;}
+.admin-main .admin-product-copy small,.admin-main .admin-product-meta small{font-size:12px!important;}
+.admin-main .list-controls input,.admin-main .list-controls select{font-size:14px!important;min-height:47px;}
+.admin-main .row-actions button{font-size:13px!important;min-height:40px;}
+.admin-main .order-inbox-card,.admin-main .admin-order-row,.admin-main .enquiry-admin-card{font-size:14px;}
+.admin-main .staff-stock-main b{font-size:15px!important;}
+@media(max-width:760px){
+ .admin-head .admin-menu button{font-size:13px!important;}
+ .admin-main .panel-head p:not(.tag){font-size:13px!important;}
+}
