@@ -516,15 +516,12 @@ html,body{background:#f6f2f7;color:#241c27}
   transition:opacity .14s ease,visibility .14s ease;
 }
 .portal-action-loader.active{opacity:1;visibility:visible;pointer-events:auto}
-/* v128: transparent SVG symbol; only the violet outer circle rotates. */
 .one-line-loader{
-  width:90px;
-  height:90px;
+  width:82px;
+  height:82px;
   position:relative;
   display:grid;
   place-items:center;
-  flex-shrink:0;
-  isolation:isolate;
   background:transparent!important;
   border:0!important;
   box-shadow:none!important;
@@ -534,25 +531,22 @@ html,body{background:#f6f2f7;color:#241c27}
   position:absolute;
   inset:0;
   border-radius:50%;
-  box-sizing:border-box;
-  border:4px solid rgba(100,17,111,.13);
-  border-top-color:#64116f;
-  border-right-color:#92349f;
-  animation:oneLineLogoLoadSpin .95s linear infinite;
-  pointer-events:none;
+  border:3px solid rgba(100,17,111,.14);
+  border-top-color:#8a2a98;
+  border-right-color:#64116f;
+  animation:oneLineLogoLoadSpin .78s linear infinite;
 }
 .one-line-loader img{
   width:54px!important;
-  height:58px!important;
+  height:54px!important;
   object-fit:contain;
-  border:0!important;
-  border-radius:0!important;
+  border-radius:50%;
   background:transparent!important;
   box-shadow:none!important;
   filter:none!important;
 }
 @keyframes oneLineLogoLoadSpin{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){.one-line-loader::before{animation-duration:2s}}
+@media(prefers-reduced-motion:reduce){.one-line-loader::before{animation-duration:1.8s}}
 
 /* ===== v70 Sportswear pricing manager ===== */
 .sportswear-pricing-admin{margin-top:20px}

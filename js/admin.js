@@ -13,7 +13,7 @@
       el.id='portalActionLoader';
       el.className='portal-action-loader';
       el.setAttribute('aria-hidden','true');
-      el.innerHTML='<div class="one-line-loader" role="status" aria-label="Processing"><img src="assets/one-line-loader-symbol.svg" alt=""></div>';
+      el.innerHTML='<div class="one-line-loader" role="status" aria-label="Processing"><img src="one-line-logo.webp" alt=""></div>';
       document.body.appendChild(el);
     }
     return el;
@@ -56,7 +56,7 @@
   }
   const sb=()=>B?.supa?.();
   const img=(src,alt='')=>'<img src="'+esc(src||'assets/product-placeholder.svg')+'" alt="'+esc(alt)+'" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src=\'assets/product-placeholder.svg\'">';
-  const adminLoader=(label='Loading')=>'<div class="admin-loading"><div class="one-line-loader" role="status" aria-label="'+esc(label)+'"><img src="assets/one-line-loader-symbol.svg" alt=""></div></div>';
+  const adminLoader=(label='Loading')=>'<div class="admin-loading"><div class="one-line-loader" role="status" aria-label="'+esc(label)+'"><img src="one-line-logo.webp" alt=""></div></div>';
   function canonicalEnquiry(row){
     if(!row||typeof row!=='object')return null;
     const p=row.payload&&typeof row.payload==='object'?row.payload:{};
