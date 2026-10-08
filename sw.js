@@ -1,4 +1,4 @@
-const CACHE='one-line-loader-20261008-v127';
+const CACHE='one-line-loader-20261008-v128';
 const CORE=[
   './index.html','./404.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',
