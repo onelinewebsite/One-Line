@@ -763,7 +763,7 @@ create table if not exists public.custom_catalog_fabrics (
 create index if not exists idx_custom_catalog_fabrics_sort on public.custom_catalog_fabrics(active,sort_order,name);
 alter table public.custom_catalog_fabrics enable row level security;
 drop policy if exists "public custom catalogue fabrics read" on public.custom_catalog_fabrics;
-create policy "public custom catalogue fabrics read" on public.custom_catalog_fabrics for select using(active or public.has_role(array['admin','management']));
+create policy "public custom catalogue fabrics read" on public.custom_catalog_fabrics for select using(active or shareable or public.has_role(array['admin','management']));
 drop policy if exists "custom catalogue fabrics admin insert" on public.custom_catalog_fabrics;
 create policy "custom catalogue fabrics admin insert" on public.custom_catalog_fabrics for insert with check(public.has_role(array['admin','management']));
 drop policy if exists "custom catalogue fabrics admin update" on public.custom_catalog_fabrics;
@@ -895,14 +895,15 @@ on conflict(name) do nothing;
 -- ===== v77 Uniform Custom Catalogue =====
 -- Uniform items reuse custom_catalog_items.fabric_options to store highlighted features.
 update public.custom_catalog_categories
-set name='Kids Uniform', description='Kids uniform options with accurate stock by variant and size.'
-where lower(trim(name))='uniform'
-  and not exists(select 1 from public.custom_catalog_categories x where lower(trim(x.name))='kids uniform');
-insert into public.custom_catalog_categories(name,description,image_url,active,sort_order)
+set name='Uniform', description='Uniform options with accurate stock by variant and size.'
+where lower(trim(name))='kids uniform'
+  and not exists(select 1 from public.custom_catalog_categories x where lower(trim(x.name))='uniform');
+insert into public.custom_catalog_categories(name,description,image_url,active,shareable,sort_order)
 values(
-  'Kids Uniform',
-  'Kids uniform options with accurate stock by variant and size.',
+  'Uniform',
+  'Uniform options with accurate stock by variant and size.',
   '',
+  true,
   true,
   30
 )
@@ -1497,3 +1498,48 @@ end $$;
 grant execute on function public.b2b_update_storefront(text,text,text,text) to anon,authenticated;
 grant execute on function public.b2b_public_catalog(text) to anon,authenticated;
 
+
+
+-- ===== v117 Uniform MRP + shareable custom categories =====
+-- Run-safe migration for existing projects. Uniform MRP values themselves are stored
+-- inside custom_catalog_items.fabric_options.uniform_config, so no item-table column is required.
+alter table public.custom_catalog_categories
+  add column if not exists shareable boolean not null default true;
+
+-- Consolidate the legacy category label to "Uniform" without losing items.
+do $$
+declare
+  old_id uuid;
+  new_id uuid;
+begin
+  select id into old_id from public.custom_catalog_categories where lower(trim(name))='kids uniform' limit 1;
+  select id into new_id from public.custom_catalog_categories where lower(trim(name))='uniform' limit 1;
+  if old_id is not null and new_id is null then
+    update public.custom_catalog_categories
+       set name='Uniform',
+           description=replace(replace(description,'Kids uniform','Uniform'),'Kids Uniform','Uniform'),
+           updated_at=now()
+     where id=old_id;
+  elsif old_id is not null and new_id is not null and old_id<>new_id then
+    update public.custom_catalog_items set category_id=new_id where category_id=old_id;
+    delete from public.custom_catalog_categories where id=old_id;
+  end if;
+end $$;
+
+update public.custom_catalog_categories
+set description=replace(replace(description,'Kids uniform','Uniform'),'Kids Uniform','Uniform')
+where lower(trim(name))='uniform';
+
+drop policy if exists "public custom catalogue categories read" on public.custom_catalog_categories;
+create policy "public custom catalogue categories read" on public.custom_catalog_categories
+for select using(active or shareable or public.has_role(array['admin','management']));
+
+drop policy if exists "public custom catalogue items read" on public.custom_catalog_items;
+create policy "public custom catalogue items read" on public.custom_catalog_items
+for select using(
+  public.has_role(array['admin','management'])
+  or (active and exists(
+    select 1 from public.custom_catalog_categories c
+    where c.id=category_id and (c.active or c.shareable)
+  ))
+);

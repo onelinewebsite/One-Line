@@ -6658,11 +6658,42 @@ html,body{max-width:100%;overflow-x:hidden}
 .uniform-live-price{display:flex!important;align-items:baseline;gap:12px;flex-wrap:wrap}
 .uniform-crossed-mrp,.uniform-card-mrp{color:#948695;font-weight:600;font-size:.74em;text-decoration:line-through;white-space:nowrap}
 .custom-catalog-rate + .uniform-card-mrp{display:inline-block;margin-left:8px;vertical-align:baseline;font-size:12px}
-.uniform-custom-item-page .custom-item-title-row h1{font-size:clamp(21px,3.3vw,30px)!important;line-height:1.22!important}
+.uniform-custom-item-page .custom-item-title-row h1{font-size:clamp(26px,3.3vw,34px)!important;line-height:1.2!important}
 @media(max-width:760px){
  .uniform-custom-item-page .uniform-multi-options>div,
  .uniform-custom-item-page .kids-uniform-option-part>div{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
  .uniform-custom-item-page .kids-uniform-option-button{min-width:0!important;width:100%!important;max-width:100%!important;min-height:53px!important;padding:10px 5px!important;border-radius:11px!important;overflow:hidden}
  .uniform-custom-item-page .kids-uniform-option-button b{font-size:12px!important;line-height:1.2!important;overflow-wrap:anywhere;text-align:center}
- .uniform-custom-item-page .custom-item-title-row h1{font-size:20px!important}
+ .uniform-custom-item-page .custom-item-title-row h1{font-size:26px!important}
 }
+
+/* ===== v117.1 Uniform MRP / Final Rate presentation ===== */
+.uniform-price-stack{
+  display:inline-flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:7px 10px;
+}
+.uniform-price-mrp{
+  color:#938796;
+  font-size:.68em;
+  font-weight:650;
+  text-decoration-thickness:1.4px;
+  white-space:nowrap;
+}
+.uniform-price-final{
+  color:inherit;
+  font:inherit;
+  font-weight:900;
+  white-space:nowrap;
+}
+.custom-idea-info>.uniform-price-stack{
+  margin-top:2px;
+  font-size:14px;
+}
+.custom-idea-info>.uniform-price-stack .uniform-price-mrp{font-size:11px}
+.custom-idea-info>.uniform-price-stack .uniform-price-final{font-size:14px;color:#2d2130}
+.uniform-live-price .uniform-price-stack{gap:8px 13px}
+
+/* Per-uniform-variant description keeps actual prose instead of checklist formatting. */
+.uniform-custom-item-page .kids-uniform-description p.uniform-variant-detail-copy{font-size:14px;line-height:1.7;white-space:pre-line;color:#48404a;font-weight:450}
