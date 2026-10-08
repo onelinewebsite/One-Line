@@ -956,3 +956,22 @@ html,body{background:#f6f2f7;color:#241c27}
 .uniform-option-create{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
 .uniform-option-create button{border:0;background:#7152aa;color:white;border-radius:9px;padding:0 16px;font-weight:700;cursor:pointer;white-space:nowrap}
 @media(max-width:480px){.uniform-customise-content{padding:11px}.uniform-option-order-row{grid-template-columns:18px minmax(0,1fr) auto;gap:5px}.uniform-option-order-row input{font-size:13px;padding:7px}.uniform-option-order-buttons{gap:3px}.uniform-option-order-buttons button{width:30px;height:39px}.uniform-option-create button{padding:0 9px;font-size:12px}}
+
+/* v121: normal category page sharing; only visibility changes, not the page type. */
+.custom-category-mode{font-size:10px;font-weight:750;color:#5c5260;white-space:nowrap;align-self:center}
+.custom-category-mode.is-private{color:#751a89}
+.category-access-note{display:block;color:#766c7b;font-size:11px;line-height:1.5;grid-column:1/-1}
+.custom-category-share-link button:focus-visible,.custom-category-quick-access input:focus-visible{outline:2px solid #742084;outline-offset:2px}
+
+/* v122: Every new Custom Catalogue item uses user-created variants. */
+.uniform-inline-create {padding:14px 0 18px;display:grid;gap:8px;}
+.uniform-inline-create>label {font-weight:700;font-size:14px;}
+.uniform-inline-create>div {display:flex;align-items:stretch;gap:10px;}
+.uniform-inline-create input {flex:1;min-width:0;border:1px solid #dddde8;border-radius:10px;padding:12px 14px;background:#fff;color:inherit;font:inherit;}
+.uniform-inline-create button {flex-shrink:0;border:none;background:#6855d9;color:#fff;border-radius:10px;padding:0 18px;font-weight:750;cursor:pointer;}
+.uniform-inline-empty {margin:10px 0 20px;padding:18px;border-radius:12px;background:#f6f5fc;color:#605e74;}
+.uniform-variant-inline-edit {display:flex;gap:8px;align-items:center;padding:10px 0 14px;flex-wrap:wrap;}
+.uniform-variant-inline-edit input {flex:1 1 150px;min-width:0;padding:10px;border:1px solid #dddde8;border-radius:9px;font:inherit;background:white;color:inherit;}
+.uniform-variant-inline-edit button {flex:0 0 auto;padding:9px 12px;background:#f5f3fc;color:#423880;border:0;border-radius:9px;cursor:pointer;font-weight:700;}
+.uniform-variant-inline-edit button.uniform-inline-delete {color:#b52f39;background:#fff1f1;}
+@media(max-width:480px){.uniform-inline-create>div{gap:7px}.uniform-inline-create button{padding:0 10px}.uniform-variant-inline-edit{gap:6px}.uniform-variant-inline-edit button{padding:9px 10px}}
