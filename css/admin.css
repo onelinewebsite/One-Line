@@ -904,3 +904,34 @@ html,body{background:#f6f2f7;color:#241c27}
 .b2b-account-price-card.b2b-account-selected{border-color:#9450a6}
 .b2b-one-account-save{justify-self:end;margin-top:6px}
 @media(max-width:600px){.editor-bottom-actions{width:100%}.editor-bottom-actions button{flex:1}.uniform-variant-details{padding:11px}}
+
+/* v119: Close is the only sticky editor action. Delete stays in document flow at the end. */
+.editor-page .editor-savebar.editor-floating-close{
+  position:sticky;bottom:max(12px,env(safe-area-inset-bottom));
+  display:flex!important;grid-template-columns:none!important;
+  align-items:center;justify-content:flex-end;
+  width:max-content;max-width:calc(100% - 12px);
+  margin:18px 0 0 auto;padding:0!important;gap:0;
+  border:0!important;border-radius:0;background:transparent!important;
+  box-shadow:none!important;backdrop-filter:none!important;
+  pointer-events:none;z-index:12;
+}
+.editor-page .editor-savebar.editor-floating-close .ghost-btn{
+  flex:0 0 auto!important;width:auto!important;min-width:96px;
+  min-height:44px!important;padding:9px 20px;border-radius:12px;
+  border:1px solid #ded4e0;background:#fff;color:#64116f;
+  box-shadow:0 7px 21px rgba(36,17,39,.14);
+  pointer-events:auto;cursor:pointer;
+}
+.editor-page .admin-editor-delete-footer{
+  position:static!important;display:flex;justify-content:flex-end;
+  width:100%;margin-top:24px;padding:18px 0 4px;
+  border-top:1px solid #eee8ef;
+}
+.editor-page .admin-editor-delete-footer .admin-item-delete-bottom{
+  min-height:44px;padding:10px 18px;cursor:pointer;
+}
+@media(max-width:600px){
+  .editor-page .editor-savebar.editor-floating-close .ghost-btn{width:auto!important;min-width:96px}
+  .editor-page .admin-editor-delete-footer .admin-item-delete-bottom{width:100%}
+}
