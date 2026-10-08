@@ -866,22 +866,3 @@ html,body{background:#f6f2f7;color:#241c27}
   .custom-catalog-open-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}
   .custom-catalog-open-title .custom-catalog-category-thumb{display:none}
 }
-
-/* v117 Custom Catalogue visibility/share controls and Uniform pricing */
-.uniform-price-pair{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:end}
-.uniform-price-pair>label{display:grid;gap:6px;min-width:0}
-.uniform-price-pair>label span{font-size:11px;font-weight:800}
-.uniform-price-pair input{width:100%;min-width:0}
-.uniform-price-pair>small{grid-column:1/-1;color:#867b89;font-size:10px}
-.custom-catalog-category-only-shell{min-width:0;border:1px solid #e9e0e9;border-radius:14px;background:white;overflow:hidden}
-.custom-catalog-category-only-shell.public-hidden{background:#fdfbfe}
-.custom-catalog-category-only-shell .custom-catalog-category-only-card{width:100%;border:0;border-radius:0}
-.custom-category-quick-access{display:flex;justify-content:space-between;gap:6px;padding:8px 12px;border-top:1px solid #f0e9f2;flex-wrap:wrap}
-.custom-category-quick-access label{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:750;cursor:pointer;color:#504354}
-.custom-category-quick-access input{accent-color:#742084;width:15px;height:15px}
-.custom-category-share-link{display:flex;align-items:center;gap:5px;padding:4px 10px 10px}
-.custom-category-share-link input{flex:1;min-width:0;border:1px solid #eadfeb;border-radius:8px;padding:8px;font-size:9px;background:#fff;color:#5c5060}
-.custom-category-share-link button{flex:none;border:1px solid #e9dfeb;border-radius:8px;padding:8px;display:grid;place-items:center;background:#fff;cursor:pointer}
-.category-access-check{display:flex!important;align-items:center;justify-content:space-between;gap:9px}
-.category-access-check input{width:17px;height:17px;accent-color:#742084}
-@media(max-width:600px){.uniform-price-pair{gap:8px}.uniform-price-pair input{font-size:13px}.custom-category-quick-access{padding:8px}}

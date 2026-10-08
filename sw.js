@@ -1,4 +1,4 @@
-const CACHE='one-line-admin-custom-catalog-20261008-v116';
+const CACHE='one-line-admin-custom-catalog-20261008-v117';
 const CORE=[
   './index.html','./404.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',

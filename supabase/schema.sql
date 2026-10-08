@@ -679,10 +679,13 @@ create table if not exists public.custom_catalog_categories (
   description text not null default '',
   image_url text not null default '',
   active boolean not null default true,
+  shareable boolean not null default true,
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.custom_catalog_categories add column if not exists shareable boolean not null default true;
 
 create table if not exists public.custom_catalog_items (
   id uuid primary key default gen_random_uuid(),
@@ -707,13 +710,13 @@ alter table public.custom_catalog_items enable row level security;
 
 drop policy if exists "public custom catalogue categories read" on public.custom_catalog_categories;
 create policy "public custom catalogue categories read" on public.custom_catalog_categories
-for select using(active or public.has_role(array['admin','management']));
+for select using(active or shareable or public.has_role(array['admin','management']));
 
 drop policy if exists "public custom catalogue items read" on public.custom_catalog_items;
 create policy "public custom catalogue items read" on public.custom_catalog_items
 for select using(
   public.has_role(array['admin','management'])
-  or (active and exists(select 1 from public.custom_catalog_categories c where c.id=category_id and c.active))
+  or (active and exists(select 1 from public.custom_catalog_categories c where c.id=category_id and (c.active or c.shareable)))
 );
 
 drop policy if exists "custom catalogue categories admin insert" on public.custom_catalog_categories;
