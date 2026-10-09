@@ -1,6 +1,6 @@
-const CACHE='one-line-orders-addresses-v131';
+const CACHE='one-line-no-b2b-v134';
 const CORE=[
-  './index.html','./404.html','./admin.html','./staff.html','./management.html','./b2b.html',
+  './index.html','./404.html','./admin.html','./staff.html','./management.html',
   './css/site.css','./css/admin.css',
   './js/config.js','./js/data.js','./js/msg91-widget.js','./js/backend.js','./js/designer.js','./js/app.js','./js/admin.js',
   './one-line-logo.webp','./favicon.png','./icon-192.png','./icon-512.png','./manifest.webmanifest',

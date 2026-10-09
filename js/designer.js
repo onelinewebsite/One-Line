@@ -29,7 +29,7 @@
     const out=Object.fromEntries(sizeLabels.map(size=>[size,0]));
     if(saved?.sizeQty&&typeof saved.sizeQty==='object'){sizeLabels.forEach(size=>{out[size]=Math.max(0,Math.min(999,Math.floor(Number(saved.sizeQty[size])||0)));});}
     else{const legacySize=sizeLabels.includes(saved?.size)?saved.size:'M',legacyQty=Math.max(1,Math.floor(Number(saved?.qty)||1));out[legacySize]=legacyQty;}
-    if(!Object.values(out).some(Boolean))out.M=1;
+    if(!Object.values(out).some(Boolean)&&!(saved?.sizeQty&&typeof saved.sizeQty==='object')&&saved?.cartCleared!==true)out.M=1;
     return out;
   }
 

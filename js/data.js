@@ -95,7 +95,7 @@
   function getCustomSportswearTypes(){ return load("one-line-custom-sportswear-types-v1",[]); }
   function getDelivery(){ return load("custom-store-delivery-v3",deliveryDefaults); }
   function getPrints(){ return load("custom-store-print-types-v3",printDefaults); }
-  function getSettings(){ return Object.assign({whatsapp:"919562886917",b2bId:"",b2bPassword:""},designerPricingDefaults,load("custom-store-settings-v3",{})); }
+  function getSettings(){ return Object.assign({whatsapp:"919562886917"},designerPricingDefaults,load("custom-store-settings-v3",{})); }
   function customDesignPrice(design,qty,settings){
     const cfg=Object.assign({},designerPricingDefaults,settings||getSettings()),num=(k,f=0)=>{const v=Number(cfg[k]);return Number.isFinite(v)?v:Number(f||0);};
     const type=String(design?.garmentType||'T-Shirt'),material=String(design?.materialQuality||'Budget').toLowerCase(),print=String(design?.printType||'DTF Print').toLowerCase();
