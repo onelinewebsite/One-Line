@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "One-Line Touch Shoping",
+  "name": "One-Line Touch Shopping",
   "short_name": "One-Line",
-  "description": "One-Line Touch Shoping \u2014 personalized products, custom catalogue and ready-made orders.",
+  "description": "One-Line Touch Shopping \u2014 personalized products, custom catalogue and ready-made orders.",
   "start_url": "./index.html",
   "display": "standalone",
   "display_override": [

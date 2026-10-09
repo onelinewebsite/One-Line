@@ -58,11 +58,37 @@ Deno.serve(async(req)=>{
     if(!directOrder&&browserItems.length){const prepared=browserItems.map(normalizeOrderItem);for(let i=0;i<items.length;i++){const item=items[i];if(item?.itemType==='custom_design'||item?.itemType==='uniform_order'){const match=prepared.find((x:any)=>x?.itemType===item.itemType&&String(x.groupKey||'')&&String(x.groupKey)===String(item.groupKey||''))||prepared.filter((x:any)=>x?.itemType===item.itemType)[i];if(match?.design)item.design=match.design;}}}
     const checked=[] as any[];for(const item of items){if(item?.itemType==='uniform_order')checked.push(await validateUniformOrder(db,item));else checked.push(item);}items=checked;
     for(const item of items){if(item?.itemType==='team_design')item.design=await persistTeamDesignAssets(db,s.customer_id,item.design||{});else if(item?.itemType==='custom_design')item.design=await persistCustomDesignAssets(db,s.customer_id,item.design||{});}
-    const customerName=String(details.customerName||details.name||customer.name||'').trim().slice(0,120),business=String(details.business||customer.business_name||'').trim().slice(0,160),uniformItems=items.filter((x:any)=>x.itemType==='uniform_order'),normalItems=items.filter((x:any)=>x.itemType!=='uniform_order');let order:any;
-    if(normalItems.length){const q=await db.rpc('place_bulk_order',{p_customer_id:s.customer_id,p_customer_name:customerName,p_phone:String(customer.phone||details.phone||''),p_address:String(details.address||''),p_business:business,p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:normalItems});if(q.error)throw q.error;order=q.data;}
-    else{const id=crypto.randomUUID(),orderCode=makeOrderCode(),insert=await db.from('orders').insert({id,order_code:orderCode,customer_id:s.customer_id,customer_name:customerName,phone:String(customer.phone||details.phone||''),address:String(details.address||''),business,delivery:String(body.delivery||''),payment:String(body.payment||''),status:'Confirmed',total:uniformItems.reduce((n:any,x:any)=>n+Number(x.lineTotal||0),0),metadata:{uniform_order:true}}).select('id,order_code,total,status').single();if(insert.error)throw insert.error;order={id:insert.data.id,orderCode:insert.data.order_code,total:Number(insert.data.total||0),status:insert.data.status||'Confirmed'};}
+    // Re-resolve saved address by ownership; never trust a client-supplied delivery recipient.
+    let deliveryRecord:any=null
+    if(body.deliveryAddressId){
+      const aq=await db.from('customer_addresses').select('*').eq('customer_id',s.customer_id).eq('id',String(body.deliveryAddressId)).maybeSingle()
+      if(aq.error)throw aq.error
+      if(!aq.data)throw new Error('Selected delivery address is unavailable. Choose another address.')
+      deliveryRecord=aq.data
+    }
+    const formattedDelivery=deliveryRecord?[deliveryRecord.line1,deliveryRecord.line2,deliveryRecord.landmark,deliveryRecord.city,deliveryRecord.district,deliveryRecord.state,deliveryRecord.postal_code].filter(Boolean).join(', '):String(details.address||'')
+    const recipient=deliveryRecord?{name:deliveryRecord.recipient_name,phone:deliveryRecord.phone||customer.phone,label:deliveryRecord.label,address:formattedDelivery}: {name:String(details.recipientName||details.name||customer.name||''),phone:String(customer.phone||''),address:formattedDelivery}
+    const customerName=String(customer.name||details.customerName||details.name||'').trim().slice(0,120),business=String(details.business||customer.business_name||'').trim().slice(0,160),uniformItems=items.filter((x:any)=>x.itemType==='uniform_order'),normalItems=items.filter((x:any)=>x.itemType!=='uniform_order');let order:any;
+    if(normalItems.length){const q=await db.rpc('place_bulk_order',{p_customer_id:s.customer_id,p_customer_name:customerName,p_phone:String(customer.phone||details.phone||''),p_address:formattedDelivery,p_business:business,p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:normalItems});if(q.error)throw q.error;order=q.data;}
+    else{const id=crypto.randomUUID(),orderCode=makeOrderCode(),insert=await db.from('orders').insert({id,order_code:orderCode,customer_id:s.customer_id,customer_name:customerName,phone:String(customer.phone||details.phone||''),address:formattedDelivery,business,delivery:String(body.delivery||''),payment:String(body.payment||''),status:'Confirmed',total:uniformItems.reduce((n:any,x:any)=>n+Number(x.lineTotal||0),0),metadata:{uniform_order:true}}).select('id,order_code,total,status').single();if(insert.error)throw insert.error;order={id:insert.data.id,orderCode:insert.data.order_code,total:Number(insert.data.total||0),status:insert.data.status||'Confirmed'};}
     for(const item of uniformItems){const ins=await db.from('order_items').insert({order_id:order.id,item_type:'uniform_order',item_name:item.name||'Uniform',item_code:item.code||'UNIFORM',qty:Math.max(1,Number(item.qty||1)),unit_price:Number(item.unitPrice||0),design_json:item.design||{},group_key:item.groupKey||''});if(ins.error)throw ins.error;}
     if(normalItems.length&&uniformItems.length){const extra=uniformItems.reduce((n:number,x:any)=>n+Number(x.lineTotal||0),0),current=Number(order?.total||0),updated=await db.from('orders').update({total:current+extra}).eq('id',order.id).select('total').single();if(updated.error)throw updated.error;order.total=Number(updated.data?.total||current+extra);}
+    // Save images seen at the time of purchase for Ready Made lines as well.
+    const placedLines=await db.from('order_items').select('id,product_id,color,size,design_json').eq('order_id',order.id).eq('item_type','product')
+    if(placedLines.error)throw placedLines.error
+    for(const line of (placedLines.data||[])){
+      if(!line.product_id)continue
+      const prod=await db.from('products').select('images').eq('id',line.product_id).maybeSingle()
+      if(prod.error)throw prod.error
+      const variant=await db.from('product_variants').select('image_url').eq('product_id',line.product_id).eq('color',line.color||'').eq('size',line.size||'').maybeSingle()
+      // Variant photo takes precedence; otherwise use the ordered product's catalogue image.
+      const shot=variant.data?.image_url||prod.data?.images?.[0]||''
+      if(shot){const q=await db.from('order_items').update({design_json:{...(line.design_json||{}),images:[shot],cardImage:shot}}).eq('id',line.id);if(q.error)throw q.error}
+    }
+    const snapshot=await db.from('orders').select('metadata').eq('id',order.id).single()
+    if(snapshot.error)throw snapshot.error
+    const detailsSaved=await db.from('orders').update({metadata:{...(snapshot.data?.metadata||{}),account:{id:s.customer_id,name:customer.name||customerName,phone:customer.phone||'',businessName:customer.business_name||''},deliveryRecipient:recipient}}).eq('id',order.id)
+    if(detailsSaved.error)throw detailsSaved.error
     await db.from('customers').update({name:customerName||customer.name||'',business_name:business||customer.business_name||'',updated_at:new Date().toISOString(),last_seen_at:new Date().toISOString()}).eq('id',s.customer_id);
     if(!directOrder){const cleared=await db.rpc('customer_cart_mutate',{p_customer_id:s.customer_id,p_operation:'clear',p_item_key:null,p_item:null});if(cleared.error)console.error('Order placed but cart clear failed:',cleared.error.message);}
     const verify=await db.from('order_items').select('id,item_type,design_json').eq('order_id',order.id);if(verify.error)throw verify.error;const teamItems=(verify.data||[]).filter((x:any)=>x.item_type==='team_design');for(const saved of teamItems){const d=saved.design_json||{},front=d?.design?.front||d?.front||{},back=d?.design?.back||d?.back||{};if(!front.compositeUrl||!back.compositeUrl||!Array.isArray(d.roster))throw new Error('Team enquiry was not fully saved. Please try again.');}

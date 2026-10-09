@@ -1,4 +1,52 @@
-import { cors,json,admin,resolveCustomerSession } from '../_shared.ts'
+// One-Line v131 customer-account - standalone Supabase Dashboard deployment.
+// The shared helpers are included here so this file requires no ../_shared.ts.
+import { createClient } from 'npm:@supabase/supabase-js@2'
+
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-one-line-public',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors, 'content-type': 'application/json' },
+  })
+
+const secretKey = () => {
+  const packed = Deno.env.get('SUPABASE_SECRET_KEYS')
+  if (packed) {
+    try {
+      const obj = JSON.parse(packed)
+      if (obj.default) return String(obj.default)
+      const first = Object.values(obj)[0]
+      if (first) return String(first)
+    } catch { /* Fall back to service role key. */ }
+  }
+  return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+}
+const admin = () => createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  secretKey(),
+  { auth: { persistSession: false, autoRefreshToken: false } },
+)
+const hashToken = async (token: string) => {
+  const bytes = new TextEncoder().encode(token)
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('')
+}
+async function resolveCustomerSession(token: string) {
+  const db = admin()
+  const hash = await hashToken(token)
+  const { data, error } = await db.from('customer_sessions')
+    .select('customer_id,expires_at,customers(id,phone,name,business_name,job_title)')
+    .eq('token_hash', hash)
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle()
+  if (error || !data) return null
+  return data
+}
+
 
 const text=(v:unknown,max=120)=>String(v||'').trim().slice(0,max)
 const nowIso=()=>new Date().toISOString()
@@ -66,6 +114,32 @@ Deno.serve(async(req)=>{
       return json({ok:true,enquiry:{id:q.data.id,createdAt:q.data.created_at}})
     }
 
+    if(['address_create','address_update','address_delete'].includes(action)){
+      const id=String(body?.id||'')
+      if(action==='address_delete'){
+        if(!id)return json({error:'Address is required.'},400)
+        const removed=await db.from('customer_addresses').delete().eq('customer_id',customerId).eq('id',id).select('id')
+        if(removed.error)throw removed.error
+        if(!removed.data?.length)return json({error:'Address not found.'},404)
+      }else{
+        const a=body?.address||{}
+        const row={label:text(a.label,30)||'Home',recipient_name:text(a.recipientName,120),phone:text(a.phone,20),line1:text(a.line1,240),line2:text(a.line2,200),city:text(a.city,100),district:text(a.district,100),state:text(a.state,100)||'Kerala',postal_code:text(a.postalCode,12),landmark:text(a.landmark,200),is_default:!!a.isDefault,updated_at:nowIso()}
+        if(row.recipient_name.length<2||row.line1.length<4||!row.city)return json({error:'Enter recipient, address and city.'},400)
+        if(row.is_default){const q=await db.from('customer_addresses').update({is_default:false}).eq('customer_id',customerId);if(q.error)throw q.error}
+        if(action==='address_create'){
+          const q=await db.from('customer_addresses').insert({...row,customer_id:customerId}).select('id').single();if(q.error)throw q.error
+        }else{
+          if(!id)return json({error:'Address is required.'},400)
+          const q=await db.from('customer_addresses').update(row).eq('customer_id',customerId).eq('id',id).select('id')
+          if(q.error)throw q.error
+          if(!q.data?.length)return json({error:'Address not found.'},404)
+        }
+      }
+      const addresses=await db.from('customer_addresses').select('*').eq('customer_id',customerId).order('created_at',{ascending:true})
+      if(addresses.error)throw addresses.error
+      return json({ok:true,addresses:addresses.data||[]})
+    }
+
     if(action==='cart_mutate'){
       const operation=String(body?.operation||'').toLowerCase()
       if(!['upsert','remove','clear'].includes(operation))return json({error:'Invalid cart operation.'},400)
@@ -102,22 +176,24 @@ Deno.serve(async(req)=>{
       return json({ok:true,customer:customerJson(c),cart,ordersMeta:meta,enquiriesMeta:enquiryMeta})
     }
 
-    const [customerQ,cartQ,ordersQ,enquiriesQ]=await Promise.all([
+    const [customerQ,cartQ,ordersQ,enquiriesQ,addressesQ]=await Promise.all([
       db.from('customers').select('*').eq('id',customerId).single(),
       db.from('customer_carts').select('*').eq('customer_id',customerId).maybeSingle(),
       db.from('orders').select('*,order_items(*)').eq('customer_id',customerId).order('created_at',{ascending:false}).limit(100),
-      db.from('customer_activity').select('id,event_type,payload,created_at').eq('customer_id',customerId).eq('event_type','custom_catalog_enquiry').order('created_at',{ascending:false}).limit(100)
+      db.from('customer_activity').select('id,event_type,payload,created_at').eq('customer_id',customerId).eq('event_type','custom_catalog_enquiry').order('created_at',{ascending:false}).limit(100),
+      db.from('customer_addresses').select('*').eq('customer_id',customerId).order('created_at',{ascending:true})
     ])
     if(customerQ.error)throw customerQ.error
     if(cartQ.error)throw cartQ.error
     if(ordersQ.error)throw ordersQ.error
     if(enquiriesQ.error)throw enquiriesQ.error
+    if(addressesQ.error)throw addressesQ.error
     const latest=(ordersQ.data||[]).reduce((m:any,o:any)=>String(o.updated_at||'')>m?String(o.updated_at||''):m,'')
     const latestEnquiry=(enquiriesQ.data||[]).reduce((m:any,e:any)=>String(e.created_at||'')>m?String(e.created_at||''):m,'')
     await db.from('customers').update({last_seen_at:nowIso()}).eq('id',customerId)
     return json({
       ok:true,customer:customerJson(customerQ.data),cart:cartJson(cartQ.data),
-      orders:ordersQ.data||[],ordersMeta:{count:(ordersQ.data||[]).length,updatedAt:latest},
+      addresses:addressesQ.data||[],orders:ordersQ.data||[],ordersMeta:{count:(ordersQ.data||[]).length,updatedAt:latest},
       enquiries:enquiriesQ.data||[],enquiriesMeta:{count:(enquiriesQ.data||[]).length,updatedAt:latestEnquiry}
     })
   }catch(e){return json({error:e instanceof Error?e.message:'Could not load customer account.'},500)}

@@ -148,6 +148,7 @@
   }
   async function customerTeamEnquiry(payload){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');return invoke('customer-event',{token:s.token,event_type:'team_design_enquiry',payload:payload||{}},false);}
   async function customerAccount(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'get'},false);}
+  async function customerAddress(action,address,id){const s=session();if(!s?.token)throw new Error('Sign in to manage addresses.');return invoke('customer-account',{token:s.token,action,address:address||{},id:id||''},false);}
   async function customerSync(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'sync'},false);}
   async function updateCustomerProfile(profile){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');const data=await invoke('customer-account',{token:s.token,action:'update',profile:profile||{}},false);return data?.customer||null;}
   async function mutateCustomerCart(operation,itemKey,item){
@@ -207,5 +208,5 @@
     await hydrate();return data;
   }
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate();}
-  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,adminFeed,listProfiles,b2bSession,setB2BSession,b2bLogin,b2bCatalog,b2bLogout,b2bUpdateStorefront,b2bPublicCatalog,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
+  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,adminFeed,listProfiles,b2bSession,setB2BSession,b2bLogin,b2bCatalog,b2bLogout,b2bUpdateStorefront,b2bPublicCatalog,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
 })();

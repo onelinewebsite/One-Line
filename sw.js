@@ -1,4 +1,4 @@
-const CACHE='one-line-admin-spacious-20261008-v130';
+const CACHE='one-line-orders-addresses-v131';
 const CORE=[
   './index.html','./404.html','./admin.html','./staff.html','./management.html','./b2b.html',
   './css/site.css','./css/admin.css',
