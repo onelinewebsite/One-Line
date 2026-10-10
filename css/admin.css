@@ -1193,3 +1193,6 @@ html,body{background:#f6f2f7;color:#241c27}
  .admin-head .admin-menu button{font-size:13px!important;}
  .admin-main .panel-head p:not(.tag){font-size:13px!important;}
 }
+/* v135 catalogue tools */
+.separate-variants-upload{display:flex;flex-direction:column;gap:10px;padding:18px;margin:16px 0;border:1px dashed #648b73;border-radius:14px;background:#f4faf6}.separate-variants-upload small{color:#536258}.custom-catalog-mini-item .category-order-controls{display:flex;gap:4px;flex-shrink:0}.custom-catalog-mini-item .category-order-controls button{min-width:32px;min-height:36px}.user-code,.customer-main small,.account-list small{overflow-wrap:anywhere}
+.custom-catalog-mini-item>.custom-catalog-mini-image{grid-row:1;grid-column:1}.custom-catalog-mini-item>.custom-catalog-mini-copy{grid-row:1;grid-column:2}.custom-catalog-mini-item>.category-order-controls{grid-row:2;grid-column:1}.custom-catalog-mini-item>.custom-catalog-mini-edit{grid-row:2;grid-column:2;position:static;justify-self:end}

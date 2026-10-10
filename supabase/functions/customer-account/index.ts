@@ -123,8 +123,8 @@ Deno.serve(async(req)=>{
         if(!removed.data?.length)return json({error:'Address not found.'},404)
       }else{
         const a=body?.address||{}
-        const row={label:text(a.label,30)||'Home',recipient_name:text(a.recipientName,120),phone:text(a.phone,20),line1:text(a.line1,240),line2:text(a.line2,200),city:text(a.city,100),district:text(a.district,100),state:text(a.state,100)||'Kerala',postal_code:text(a.postalCode,12),landmark:text(a.landmark,200),is_default:!!a.isDefault,updated_at:nowIso()}
-        if(row.recipient_name.length<2||row.line1.length<4||!row.city)return json({error:'Enter recipient, address and city.'},400)
+        const row={label:text(a.label,30)||'Home',recipient_name:text(a.recipientName,120),phone:text(a.phone,20),line1:text(a.line1,1500),business_name:text(a.businessName,160),line2:text(a.line2,200),city:text(a.city,100),district:text(a.district,100),state:text(a.state,100),postal_code:text(a.postalCode,12),landmark:text(a.landmark,200),is_default:!!a.isDefault,updated_at:nowIso()}
+        if(row.recipient_name.length<2||row.line1.length<4||row.phone.replace(/\D/g,'').length<10||!/^\d{6}$/.test(row.postal_code))return json({error:'Enter name, phone number, six-digit PIN code and full address.'},400)
         if(row.is_default){const q=await db.from('customer_addresses').update({is_default:false}).eq('customer_id',customerId);if(q.error)throw q.error}
         if(action==='address_create'){
           const q=await db.from('customer_addresses').insert({...row,customer_id:customerId}).select('id').single();if(q.error)throw q.error
