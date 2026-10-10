@@ -75,7 +75,22 @@
     const categories=cats.filter(c=>c.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(c=>({id:c.id,name:c.name,image:c.image_url||'',sub:subs.filter(s=>s.category_id===c.id&&s.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(s=>s.name).join(' · ')||c.subtitle||'',active:true}));
     return{products,categories,orders:data.orders||[],settings:data.settings||{},prints:data.print_types||null,delivery:data.delivery_methods||null};
   }
-  async function hydrate(){
+  let catalogueFlight=null,catalogueCache=null,catalogueCachedAt=0;
+  const CATALOGUE_TTL=120000;
+  function hydrate(options={}){
+    if(catalogueFlight)return catalogueFlight;
+    if(!options.force&&catalogueCache&&Date.now()-catalogueCachedAt<CATALOGUE_TTL)return Promise.resolve(catalogueCache);
+    catalogueFlight=hydrateFresh().then(data=>{catalogueCache=data;catalogueCachedAt=Date.now();return data;}).finally(()=>{catalogueFlight=null;});
+    return catalogueFlight;
+  }
+  function patchCatalogue(kind,row){
+    const key=kind==='items'?'customItems':'customCategories',storage=kind==='items'?'one-line-custom-catalog-items-v1':'one-line-custom-catalog-categories-v1';
+    const rows=catalogueCache?.[key]||JSON.parse(localStorage.getItem(storage)||'[]'),index=rows.findIndex(x=>String(x.id)===String(row.id));
+    if(index<0)rows.push(row);else rows[index]=row;
+    if(catalogueCache)catalogueCache[key]=rows;
+    local(storage,rows);
+  }
+  async function hydrateFresh(){
     if(!configured())return{configured:false};
     const sb=supa();
     const queries=await Promise.all([
@@ -165,11 +180,12 @@
     if(!profile)throw new Error('No portal profile is linked to this account. Ask an administrator to check your account.');
     if(!profile.active){await sb.auth.signOut();throw new Error('This account is suspended.');}return profile;
   }
-  async function staffSignOut(){const sb=supa();if(sb)await sb.auth.signOut();}
+  async function staffSignOut(){lastAdminFeed=null;const sb=supa();if(sb)await sb.auth.signOut();}
   async function adminCreateAccount(payload){return invoke('admin-user',{action:'create',...payload});}
   async function adminUpdateAccount(payload){return invoke('admin-user',{action:'update',...payload});}
   async function adminBootstrapAccounts(){return invoke('admin-user',{action:'bootstrap_defaults'});}
-  async function adminFeed(){return invoke('admin-user',{action:'admin_feed'});}
+  let lastAdminFeed=null,adminFeedFlight=null;
+  async function adminFeed(){if(adminFeedFlight)return adminFeedFlight;adminFeedFlight=invoke('admin-user',{action:'admin_feed',syncToken:lastAdminFeed?.syncToken||''}).then(data=>{if(data?.unchanged&&lastAdminFeed)return lastAdminFeed;lastAdminFeed=data;return data;}).finally(()=>{adminFeedFlight=null;});return adminFeedFlight;}
   async function listProfiles(){const sb=supa();if(!sb)return[];const {data,error}=await sb.from('profiles').select('*').order('created_at',{ascending:false});if(error)throw error;return data||[];}
 
   
@@ -177,8 +193,20 @@
   
   
   
+  async function catalogueImage(file,folder){
+    // Catalogue media only; original customer artwork and downloads remain untouched.
+    if(!/^(custom-catalog|catalog|categories|variants|products)(\/|$)/.test(folder)||!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size<150000||!window.createImageBitmap)return file;
+    let bitmap;
+    try{
+      bitmap=await createImageBitmap(file);const scale=Math.min(1,1400/Math.max(bitmap.width,bitmap.height));
+      const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+      canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.85));
+      return blob&&blob.type==='image/webp'&&blob.size<file.size?new File([blob],file.name.replace(/\.[^.]+$/,'')+'.webp',{type:'image/webp'}):file;
+    }catch(_){return file;}finally{bitmap?.close?.();}
+  }
   async function uploadImage(file,folder='catalog'){
-    const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');if(!file)return'';const ext=(file.name.split('.').pop()||'webp').toLowerCase();const path=folder+'/'+crypto.randomUUID()+'.'+ext;const {error}=await sb.storage.from(C.STORAGE_BUCKET||'product-images').upload(path,file,{cacheControl:'31536000',upsert:false});if(error)throw error;return sb.storage.from(C.STORAGE_BUCKET||'product-images').getPublicUrl(path).data.publicUrl;
+    const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');if(!file)return'';file=await catalogueImage(file,folder);const ext=(file.name.split('.').pop()||'webp').toLowerCase();const path=folder+'/'+crypto.randomUUID()+'.'+ext;const {error}=await sb.storage.from(C.STORAGE_BUCKET||'product-images').upload(path,file,{cacheControl:'31536000',upsert:false});if(error)throw error;return sb.storage.from(C.STORAGE_BUCKET||'product-images').getPublicUrl(path).data.publicUrl;
   }
   function storageObjectPath(url){
     const value=String(url||'').trim();if(!value)return'';
@@ -197,14 +225,14 @@
     const unique=[...new Set((urls||[]).map(String).filter(Boolean))];for(const url of unique){try{await deleteImage(url);}catch(err){console.warn('Image cleanup failed',err);}}
     return true;
   }
-  async function upsertCategory(row){const sb=supa();const payload={id:row.id||undefined,name:row.name,image_url:row.image||'',subtitle:row.sub||'',active:row.active!==false,sort_order:Number(row.sort_order||0)};const {data,error}=await sb.from('categories').upsert(payload).select().single();if(error)throw error;await hydrate();return data;}
+  async function upsertCategory(row){const sb=supa();const payload={id:row.id||undefined,name:row.name,image_url:row.image||'',subtitle:row.sub||'',active:row.active!==false,sort_order:Number(row.sort_order||0)};const {data,error}=await sb.from('categories').upsert(payload).select().single();if(error)throw error;await hydrate({force:true});return data;}
   async function upsertProduct(p){
     const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');
     const base={id:p.id||undefined,code:p.code||p.sku||'',barcode:p.barcode||null,name:p.name||'',description:p.description||'',category_id:p.categoryId||null,subcategory_id:p.subcategoryId||null,price:Number(p.price||0),mrp:Number(p.mrp||0),product_type:p.type||'Simple',option_title:p.optionTitle||'Size',images:p.images?.length?p.images:[p.image].filter(Boolean),active:p.active!==false,customer_visible:true,ask_for_price:!!p.askForPrice,stock:Number(p.stock||0)};
     const {data,error}=await sb.from('products').upsert(base).select().single();if(error)throw error;
     if(Array.isArray(p.variants)){const removed=await sb.from('product_variants').delete().eq('product_id',data.id);if(removed.error)throw removed.error;if(p.variants.length){const rows=p.variants.map(v=>({product_id:data.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??p.price??0),barcode:v.barcode||null,image_url:v.image||'',active:v.active!==false}));const r=await sb.from('product_variants').insert(rows);if(r.error)throw r.error;}}
-    await hydrate();return data;
+    await hydrate({force:true});return data;
   }
-  async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate();}
-  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
+  async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate({force:true});}
+  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
 })();

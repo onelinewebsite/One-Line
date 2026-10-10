@@ -47,7 +47,16 @@ async function upsertPortalAccount(db:any,spec:{name:string;username:string;pass
   return q.data
 }
 
-async function adminFeed(db:any){
+async function adminFeed(db:any,syncToken=''){
+  // Compare compact change records before transferring potentially large design JSON.
+  const [oh,eh]=await Promise.all([
+    db.from('orders').select('id,updated_at,status,total').order('created_at',{ascending:false}).limit(1000),
+    db.from('customer_activity').select('id,created_at').in('event_type',['custom_catalog_enquiry','team_design_enquiry']).order('created_at',{ascending:false}).limit(1000)
+  ]);
+  if(oh.error)throw oh.error;if(eh.error)throw eh.error;
+  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([oh.data,eh.data])));
+  const token=Array.from(new Uint8Array(bytes)).map(v=>v.toString(16).padStart(2,'0')).join('');
+  if(syncToken===token)return {unchanged:true,syncToken:token};
   const [ordersQ,enquiriesQ]=await Promise.all([
     db.from('orders').select('*').order('created_at',{ascending:false}).limit(1000),
     db.from('customer_activity').select('*,customers(id,name,phone,business_name,job_title,created_at,last_seen_at)').in('event_type',['custom_catalog_enquiry','team_design_enquiry']).order('created_at',{ascending:false}).limit(1000)
@@ -66,7 +75,7 @@ async function adminFeed(db:any){
       if((page.data||[]).length<500)break
     }
   }
-  return {orders,orderItems,enquiries:enquiriesQ.data||[]}
+  return {orders,orderItems,enquiries:enquiriesQ.data||[],syncToken:token}
 }
 
 Deno.serve(async(req)=>{
@@ -76,7 +85,7 @@ Deno.serve(async(req)=>{
     if(!portal)return json({error:'Admin authorization required.'},403)
     const body=await req.json(),action=String(body.action||''),db=admin()
 
-    if(action==='admin_feed')return json({ok:true,...await adminFeed(db)})
+    if(action==='admin_feed')return json({ok:true,...await adminFeed(db,String(body.syncToken||''))})
 
     if(action==='bootstrap_defaults'){
       const defaults=[

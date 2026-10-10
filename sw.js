@@ -1,4 +1,4 @@
-const CACHE='one-line-catalogue-v135';
+const CACHE='one-line-catalogue-v136';
 const CORE=[
   './index.html','./404.html','./admin.html','./staff.html','./management.html',
   './css/site.css','./css/admin.css',

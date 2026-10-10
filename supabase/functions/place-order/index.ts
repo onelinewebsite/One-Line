@@ -27,6 +27,7 @@ function uniformRate(v:any,row:any,itemRate:any=null){const sr=row?.rate!==undef
 async function validateUniformOrder(db:any,item:any){
   const design=structuredClone(item?.design||{}),itemId=String(design.itemId||'');if(!itemId)throw new Error('Uniform item is missing. Add it to cart again.');
   const q=await db.from('custom_catalog_items').select('*').eq('id',itemId).maybeSingle();if(q.error)throw q.error;if(!q.data||q.data.active===false)throw new Error('This uniform item is no longer available.');
+  const categoryResult=await db.from('custom_catalog_categories').select('catalogue_section').eq('id',q.data.category_id).single();if(categoryResult.error)throw categoryResult.error;design.catalogueSection=categoryResult.data?.catalogue_section==='ready'?'ready':'custom';
   const cfg=uniformConfig(q.data),available=[...(Array.isArray(cfg.top)?cfg.top:[]),...(Array.isArray(cfg.bottom)?cfg.bottom:[])].filter((v:any)=>v?.enabled===true&&uniformVariantTotal(v)>0),availableMap=new Map(available.map((v:any)=>[String(v.id),v]));
   const requestedRaw=Array.isArray(design.selectedItems)?design.selectedItems:[],requestedIds:string[]=[...new Set<string>(requestedRaw.map((v:any)=>String(v?.id||'')).filter(Boolean))],selected=requestedIds.map((id:string)=>availableMap.get(id)).filter(Boolean) as any[];
   if(!selected.length||selected.length!==requestedIds.length)throw new Error('One of the selected uniform items is no longer available.');
