@@ -6499,3 +6499,12 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 }
 /* v135 delivery address and stable user ID */
 .saved-address-fields .span2{grid-column:1/-1}.saved-address-fields textarea{width:100%;padding:12px;border:1px solid #d9e2dc;border-radius:10px;font:inherit;resize:vertical}.user-code{font-size:12px;overflow-wrap:anywhere;color:#526459}
+
+/* v137: only menu title line-break and Ready Made home CTA alignment. */
+.site-header nav.open .drawer-brand-button .brand-copy small{white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;}
+.site-header nav.open .drawer-brand-button .brand-copy{min-width:0!important;}
+.site-header nav.open .drawer-brand-button .brand{min-width:0!important;gap:8px!important;}
+.site-header nav.open .drawer-brand-button .brand-mark{flex-shrink:0!important;}
+@media(max-width:375px){.site-header nav.open .drawer-brand-button .brand-mark{width:40px!important;height:40px!important;flex-basis:40px!important}.site-header nav.open .drawer-brand-button .brand-copy b{font-size:16px!important}.site-header nav.open .drawer-brand-button .brand-copy small{font-size:7px!important;letter-spacing:.03em!important}}
+.ready-made-home .section-heading>button{display:inline-flex!important;position:relative!important;align-items:center!important;justify-content:center!important;text-align:center!important;padding-left:32px!important;padding-right:32px!important;}
+.ready-made-home .section-heading>button .icon{position:absolute!important;right:11px!important;top:50%!important;transform:translateY(-50%)!important;}
