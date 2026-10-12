@@ -10,7 +10,7 @@
     authModal:false,authStep:'phone',authPhone:'',authOtp:'',authName:'',authBusy:false,authError:'',pendingAction:'',customer:B?.customerSession?.()||null,
     backendReady:false,backendError:'',catalogQuery:'',profileEditing:false,addresses:[],addressEditor:null,selectedAddressId:'',orderDetailId:'',accountLoaded:false,accountSyncing:false,cartVersion:0,cartUpdatedAt:'',ordersStamp:'',enquiriesStamp:'',profileUpdatedAt:'',
     toast:'',legal:'',checkoutStep:1,details:{name:'',phone:'',address:'',business:''},delivery:'Courier',payment:'Cash on delivery',paymentDemo:false,
-    orderPlaced:false,orderReference:'',orderSubmitting:false,installPrompt:null,zoomImage:'',zoomAlt:'',zoomImages:[],zoomIndex:0,zoomScale:1,zoomX:0,zoomY:0
+    orderPlaced:false,orderReference:'',orderSubmitting:false,directOrderItem:null,installPrompt:null,zoomImage:'',zoomAlt:'',zoomImages:[],zoomIndex:0,zoomScale:1,zoomX:0,zoomY:0
   };
   state.customCatalogCategories=(state.customCatalogCategories||[]).map(c=>['uniform','kids uniform'].includes(String(c.name||'').trim().toLowerCase())?{...c,name:'Uniform'}:c);
   const filterKey='one-line-catalog-filters-v1';
@@ -45,8 +45,9 @@
   const WHATSAPP_LOGO='https://upload.wikimedia.org/wikipedia/commons/4/4c/WhatsApp_Logo_green.svg?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original';
   const whatsappLogo=()=>'<img class="whatsapp-logo" src="'+WHATSAPP_LOGO+'" alt="" aria-hidden="true">';
 
-  const totalQty=()=>state.cart.reduce((n,x)=>n+(Array.isArray(x.bulkLines)?x.bulkLines.reduce((a,l)=>a+Number(l.qty||0),0):Number(x.qty||0)),0);
-  const subtotal=()=>state.cart.reduce((n,x)=>n+(x.total!=null?Number(x.total||0):Number(x.price||0)*Number(x.qty||0)),0);
+  const checkoutItems=()=>state.directOrderItem?[state.directOrderItem]:state.cart;
+  const totalQty=(items=state.cart)=>items.reduce((n,x)=>n+(Array.isArray(x.bulkLines)?x.bulkLines.reduce((a,l)=>a+Number(l.qty||0),0):Number(x.qty||0)),0);
+  const subtotal=(items=state.cart)=>items.reduce((n,x)=>n+(x.total!=null?Number(x.total||0):Number(x.price||0)*Number(x.qty||0)),0);
   const retailProducts=()=>[];
   const img=(src,alt,cls,fallback)=>'<img src="'+S.esc(src||fallback||'assets/product-placeholder.svg')+'" alt="'+S.esc(alt||'')+'" class="'+S.esc(cls||'')+'" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src=\''+S.esc(fallback||'assets/product-placeholder.svg')+'\'">';
   function logo(compact){return '<div class="brand" aria-label="One-Line"><img class="brand-mark" src="one-line-logo.webp" alt="">'+(compact?'':'<span class="brand-copy"><b>One-Line</b><small>TOUCH SHOPPING</small></span>')+'</div>';}
@@ -463,12 +464,16 @@
     const design={catalogueSection:category?.catalogue_section||'custom',kind:'kids_uniform_order',itemId:item.id,itemTitle:item.title||'Uniform',categoryId:category?.id||item.category_id||'',categoryName:category?.name||'Uniform',cardImage,images,selectedItems,itemQuantities:Object.fromEntries(selectedItems.map(v=>[v.id,v.sizeQuantities])),sizeQuantities:aggregate,totalUnits:sel.totalPieces,totalPieces:sel.totalPieces,descriptionBlocks:uniformConfig(item).description_blocks||[],totalAmount:Number(sel.totalAmount||0),selectedAt:new Date().toISOString()};
     const itemText=selectedItems.map(v=>v.name+': '+Object.entries(v.sizeQuantities).map(([size,qty])=>size+' × '+qty).join(', ')).join(' · ');
     const averageRate=sel.totalPieces>0?Number(sel.totalAmount||0)/sel.totalPieces:0,displayId=String(uniformConfig(item).display_id||'').trim();const cartItem={itemType:'uniform_order',custom:true,name:item.title||'Uniform',code:displayId||item.id,qty:sel.totalPieces,price:averageRate,total:Number(sel.totalAmount||0),image:cardImage,detail:itemText,design:{...design,displayId},uniformOrder:{...design,displayId}};
-    const added=await addCart(cartItem,false);
-    if(added){
-      // Only reset after Supabase confirms the cart write. Preserve selections on failure.
+    // Buy Now is a standalone order; never append it to the account's saved cart.
+    if(buyNow){
+      ensureCartKey(cartItem);state.directOrderItem=cartItem;
       state.uniformOptionIds=[];state.uniformSizeQty={};state.uniformGalleryVariantId='';state.uniformTopId='';state.uniformBottomId='';
-      if(buyNow){state.checkoutStep=1;state.orderPlaced=false;go('checkout');}
-      else render(); // The gallery and picker return to their initial unselected state.
+      state.checkoutStep=1;state.orderPlaced=false;go('checkout');
+    }else{
+      const added=await addCart(cartItem,false);
+      if(added){
+        state.uniformOptionIds=[];state.uniformSizeQty={};state.uniformGalleryVariantId='';state.uniformTopId='';state.uniformBottomId='';render();
+      }
     }
     }finally{uniformAddBusy=false;}
   }
@@ -527,15 +532,94 @@
     return '<main class="product-fullscreen screen screen-enter bulk-product-page"><div class="product-full-inner"><section class="product-full-media">'+detailSlider(gallery,label)+'</section><section class="product-full-info"><span class="eyebrow">'+[p.category,p.subcategory].filter(Boolean).map(S.esc).join(' / ')+'</span><div class="item-detail-title-row"><h1>'+S.esc(label)+'</h1><button type="button" class="inline-share-button item-title-share" data-share-kind="product" data-share-value="'+S.esc(p.id)+'" data-share-label="'+S.esc(label)+'" aria-label="Share product">'+I('share')+'<span>Share</span></button></div><div class="product-code-line"><span>ITEM CODE</span><b>'+S.esc(p.code||p.barcode||'------')+'</b></div>'+(Number(p.price||0)?'<div class="detail-price"><strong>From '+S.money(p.price)+'</strong>'+(p.mrp?'<s>'+S.money(p.mrp)+'</s>':'')+'</div>':'')+(p.description?'<p>'+S.esc(p.description)+'</p>':'')+(colors.length?'<div class="selection-block"><label>Colour <b>'+S.esc(state.color||colors[0])+'</b></label><div class="colour-options">'+colors.map(c=>'<button class="'+((state.color||colors[0])===c?'active':'')+'" data-product-color="'+S.esc(c)+'"><span style="background:'+(S.palette[c]||c||'#ddd')+'"></span>'+S.esc(c)+'</button>').join('')+'</div></div>':'')+bulkMatrix(p)+'<div class="bulk-live-summary"><span><b>'+q+'</b> piece'+(q===1?'':'s')+' selected</span><strong>'+S.money(total)+'</strong></div><div class="product-action-row"><button class="primary detail-add" data-action="add-product">Add bulk order to cart '+I('cart')+'</button><button class="custom-enquiry-btn" data-action="whatsapp" data-message="Hi, I want to know about '+S.esc(label)+' (item code '+S.esc(p.code||'')+').">'+whatsappLogo()+'<span>Contact to customize</span></button></div><div class="ready-made-note"><b>OTP only when you add to cart</b><span>You can browse freely. Phone verification starts only when you try to cart an item or design.</span></div></section></div></main>';
   }
   function customCartPreview(item){const faces=S.designedSurfaces(item.customDesign||{});const face=faces[0]||'front';return '<div class="cart-custom-preview">'+S.designPreview(item.customDesign,face,'cart-design-preview')+'<span>'+face.replace('Sleeve',' sleeve')+'</span></div>';}
+  // Each size is adjustable separately so a + on one variant never changes another.
+  function cartLineControl(item,label,quantity,optionId,size){
+    const attr=' data-key="'+S.esc(item.key)+'" data-option="'+S.esc(optionId||'')+'" data-size="'+S.esc(size||'')+'"';
+    return '<div class="cart-adjust-line"><span class="cart-line-label">'+S.esc(label)+'</span><div class="cart-line-stepper"><button type="button" data-cart-adjust="-1"'+attr+' aria-label="Remove one '+S.esc(label)+'" '+(quantity<=1&&Number(item.qty||0)<=1?'disabled':'')+'>'+I('minus')+'</button><b>'+quantity+'</b><button type="button" data-cart-adjust="1"'+attr+' aria-label="Add one '+S.esc(label)+'">'+I('plus')+'</button></div></div>';
+  }
   function cartBreakdown(item){
-    let rows=[];(item.bulkLines||[]).forEach(l=>rows.push('<span>'+S.esc([l.color,l.size].filter(Boolean).join(' · ')||'Item')+' <b>× '+Number(l.qty||0)+'</b></span>'));
-    if(item.itemType==='custom_design'&&item.sizeQuantities)rows=Object.entries(item.sizeQuantities).filter(([,q])=>Number(q)>0).map(([size,q])=>'<span>'+S.esc(size)+' <b>× '+Number(q)+'</b></span>');
-    if(item.itemType==='uniform_order'){const d=item.design||item.uniformOrder||{},items=d.selectedItems||[];rows=[];for(const x of items)for(const [size,q] of Object.entries(x.sizeQuantities||{}))if(Number(q)>0)rows.push('<span>'+S.esc((x.name||'Item')+' · '+size)+' <b>× '+Number(q)+'</b></span>');}
-    return rows.length?'<div class="cart-bulk-breakdown">'+rows.join('')+'</div>':'';
+    let rows=[];
+    if(Array.isArray(item.bulkLines)&&item.bulkLines.length){
+      rows=item.bulkLines.filter(x=>Number(x.qty)>0).map(l=>cartLineControl(item,[l.color,l.size].filter(Boolean).join(' · ')||'Item',Number(l.qty||0),String(l.variantId||''),String(l.size||'')));
+    }else if(item.itemType==='uniform_order'){
+      const d=item.design||item.uniformOrder||{};
+      for(const x of d.selectedItems||[])for(const [size,q] of Object.entries(x.sizeQuantities||{}))if(Number(q)>0)rows.push(cartLineControl(item,(x.name||'Item')+' · '+size,Number(q),String(x.id||''),size));
+    }else if(item.itemType==='custom_design'&&item.sizeQuantities){
+      rows=Object.entries(item.sizeQuantities).filter(([,q])=>Number(q)>0).map(([size,q])=>cartLineControl(item,size,Number(q),'',size));
+    }
+    return rows.length?'<div class="cart-adjust-lines">'+rows.join('')+'</div>':'';
   }
   function cartItem(item){
-    const uniform=item.itemType==='uniform_order',thumb=item.customDesign?customCartPreview(item):'<div class="cart-ready-preview">'+img(item.image,item.name,'','assets/product-placeholder.svg')+'</div>',fixed=!!(item.bulkLines||item.itemType==='custom_design'||uniform||item.custom),label=uniform?((item.design||item.uniformOrder)?.catalogueSection==='ready'?'READY MADE':'UNIFORM'):item.custom?'YOUR CUSTOM DESIGN':'BULK READY-MADE';
-    return '<article class="cart-item improved-cart-item">'+thumb+'<div class="cart-item-info"><span>'+label+'</span><h3>'+S.esc(item.name)+'</h3><p>'+[item.code?('Code '+item.code):'',item.detail].filter(Boolean).map(S.esc).join(' · ')+'</p>'+cartBreakdown(item)+(item.customDesign?'<div class="cart-design-meta"><b>'+S.esc(item.customDesign.printType)+'</b><span>'+S.designedSurfaces(item.customDesign).length+' print area'+(S.designedSurfaces(item.customDesign).length===1?'':'s')+'</span></div>':'')+'<strong>'+(Number(item.total??item.price)>0?S.money(item.total??Number(item.price||0)*Number(item.qty||0)):'Price after review')+'</strong></div>'+(fixed?'<div class="qty-static"><b>'+Number(item.qty||0)+'</b><small>pcs</small></div>':'<div class="qty-control"><button data-qty="-1" data-key="'+S.esc(item.key)+'">'+I('minus')+'</button><span>'+item.qty+'</span><button data-qty="1" data-key="'+S.esc(item.key)+'">'+I('plus')+'</button></div>')+'<button class="remove-item" data-remove-key="'+S.esc(item.key)+'" aria-label="Remove item">'+I('trash')+'</button></article>';
+    const uniform=item.itemType==='uniform_order',thumb=item.customDesign?customCartPreview(item):'<div class="cart-ready-preview">'+img(item.image,item.name,'','assets/product-placeholder.svg')+'</div>',hasLines=!!((item.bulkLines||[]).length||item.itemType==='custom_design'&&Object.values(item.sizeQuantities||{}).some(q=>Number(q)>0)||uniform),label=uniform?((item.design||item.uniformOrder)?.catalogueSection==='ready'?'READY MADE':'UNIFORM'):item.custom?'YOUR CUSTOM DESIGN':'BULK READY-MADE';
+    const singleQty=hasLines?'<div class="qty-static"><b>'+Number(item.qty||0)+'</b><small>pcs</small></div>':'<div class="qty-control"><button type="button" data-cart-adjust="-1" data-key="'+S.esc(item.key)+'" aria-label="Decrease quantity" '+(Number(item.qty)<=1?'disabled':'')+'>'+I('minus')+'</button><span>'+Number(item.qty||0)+'</span><button type="button" data-cart-adjust="1" data-key="'+S.esc(item.key)+'" aria-label="Increase quantity">'+I('plus')+'</button></div>';
+    return '<article class="cart-item improved-cart-item">'+thumb+'<div class="cart-item-info"><span>'+label+'</span><h3>'+S.esc(item.name)+'</h3><p>'+[item.code?('Code '+item.code):'',item.detail].filter(Boolean).map(S.esc).join(' · ')+'</p>'+cartBreakdown(item)+(item.customDesign?'<div class="cart-design-meta"><b>'+S.esc(item.customDesign.printType)+'</b><span>'+S.designedSurfaces(item.customDesign).length+' print area'+(S.designedSurfaces(item.customDesign).length===1?'':'s')+'</span></div>':'')+'<strong>'+(Number(item.total??item.price)>0?S.money(item.total??Number(item.price||0)*Number(item.qty||0)):'Price after review')+'</strong></div>'+singleQty+'<button class="remove-item" data-remove-key="'+S.esc(item.key)+'" aria-label="Remove item">'+I('trash')+'</button></article>';
+  }
+  let cartAdjustmentBusy=false;
+  async function adjustCartQuantity(key,delta,optionId='',size=''){
+    if(cartAdjustmentBusy||cartMutationsPending>0)return;
+    const current=state.cart.find(x=>String(x.key)===String(key));if(!current)return;
+    cartAdjustmentBusy=true;
+    try{
+      const item=clone(current),d=item.design||item.uniformOrder||{},number=Math.floor(Number(delta));
+      if(![-1,1].includes(number))return;
+      if(item.itemType==='uniform_order'){
+        const variant=(d.selectedItems||[]).find(x=>String(x.id)===String(optionId));
+        if(!variant||!size)throw new Error('Choose a valid variant and size.');
+        const before=Math.floor(Number(variant.sizeQuantities?.[size]||0)),next=before+number;
+        if(next<0||(next===0&&Number(item.qty)<=1))return;
+        if(number>0){
+          const sb=B?.supa?.();if(!sb)throw new Error('Cannot check stock. Try again shortly.');
+          const {data,error}=await sb.from('custom_catalog_items').select('id,active,fabric_options').eq('id',d.itemId).single();
+          if(error||!data)throw new Error('Cannot check current stock. Please retry.');
+          if(data.active===false)throw new Error('This item is currently unavailable.');
+          const option=uniformAllVariants(uniformConfig(data)).find(x=>String(x.id)===String(optionId));
+          const row=option?.sizes?.find(x=>String(x.size)===String(size));
+          if(!option?.enabled||!row)throw new Error('Selected option or size is no longer available.');
+          const alreadyInCart=state.cart.filter(x=>x.itemType==='uniform_order'&&String((x.design||x.uniformOrder)?.itemId)===String(d.itemId)).reduce((sum,x)=>sum+(x.design||x.uniformOrder)?.selectedItems?.filter(v=>String(v.id)===String(optionId)).reduce((n,v)=>n+Number(v.sizeQuantities?.[size]||0),0)||0,0);
+          // Stock is checked here for feedback, and rechecked transactionally on Place Order.
+          const raw=(data.fabric_options?.uniform_config||{}),rawOption=[...(raw.top||[]),...(raw.bottom||[]),...(raw.items||[])].find(v=>String(v.id)===String(optionId));
+          const rawSize=rawOption?.sizes?.find(v=>String(v.size)===String(size));
+          if(rawSize&&Object.hasOwn(rawSize,'stock')&&rawSize.stock!=null&&alreadyInCart+1>Number(rawSize.stock))throw new Error('Only '+Math.max(0,Math.floor(Number(rawSize.stock)))+' available for '+variant.name+' · '+size+'.');
+        }
+        variant.sizeQuantities[size]=next;
+        const remaining=[];let qty=0,total=0,aggregate={};
+        for(const v of d.selectedItems||[]){
+          const sizes=Object.fromEntries(Object.entries(v.sizeQuantities||{}).filter(([,q])=>Number(q)>0));
+          const count=Object.values(sizes).reduce((n,q)=>n+Number(q),0);if(!count)continue;
+          v.sizeQuantities=sizes;v.orderedQty=count;v.lineTotal=Object.entries(sizes).reduce((n,[z,q])=>n+Number(q)*Number(v.sizeRates?.[z]??v.rate??item.price??0),0);
+          qty+=count;total+=v.lineTotal;for(const [z,q] of Object.entries(sizes))aggregate[z]=(aggregate[z]||0)+Number(q);
+          remaining.push(v);
+        }
+        d.selectedItems=remaining;d.sizeQuantities=aggregate;d.itemQuantities=Object.fromEntries(remaining.map(v=>[v.id,v.sizeQuantities]));d.totalUnits=qty;d.totalPieces=qty;d.totalAmount=total;
+        item.qty=qty;item.total=total;item.price=qty?total/qty:0;
+        item.detail=remaining.map(v=>v.name+': '+Object.entries(v.sizeQuantities).map(([z,q])=>z+' × '+q).join(', ')).join(' · ');
+        item.design=clone(d);item.uniformOrder=clone(d);
+      }else if(Array.isArray(item.bulkLines)&&item.bulkLines.length){
+        const line=item.bulkLines.find(x=>String(x.variantId||'')===String(optionId)&&String(x.size||'')===String(size));if(!line)return;
+        const next=Number(line.qty||0)+number;if(next<0||(next===0&&Number(item.qty)<=1))return;
+        if(number>0){
+          const sb=B?.supa?.();if(!sb)throw new Error('Cannot check stock.');
+          const table=line.variantId?'product_variants':'products',query=sb.from(table).select('stock').eq('id',line.variantId||item.productId).single(),{data,error}=await query;
+          if(error||!data)throw new Error('Cannot check stock right now.');
+          if(data.stock!=null){const reserved=state.cart.filter(x=>String(x.productId)===String(item.productId)).flatMap(x=>x.bulkLines||[]).filter(x=>String(x.variantId||'')===String(optionId)&&String(x.size||'')===String(size)).reduce((n,x)=>n+Number(x.qty||0),0);if(reserved+1>Number(data.stock))throw new Error('Only '+Number(data.stock)+' available for '+(size||'item')+'.');}
+        }
+        line.qty=next;item.bulkLines=item.bulkLines.filter(x=>Number(x.qty)>0);item.qty=bulkTotalQty(item.bulkLines);item.total=bulkTotalPrice(item.bulkLines);item.price=item.qty?item.total/item.qty:0;item.detail=item.bulkLines.map(x=>(x.size||x.color||'Item')+' × '+x.qty).join(' · ');
+      }else if(item.itemType==='custom_design'&&item.sizeQuantities){
+        const next=Number(item.sizeQuantities[size]||0)+number;if(next<0||(next===0&&Number(item.qty)<=1))return;
+        if(next>100000)throw new Error('Quantity is too large.');
+        if(next===0)delete item.sizeQuantities[size];else item.sizeQuantities[size]=next;
+        item.qty=Object.values(item.sizeQuantities).reduce((n,q)=>n+Number(q),0);
+        item.customDesign={...(item.customDesign||{}),sizeQuantities:{...item.sizeQuantities},totalQty:item.qty};
+        item.price=S.customDesignPrice?.(item.customDesign,item.qty,state.settings)??item.price;item.total=Number(item.price||0)*item.qty;
+      }else{
+        item.qty=Math.max(1,Number(item.qty||1)+number);
+        if(item.qty>100000)throw new Error('Quantity is too large.');
+        item.total=Number(item.price||0)*item.qty;
+      }
+      const saved=await queueCartMutation('upsert',item.key,item);
+      if(saved)render();
+    }catch(e){showToast(e.message||'Could not update quantity.');}
+    finally{cartAdjustmentBusy=false;}
   }
   function cart(){
     return '<main class="cart-page section-wrap screen screen-enter improved-cart-page simple-cart-page"><div class="catalog-title cart-title"><div><span class="eyebrow">YOUR SELECTIONS</span><h1>Cart</h1><p>Review products, size quantities and saved custom designs before checkout.</p></div></div>'+(state.cart.length?'<div class="cart-layout"><section class="cart-list">'+state.cart.map(cartItem).join('')+'</section><aside class="order-summary clean-order-summary"><span class="eyebrow">SUMMARY</span><div class="summary-line"><span>Selected pieces</span><b>'+totalQty()+'</b></div><div class="summary-line"><span>Products / designs</span><b>'+state.cart.length+'</b></div><div class="summary-total"><span>Estimated total</span><strong>'+S.money(subtotal())+'</strong></div><small>Final delivery charges, if any, are confirmed at checkout.</small><button class="primary wide" data-action="checkout">Continue to checkout '+I('arrow')+'</button><button class="secondary wide cart-edit-design" data-go="customize">Continue designing</button></aside></div>':'<div class="empty-state cart-empty">'+I('cart')+'<h2>Your cart is empty</h2><p>Add a catalogue item, custom design or team jersey order.</p><div><button class="primary" data-go="customize">Open customizer</button><button class="secondary" data-go="catalog">Browse products</button></div></div>')+'</main>';
@@ -550,6 +634,7 @@
 
   function addressesSection(checkoutMode=false){return '<section class="saved-address-section"><div class="saved-address-heading"><h2>Delivery addresses</h2><button class="secondary" type="button" data-action="new-address">+ Add address</button></div>'+savedAddressCards(checkoutMode)+addressEditorForm()+'</section>';}
   function checkout(){
+    const orderItems=checkoutItems();
     if(state.orderPlaced)return success();const deliveries=S.getDelivery().filter(x=>x.active);
     if(!state.cart.length)return cart();
     state.payment='Cash on delivery';
@@ -560,9 +645,9 @@
       '<div class="checkout-address-preview"><span class="checkout-option-icon">'+I('map')+'</span><div><small>DELIVER TO</small><b>'+S.esc(state.details.name||state.customer?.name||'Customer')+'</b><p>'+S.esc(state.details.address||'Delivery address')+'</p></div><button type="button" data-action="checkout-edit-details">Edit</button></div>'+
       '<section class="checkout-option-section"><div class="checkout-option-heading"><div><span>01</span><div><b>Delivery method</b><small>Select one available delivery option</small></div></div></div><div class="delivery-method-grid">'+deliveries.map(d=>'<button type="button" data-delivery="'+S.esc(d.name)+'" class="delivery-method-card '+(state.delivery===d.name?'active':'')+'"><span class="checkout-option-icon">'+I(d.name.toLowerCase().includes('pickup')?'package':d.name.toLowerCase().includes('bus')?'box':'truck')+'</span><span class="delivery-method-copy"><b>'+S.esc(d.name)+'</b><small>'+S.esc(d.note||'Delivery details will be confirmed with your order.')+'</small></span><span class="delivery-check">'+(state.delivery===d.name?I('check'):'')+'</span></button>').join('')+'</div></section>'+
       '<section class="checkout-option-section payment-only-cod"><div class="checkout-option-heading"><div><span>02</span><div><b>Payment method</b><small>Only one payment method is available</small></div></div></div><div class="cod-payment-card active"><span class="checkout-option-icon cod-icon">'+I('card')+'</span><span class="delivery-method-copy"><b>Cash on Delivery</b><small>Pay when your order is delivered.</small></span><span class="cod-badge">SELECTED</span><span class="delivery-check">'+I('check')+'</span></div><div class="cod-note">'+I('shield')+'<span><b>No online payment required</b><small>Your order will be placed without redirecting to any payment gateway.</small></span></div></section>'+
-      '<div class="checkout-place-order"><div><small>TOTAL</small><strong>'+S.money(subtotal())+'</strong><span>'+totalQty()+' piece'+(totalQty()===1?'':'s')+' in this order</span></div><button class="primary order-submit-button" data-action="submit-order" '+(state.orderSubmitting?'disabled aria-busy="true"':'')+'>'+(state.orderSubmitting?'<span class="order-submit-inline-spinner" aria-hidden="true"></span> Placing order…':'Place order '+I('arrow'))+'</button></div></div>';
+      '<div class="checkout-place-order"><div><small>TOTAL</small><strong>'+S.money(subtotal(orderItems))+'</strong><span>'+totalQty(orderItems)+' piece'+(totalQty(orderItems)===1?'':'s')+' in this order</span></div><button class="primary order-submit-button" data-action="submit-order" '+(state.orderSubmitting?'disabled aria-busy="true"':'')+'>'+(state.orderSubmitting?'<span class="order-submit-inline-spinner" aria-hidden="true"></span> Placing order…':'Place order '+I('arrow'))+'</button></div></div>';
     const submitOverlay=state.orderSubmitting?'<div class="order-submit-overlay" role="status" aria-live="assertive" aria-busy="true"><div class="order-submit-loader"><span class="order-submit-spinner" aria-hidden="true"></span><strong>Placing your order</strong><p>Please wait while we save your order and confirm all items.</p><div class="order-submit-dots" aria-hidden="true"><i></i><i></i><i></i></div><small>Do not tap Place Order again.</small></div></div>':'';
-    return '<main class="checkout-page section-wrap screen screen-enter styled-checkout-page"><div class="checkout-head">'+logo(true)+'<span>Secure checkout '+I('shield')+'</span></div><div class="checkout-steps two-steps"><span class="'+(state.checkoutStep>=1?'active':'')+'"><b>1</b>Details</span><i></i><span class="'+(state.checkoutStep>=2?'active':'')+'"><b>2</b>Delivery & payment</span></div><div class="checkout-layout"><section class="checkout-card styled-checkout-card">'+(state.checkoutStep===1?'<div><span class="eyebrow">STEP 01</span><h1>Delivery address</h1><p>Choose a saved address or add a new one.</p>'+addressesSection(true)+'<label class="checkout-business-label">Business / institution <small>optional</small><input data-checkout-business value="'+S.esc(state.details.business||state.customer?.businessName||'')+'"></label><button type="button" class="primary wide" data-action="delivery-step" '+(!activeDeliveryAddress()?'disabled':'')+'>Continue '+I('arrow')+'</button></div>':stepTwo)+'</section><aside class="order-summary checkout-summary styled-checkout-summary"><span class="eyebrow">YOUR ORDER</span>'+state.cart.map(i=>'<div><span>'+i.qty+' × '+S.esc(i.name)+'</span><b>'+(Number(i.total??(i.price*i.qty))>0?S.money(i.total??(i.price*i.qty)):'Quote')+'</b></div>').join('')+'<hr><div class="summary-total"><span>Total</span><strong>'+S.money(subtotal())+'</strong></div><small class="checkout-summary-cod">'+I('check')+' Cash on Delivery</small></aside></div></main>'+submitOverlay;
+    return '<main class="checkout-page section-wrap screen screen-enter styled-checkout-page"><div class="checkout-head">'+logo(true)+'<span>Secure checkout '+I('shield')+'</span></div><div class="checkout-steps two-steps"><span class="'+(state.checkoutStep>=1?'active':'')+'"><b>1</b>Details</span><i></i><span class="'+(state.checkoutStep>=2?'active':'')+'"><b>2</b>Delivery & payment</span></div><div class="checkout-layout"><section class="checkout-card styled-checkout-card">'+(state.checkoutStep===1?'<div><span class="eyebrow">STEP 01</span><h1>Delivery address</h1><p>Choose a saved address or add a new one.</p>'+addressesSection(true)+'<label class="checkout-business-label">Business / institution <small>optional</small><input data-checkout-business value="'+S.esc(state.details.business||state.customer?.businessName||'')+'"></label><button type="button" class="primary wide" data-action="delivery-step" '+(!activeDeliveryAddress()?'disabled':'')+'>Continue '+I('arrow')+'</button></div>':stepTwo)+'</section><aside class="order-summary checkout-summary styled-checkout-summary"><span class="eyebrow">YOUR ORDER</span>'+orderItems.map(i=>'<div><span>'+i.qty+' × '+S.esc(i.name)+'</span><b>'+(Number(i.total??(i.price*i.qty))>0?S.money(i.total??(i.price*i.qty)):'Quote')+'</b></div>').join('')+'<hr><div class="summary-total"><span>Total</span><strong>'+S.money(subtotal(orderItems))+'</strong></div><small class="checkout-summary-cod">'+I('check')+' Cash on Delivery</small></aside></div></main>'+submitOverlay;
   }
   function success(){return '<main class="success-page section-wrap screen screen-enter"><div class="success-card">'+I('check')+'<span class="eyebrow">ORDER CONFIRMED</span><h1>Thank you.</h1><p>Your order and exact custom design data were saved.</p><div class="success-order"><span>Order reference</span><b>#'+S.esc(state.orderReference)+'</b></div><div><button class="primary" data-action="view-order">View my order</button><button class="secondary" data-go="home">Back to home</button></div></div></main>';}
   function orderItem(item){
@@ -785,7 +870,7 @@
     }
     return '<div class="auth-overlay"><section class="auth-card simple-auth-card"><button type="button" class="close" data-action="close-auth">'+I('close')+'</button><h2>'+title+'</h2>'+body+(state.authError?'<p class="auth-error">'+S.esc(state.authError)+'</p>':'')+'</section></div>';
   }
-  async function continuePendingAction(){const a=state.pendingAction;state.pendingAction='';if(a==='add-product')await addSelectedProductToCart();else if(a==='team-enquiry')await submitTeamEnquiry();else if(a==='custom-add'&&state.pendingCustomItem){const item=state.pendingCustomItem;state.pendingCustomItem=null;item.itemType='custom_design';const added=await addCart(item,true);if(added)clearDesignerAfterCart();}else if(a==='uniform-add-cart')await addUniformOrderToCart(state.customItemId,false);else if(a==='uniform-buy-now')await addUniformOrderToCart(state.customItemId,true);else if(a==='checkout'){state.checkoutStep=1;state.orderPlaced=false;go('checkout');}else if(a==='profile-login'){go('profile');}else if(a==='custom-catalog-enquiry'){await submitCustomCatalogEnquiry(state.customItemId);}else render();}
+  async function continuePendingAction(){const a=state.pendingAction;state.pendingAction='';if(a==='add-product')await addSelectedProductToCart();else if(a==='team-enquiry')await submitTeamEnquiry();else if(a==='custom-add'&&state.pendingCustomItem){const item=state.pendingCustomItem;state.pendingCustomItem=null;item.itemType='custom_design';const added=await addCart(item,true);if(added)clearDesignerAfterCart();}else if(a==='uniform-add-cart')await addUniformOrderToCart(state.customItemId,false);else if(a==='uniform-buy-now')await addUniformOrderToCart(state.customItemId,true);else if(a==='checkout'){state.directOrderItem=null;state.checkoutStep=1;state.orderPlaced=false;go('checkout');}else if(a==='profile-login'){go('profile');}else if(a==='custom-catalog-enquiry'){await submitCustomCatalogEnquiry(state.customItemId);}else render();}
   function legal(){const lines=legalCopy[state.legal]||legalCopy.About;return '<div class="overlay"><div class="legal-panel"><div class="legal-head-actions"><button class="legal-back" data-action="close-legal">'+I('back')+'<span>Back</span></button><button class="close" data-action="close-legal">'+I('close')+'</button></div><span class="eyebrow">STORE INFORMATION</span><h2>'+S.esc(state.legal)+'</h2>'+lines.map(x=>'<p>'+S.esc(x)+'</p>').join('')+'</div></div>';}
   function imageZoomModal(){if(!state.zoomImage)return'';const many=(state.zoomImages||[]).length>1,count=(state.zoomImages||[]).length||1;return '<div class="image-zoom-overlay" data-zoom-overlay><div class="image-zoom-shell" role="dialog" aria-modal="true" aria-label="Product image viewer"><button type="button" class="zoom-close" data-action="close-zoom" aria-label="Close image">'+I('close')+'</button>'+(many?'<button type="button" class="zoom-nav zoom-prev" data-action="zoom-prev" aria-label="Previous image">'+I('back')+'</button><button type="button" class="zoom-nav zoom-next" data-action="zoom-next" aria-label="Next image">'+I('arrow')+'</button>':'')+'<div class="zoom-image-stage" data-zoom-stage><img data-zoom-view src="'+S.esc(state.zoomImage)+'" alt="'+S.esc(state.zoomAlt||'Product image')+'" style="transform:translate3d('+state.zoomX+'px,'+state.zoomY+'px,0) scale('+state.zoomScale+')"></div><div class="zoom-controls"><button type="button" data-action="zoom-out" aria-label="Zoom out">'+I('minus')+'</button><span data-zoom-label>'+Math.round(state.zoomScale*100)+'%</span><span class="zoom-count">'+(state.zoomIndex+1)+' / '+count+'</span><button type="button" data-action="zoom-in" aria-label="Zoom in">'+I('plus')+'</button></div></div></div>'; }
   function paymentModal(){return '<div class="overlay"><div class="payment-modal"><button class="close" data-action="close-payment">'+I('close')+'</button><div class="demo-tag">ORDER CONFIRMATION</div>'+I('card')+'<h2>'+S.money(subtotal())+'</h2><p>Online payment gateway can be connected after the client supplies the selected payment provider credentials.</p><button class="primary wide" data-action="complete-order">Confirm order</button><button class="text-button" data-action="close-payment">Cancel</button></div></div>';}
@@ -826,17 +911,18 @@
     if(front)design.frontCompositeDataUrl=front;if(back)design.backCompositeDataUrl=back;return design;
   }
   async function completeOrder(){
-    if(state.orderSubmitting||!state.cart.length)return;
-    const orderCart=clone(state.cart),orderTotal=subtotal();
+    if(state.orderSubmitting||!checkoutItems().length)return;
+    const directOrder=!!state.directOrderItem,orderCart=clone(checkoutItems());
     state.orderSubmitting=true;state.authBusy=true;state.payment='Cash on delivery';render();
     try{
       const prepared=[];for(const item of orderCart){if(item.itemType==='custom_design')prepared.push({...item,preparedDesign:await prepareCustomOrderDesign(item.design||item.customDesign||{})});else prepared.push(item);}
-      const payload={deliveryAddressId:state.selectedAddressId||'',customerName:state.customer?.name||state.details.name||'',recipientName:activeDeliveryAddress()?.recipient_name||'',phone:state.customer?.phone||state.details.phone||'',address:state.details.address||'',business:state.details.business||'',delivery:state.delivery,payment:'Cash on delivery',items:prepared.map(item=>item.itemType==='custom_design'?{itemType:item.itemType,key:item.key||'',name:item.name,code:item.code||'CUSTOM',qty:item.qty||1,unitPrice:Number(item.price||0),design:item.preparedDesign||item.design||item.customDesign||{}}:item.itemType==='uniform_order'?{itemType:'uniform_order',key:item.key||'',name:item.name,code:item.code||'UNIFORM',qty:item.qty||1,unitPrice:Number(item.price||0),design:item.design||item.uniformOrder||{}}:{itemType:'product',productId:item.productId,name:item.name,code:item.code||'',lines:item.bulkLines||[]})};
+      const payload={directOrder,deliveryAddressId:state.selectedAddressId||'',customerName:state.customer?.name||state.details.name||'',recipientName:activeDeliveryAddress()?.recipient_name||'',phone:state.customer?.phone||state.details.phone||'',address:state.details.address||'',business:state.details.business||'',delivery:state.delivery,payment:'Cash on delivery',items:prepared.map(item=>item.itemType==='custom_design'?{itemType:item.itemType,key:item.key||'',name:item.name,code:item.code||'CUSTOM',qty:item.qty||1,unitPrice:Number(item.price||0),design:item.preparedDesign||item.design||item.customDesign||{}}:item.itemType==='uniform_order'?{itemType:'uniform_order',key:item.key||'',name:item.name,code:item.code||'UNIFORM',qty:item.qty||1,unitPrice:Number(item.price||0),design:item.design||item.uniformOrder||{}}:{itemType:'product',productId:item.productId,name:item.name,code:item.code||'',lines:item.bulkLines||[]})};
       await cartMutationQueue;
-      if(cartSyncError)throw new Error('Cart is not fully synced yet. '+cartSyncError);
+      if(!directOrder&&cartSyncError)throw new Error('Cart is not fully synced yet. '+cartSyncError);
       B?.customerEvent?.('order_submit_attempt',{delivery:state.delivery,payment:state.payment,items:orderCart.map(i=>({name:i.name,code:i.code||'',itemType:i.itemType||'product',qty:i.qty||1}))});
       const r=await B.placeOrder(payload);
-      state.orderReference=r.orderCode||r.id||'ORDER';state.orderPlaced=false;state.paymentDemo=false;state.cart=[];state.cartVersion=Number(state.cartVersion||0)+1;broadcastAccountSync('order');
+      state.orderReference=r.orderCode||r.id||'ORDER';state.orderPlaced=false;state.paymentDemo=false;state.directOrderItem=null;
+      if(!directOrder){state.cart=[];state.cartVersion=Number(state.cartVersion||0)+1;}broadcastAccountSync('order');
       await B.hydrate({force:true});await refreshCustomerAccount(false);
       state.orderSubmitting=false;state.authBusy=false;state.checkoutStep=1;
       go('orders');
@@ -977,7 +1063,7 @@
     root.querySelectorAll('[data-product-color]').forEach(x=>x.addEventListener('click',()=>{state.color=x.dataset.productColor;state.previewImage='';state.bulkQty={};render();}));
     root.querySelectorAll('[data-product-image]').forEach(x=>x.addEventListener('click',()=>{if(state.selected)state.previewImage=x.dataset.productImage;render();}));
     root.querySelectorAll('[data-bulk-key]').forEach(x=>x.addEventListener('change',()=>{state.bulkQty[x.dataset.bulkKey]=Math.max(0,Number(x.value||0));render();}));
-    root.querySelectorAll('[data-qty]').forEach(x=>x.addEventListener('click',()=>{const item=state.cart.find(i=>i.key===x.dataset.key);if(item){item.qty=Math.max(1,item.qty+Number(x.dataset.qty));queueCartMutation('upsert',item.key,item);}render();}));
+    root.querySelectorAll('[data-cart-adjust]').forEach(x=>x.addEventListener('click',()=>adjustCartQuantity(x.dataset.key,Number(x.dataset.cartAdjust),x.dataset.option||'',x.dataset.size||'')));
     root.querySelectorAll('[data-remove-key]').forEach(x=>x.addEventListener('click',()=>{const item=state.cart.find(i=>i.key===x.dataset.removeKey);state.cart=state.cart.filter(i=>i.key!==x.dataset.removeKey);queueCartMutation('remove',x.dataset.removeKey,null);B?.customerEvent?.('cart_remove',{item:{name:item?.name||'',code:item?.code||''}});render();}));
     root.querySelectorAll('[data-delivery]').forEach(x=>x.addEventListener('click',()=>{state.delivery=x.dataset.delivery;render();}));
     root.querySelectorAll('[data-payment]').forEach(x=>x.addEventListener('click',()=>{state.payment=x.dataset.payment;render();}));
@@ -1046,7 +1132,7 @@
       else if(a==='profile-edit'){state.profileEditing=true;render();}
       else if(a==='profile-cancel-edit'){state.profileEditing=false;render();}
       else if(a==='profile-logout'){B?.clearCustomerSession?.();state.customer=null;state.cart=[];state.orders=[];state.enquiries=[];state.cartVersion=0;state.ordersStamp='';state.enquiriesStamp='';state.accountLoaded=false;state.profileEditing=false;window.OneLineOTP?.reset?.();broadcastAccountSync('logout');render();}
-      else if(a==='checkout'){if(!state.customer?.token){requireCustomer('checkout');return;}B?.customerEvent?.('checkout_started',{cartItems:state.cart.length,pieces:totalQty(),items:state.cart.map(i=>({name:i.name,code:i.code||'',itemType:i.itemType||'product',qty:i.qty||1}))});state.checkoutStep=1;state.orderPlaced=false;go('checkout');}
+      else if(a==='checkout'){state.directOrderItem=null;if(!state.customer?.token){requireCustomer('checkout');return;}B?.customerEvent?.('checkout_started',{cartItems:state.cart.length,pieces:totalQty(),items:state.cart.map(i=>({name:i.name,code:i.code||'',itemType:i.itemType||'product',qty:i.qty||1}))});state.checkoutStep=1;state.orderPlaced=false;go('checkout');}
       else if(a==='delivery-step'){const addr=activeDeliveryAddress();if(!addr){showToast('Choose or add a delivery address');return;}state.details={...state.details,name:state.customer?.name||'',recipientName:addr.recipient_name,address:deliveryAddressLine(addr),business:root.querySelector('[data-checkout-business]')?.value||state.customer?.businessName||''};state.payment='Cash on delivery';state.checkoutStep=2;render();}
       else if(a==='checkout-edit-details'){state.checkoutStep=1;render();}
       else if(a==='submit-order')await completeOrder();
@@ -1144,7 +1230,7 @@
     if(e.state?.oneLineZoom){state.screen=next||state.screen;restoreRouteState(state.screen,e.state||{});const custom=state.screen==='customItem'?state.customCatalogItems.find(x=>String(x.id)===String(state.customItemId)):null;const gallery=custom?[...(custom.images||[])].filter(Boolean):(state.selected?productGallery(state.selected):[]);state.zoomImages=gallery.length?gallery:[e.state.zoomSrc].filter(Boolean);state.zoomIndex=Math.max(0,Math.min(state.zoomImages.length-1,Number(e.state.zoomIndex||0)));state.zoomImage=e.state.zoomSrc||state.zoomImages[state.zoomIndex]||'';state.zoomAlt=e.state.zoomAlt||'Product image';state.zoomScale=1;state.zoomX=0;state.zoomY=0;render();return;}
     resetZoomState();state.legal='';state.screen=next||'home';restoreRouteState(state.screen,e.state||{});state.menu=false;state.filterOpen=false;state.filterDraft=null;render();requestAnimationFrame(()=>window.scrollTo(0,Number(e.state?.scrollY||0)));
   });
-  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=134').catch(()=>{});
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=138').catch(()=>{});
   const initialStamp=()=>JSON.stringify([S.getProducts(),S.getCategories(),S.getCustomCatalogCategories?.()||[],S.getCustomCatalogItems?.()||[],S.getCustomCatalogFabrics?.()||[],S.getSettings()]);
   let renderedStamp=initialStamp();render();
   B?.ready?.().then(async r=>{state.backendReady=true;if(r?.error)state.backendError=r.error.message||String(r.error);state.products=S.getProducts();state.categories=S.getCategories();state.customCatalogCategories=(S.getCustomCatalogCategories?.()||r?.customCategories||[]).map(c=>['uniform','kids uniform'].includes(String(c.name||'').trim().toLowerCase())?{...c,name:'Uniform'}:c);state.customCatalogItems=S.getCustomCatalogItems?.()||r?.customItems||[];state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||r?.customFabrics||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||r?.customSportswearFabrics||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||r?.customSportswearTypes||[];state.settings=S.getSettings();restoreRouteState(state.screen,history.state||{});try{history.replaceState({...history.state,...routeState(state.screen,history.state?.scrollY||0)},'',routeUrl(state.screen));}catch(_){}let accountChanged=false;if(B?.customerSession?.()?.token){const before=JSON.stringify([state.customer,state.cart,state.orders,state.enquiries]);await refreshCustomerAccount(false);accountChanged=before!==JSON.stringify([state.customer,state.cart,state.orders,state.enquiries]);}const nextStamp=initialStamp(),accountVisible=['profile','cart','orders','addresses','checkout'].includes(state.screen);if(nextStamp!==renderedStamp||(accountChanged&&accountVisible)||state.backendError){renderedStamp=nextStamp;render();}setInterval(()=>pollCustomerAccount(false),ACCOUNT_POLL_MS);}).catch(e=>{state.backendReady=true;state.backendError=e.message||String(e);render();});if(state.sharedSection==='shirt-colour'){setTimeout(()=>document.querySelector('[data-fast-uniform]')?.scrollIntoView({behavior:'auto',block:'start'}),120);}
