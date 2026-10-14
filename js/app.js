@@ -110,6 +110,17 @@
   }
   let cartMutationQueue=Promise.resolve(),cartMutationsPending=0,cartSyncError='',accountPollBusy=false,accountChannel=null;
   let lastAccountSyncAt=0, uniformAddBusy=false, cartAddBusy=false;
+  let cartFeedbackTimer=null;
+  function cartFeedback(stage){
+    if(cartFeedbackTimer){clearTimeout(cartFeedbackTimer);cartFeedbackTimer=null;}
+    let overlay=document.getElementById('one-line-cart-feedback');
+    if(stage==='hide'){overlay?.remove();return;}
+    if(!overlay){overlay=document.createElement('div');overlay.id='one-line-cart-feedback';overlay.className='one-line-cart-feedback';overlay.setAttribute('role','status');overlay.setAttribute('aria-live','polite');document.body.appendChild(overlay);}
+    overlay.innerHTML=stage==='success'
+      ?'<div class="one-line-cart-feedback-card is-success"><span class="one-line-cart-feedback-check">'+I('check')+'</span><strong>Added to cart</strong></div>'
+      :'<div class="one-line-cart-feedback-card"><span class="one-line-cart-feedback-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Adding to cart</span></div>';
+    if(stage==='success')cartFeedbackTimer=setTimeout(()=>{overlay.remove();cartFeedbackTimer=null;},1350);
+  }
   const ACCOUNT_POLL_MS=60000;
   const accountView=()=>['profile','cart','orders','addresses','checkout'].includes(state.screen);
   try{if('BroadcastChannel' in window){accountChannel=new BroadcastChannel('one-line-account-v41');accountChannel.onmessage=()=>pollCustomerAccount(true);}}catch(_){}
@@ -160,14 +171,17 @@
   async function addCart(item,navigate){
     // Hold the lock through the server response; a rapid double tap must never create two cart rows.
     if(cartAddBusy)return false;cartAddBusy=true;
+    cartFeedback('loading');
     ensureCartKey(item);state.cart.push(item);
+    let succeeded=false;
     try{
       const saved=await queueCartMutation('upsert',item.key,item);
-      if(!saved)return false; // queueCartMutation already displays a server error and resynchronizes.
+      if(!saved)return false; // The existing cart-sync error handling reports the problem.
       B?.customerEvent?.('cart_add',{item:{productId:item.productId||null,name:item.name,code:item.code||'',qty:item.qty||1,itemType:item.itemType||'product'}});
-      if(navigate)go('cart');else showToast('Added to your cart');
+      if(navigate)go('cart');
+      cartFeedback('success');succeeded=true;
       return true;
-    }finally{cartAddBusy=false;}
+    }finally{if(!succeeded)cartFeedback('hide');cartAddBusy=false;}
   }
   function clearDesignerAfterCart(){
     // A submitted design must not reappear as a preselected draft on the next visit.
@@ -460,18 +474,21 @@
     const selectedRate=tshirt?(validQuality?customFabricRate(selected.fabric,state.customQuality):customItemFromRate(item)):sportswear?(selectedType&&validQuality?sportswearRate(selected.fabric,state.customQuality,selectedType):customItemFromRate(item)):uniform?uniformDisplayedSetRate(item,uniformSel):customItemFromRate(item);
     const ready=tshirt?validQuality:sportswear?!!selectedType&&validQuality:uniform?!!uniformSel?.ready:true,picker=tshirt?tshirtFabricPicker(item):sportswear?sportswearPicker(item):uniform?uniformPicker(item):'',needsChoice=tshirt?'Choose fabric and quality':sportswear?'Choose type, fabric and quality':'',choiceHelp=tshirt?'Select one fabric, then select its quality to continue.':sportswear?'Select the sportswear type first, then fabric and quality.':'',ratePrefix=uniform?'Set ':(((tshirt||sportswear)&&!ready)?'From ':'');
     const actionArea=uniform?'<div class="uniform-actions-anchor" data-uniform-actions-anchor><div class="uniform-order-actions" data-uniform-order-actions><button class="secondary wide uniform-add-cart-button" data-action="uniform-add-cart" data-item-id="'+S.esc(item.id)+'">Add to cart '+I('cart')+'</button><button class="primary wide" data-action="uniform-buy-now" data-item-id="'+S.esc(item.id)+'">Buy now '+I('arrow')+'</button></div></div>':'<div class="custom-enquiry-note"><b>'+(ready?(logged?'Send this enquiry':'Create account to enquire'):needsChoice)+'</b><span>'+(ready?(logged?'Your selected option and verified contact details will be sent with this item.':'Verify your mobile number and add your name once. Then this enquiry will be sent automatically.'):choiceHelp)+'</span></div><button class="primary wide custom-catalog-enquiry-button '+(sent?'sent':'')+'" data-action="custom-catalog-enquiry" data-item-id="'+S.esc(item.id)+'" '+(busy||sent||!ready?'disabled':'')+'>'+(sent?'Enquiry sent '+I('check'):busy?'Sending…':'Enquire '+I('arrow'))+'</button>';
-    const uniformDisplayId=String((uniform?uniformConfig(item).display_id:'')||item.id).trim(),shareButton='<button type="button" class="inline-share-button item-title-share custom-item-title-share" data-share-kind="custom-item" data-share-value="'+S.esc(item.id)+'" data-share-label="'+S.esc(item.title||'Customization idea')+'" aria-label="Share item">'+I('share')+'<span>Share</span></button>',titleAction=true?'<div class="custom-uniform-title-actions">'+(uniformDisplayId?'<div class="custom-uniform-item-id"><span>ID</span><b>'+S.esc(uniformDisplayId)+'</b></div>':'')+shareButton+'</div>':shareButton;
-    return '<main class="product-fullscreen custom-item-page '+(uniform?'uniform-custom-item-page ':'')+'screen screen-enter"><div class="product-full-inner custom-item-inner"><section class="product-full-media">'+detailSlider(images,item.title||'Customization idea')+'</section><section class="product-full-info custom-item-info"><span class="eyebrow">'+(c?.catalogue_section==='ready'?'READY MADE':'CUSTOM CATALOGUE')+(c?' / '+S.esc(c.name):'')+'</span><div class="item-detail-title-row custom-item-title-row"><h1>'+S.esc(item.title||'Customization idea')+'</h1>'+titleAction+'</div>'+(uniform?'<div class="custom-item-rate uniform-live-price" data-uniform-live-rate>'+uniformPriceHtml(item,uniformSel)+'</div>':(selectedRate!==null?'<div class="custom-item-rate">'+ratePrefix+S.money(selectedRate)+'</div>':''))+(uniform?'':'<p>'+S.esc(item.description||'Ask us to customize this reference for your team, business or event.')+'</p>')+picker+(uniform?uniformDescriptionHtml(item):'')+actionArea+'</section></div></main>';
+    const uniformDisplayId=String((uniform?uniformConfig(item).display_id:'')||item.id).trim(),shareButton='<button type="button" class="inline-share-button item-title-share custom-item-title-share" data-share-kind="custom-item" data-share-value="'+S.esc(item.id)+'" data-share-label="'+S.esc(item.title||'Customization idea')+'" aria-label="Share item">'+I('share')+'<span>Share</span></button>',mediaActions='<div class="custom-item-media-actions">'+(uniformDisplayId?'<div class="custom-uniform-item-id"><span>ID</span><b>'+S.esc(uniformDisplayId)+'</b></div>':'')+shareButton+'</div>';
+    return '<main class="product-fullscreen custom-item-page '+(uniform?'uniform-custom-item-page ':'')+'screen screen-enter"><div class="product-full-inner custom-item-inner"><section class="product-full-media">'+detailSlider(images,item.title||'Customization idea')+mediaActions+'</section><section class="product-full-info custom-item-info"><span class="eyebrow">'+(c?.catalogue_section==='ready'?'READY MADE':'CUSTOM CATALOGUE')+(c?' / '+S.esc(c.name):'')+'</span><div class="item-detail-title-row custom-item-title-row"><h1>'+S.esc(item.title||'Customization idea')+'</h1></div>'+(uniform?'<div class="custom-item-rate uniform-live-price" data-uniform-live-rate>'+uniformPriceHtml(item,uniformSel)+'</div>':(selectedRate!==null?'<div class="custom-item-rate">'+ratePrefix+S.money(selectedRate)+'</div>':''))+(uniform?'':'<p>'+S.esc(item.description||'Ask us to customize this reference for your team, business or event.')+'</p>')+picker+(uniform?uniformDescriptionHtml(item):'')+actionArea+'</section></div></main>';
   }
   async function addUniformOrderToCart(itemId,buyNow=false){
     if(uniformAddBusy||cartAddBusy)return;
     uniformAddBusy=true;
+    let cartAdded=false;
+    // Start the three-dot feedback before the stock verification request.
+    if(!buyNow)cartFeedback('loading');
     try{
     let item=state.customCatalogItems.find(x=>String(x.id)===String(itemId||state.customItemId));if(!item)return;
     try{const client=B?.supa?.();if(client){const latest=await client.from('custom_catalog_items').select('*').eq('id',item.id).maybeSingle();if(!latest.error&&latest.data){item=latest.data;const at=state.customCatalogItems.findIndex(x=>String(x.id)===String(item.id));if(at>=0)state.customCatalogItems[at]=latest.data;}}}catch(_){}
-    const sel=uniformSelection(item);if(!sel.selectedOptions.length){render();showToast('Select at least one variant.');return;}if(!sel.totalPieces){render();showToast('Choose a size quantity within available stock.');scrollToUniformChoices();return;}
+    const sel=uniformSelection(item);if(!sel.selectedOptions.length){render();showToast('Select at least one variant.');return;}if(!sel.totalPieces){showToast('Choose a size quantity within available stock.');return;}
     const selectedItems=sel.selectedItems.filter(v=>v.orderedQty>0).map(v=>({id:v.id,name:v.name,detailTitle:v.detail_title||'',detailDescription:v.detail_description||'',mrp:v.mrp??v.itemMrp??null,rate:v.rate??null,availableStock:uniformVariantStock(v),images:(v.images||[]).filter(Boolean),sizeQuantities:{...v.sizeQuantities},sizeRates:{...(v.sizeRates||{})},sizeStocks:(v.sizes||[]).map(x=>({size:String(x.size||''),stock:Math.max(0,Math.floor(Number(x.stock||0))),rate:uniformEffectiveRate(v,x)})).filter(x=>x.size),orderedQty:v.orderedQty,lineTotal:Number(v.lineTotal||0)}));
-    if(!selectedItems.length){render();showToast('Choose a size quantity within available stock.');scrollToUniformChoices();return;}
+    if(!selectedItems.length){showToast('Choose a size quantity within available stock.');return;}
     const aggregate={};for(const v of selectedItems)for(const [size,qty] of Object.entries(v.sizeQuantities||{}))aggregate[size]=(aggregate[size]||0)+Number(qty||0);
     const cardImage=(item.images||[])[0]||'',images=uniformGalleryImages(item,{...sel,selectedOptions:selectedItems}),category=customCategoryForItem(item);
     const design={catalogueSection:category?.catalogue_section||'custom',kind:'kids_uniform_order',itemId:item.id,itemTitle:item.title||'Uniform',categoryId:category?.id||item.category_id||'',categoryName:category?.name||'Uniform',cardImage,images,selectedItems,itemQuantities:Object.fromEntries(selectedItems.map(v=>[v.id,v.sizeQuantities])),sizeQuantities:aggregate,totalUnits:sel.totalPieces,totalPieces:sel.totalPieces,descriptionBlocks:uniformConfig(item).description_blocks||[],totalAmount:Number(sel.totalAmount||0),selectedAt:new Date().toISOString()};
@@ -483,12 +500,11 @@
       state.uniformOptionIds=[];state.uniformSizeQty={};state.uniformGalleryVariantId='';state.uniformTopId='';state.uniformBottomId='';
       state.checkoutStep=1;state.orderPlaced=false;go('checkout');
     }else{
-      const added=await addCart(cartItem,false);
-      if(added){
-        state.uniformOptionIds=[];state.uniformSizeQty={};state.uniformGalleryVariantId='';state.uniformTopId='';state.uniformBottomId='';render();
-      }
+      cartAdded=await addCart(cartItem,false);
+      // Preserve the selected options on screen instead of redrawing/shortening the
+      // page after success; the next normal visit starts with a fresh selection.
     }
-    }finally{uniformAddBusy=false;}
+    }finally{if(!buyNow&&!cartAdded)cartFeedback('hide');uniformAddBusy=false;}
   }
 
   async function submitCustomCatalogEnquiry(itemId){
