@@ -1196,3 +1196,37 @@ html,body{background:#f6f2f7;color:#241c27}
 /* v135 catalogue tools */
 .separate-variants-upload{display:flex;flex-direction:column;gap:10px;padding:18px;margin:16px 0;border:1px dashed #648b73;border-radius:14px;background:#f4faf6}.separate-variants-upload small{color:#536258}.custom-catalog-mini-item .category-order-controls{display:flex;gap:4px;flex-shrink:0}.custom-catalog-mini-item .category-order-controls button{min-width:32px;min-height:36px}.user-code,.customer-main small,.account-list small{overflow-wrap:anywhere}
 .custom-catalog-mini-item>.custom-catalog-mini-image{grid-row:1;grid-column:1}.custom-catalog-mini-item>.custom-catalog-mini-copy{grid-row:1;grid-column:2}.custom-catalog-mini-item>.category-order-controls{grid-row:2;grid-column:1}.custom-catalog-mini-item>.custom-catalog-mini-edit{grid-row:2;grid-column:2;position:static;justify-self:end}
+
+/* v142: variant image chooser (native file input hidden but keyboard operable) */
+.separate-variants-upload{position:relative;display:grid;gap:13px;border:1px solid #d6e7da!important;border-radius:20px!important;padding:20px!important;background:linear-gradient(135deg,#f2faf5,#fff)!important;cursor:pointer;transition:box-shadow .2s,border-color .2s,transform .2s}
+.separate-variants-upload:hover,.separate-variants-upload:focus-within{border-color:#5e9874!important;box-shadow:0 0 0 3px rgba(76,146,94,.10)}
+.separate-variants-copy{display:flex;align-items:flex-start;gap:12px}
+.separate-variants-copy>span:last-child{display:grid;gap:5px;min-width:0}
+.separate-variants-copy b{font-size:17px;color:#193d29;line-height:1.25}
+.separate-variants-copy small{font-size:12px;color:#567260;line-height:1.5}
+.separate-variants-symbol{width:35px;height:35px;flex:none;display:grid;place-items:center;background:#e0f1e5;color:#28693c;font-weight:800;border-radius:12px;font-size:25px}
+.separate-variants-picker{display:flex;align-items:center;justify-content:center;gap:10px;min-height:49px;width:fit-content;max-width:100%;padding:12px 19px;border-radius:12px;background:#226d3e;color:#fff;font-size:14px;font-weight:800;letter-spacing:.01em;box-shadow:0 6px 16px rgba(18,95,48,.16)}
+.separate-variants-picker>span{font-size:23px;line-height:16px}
+.separate-variants-upload:active .separate-variants-picker{transform:translateY(1px);background:#195831}
+.separate-variants-hint{font-size:11px;color:#63816b}
+.separate-variants-file-input{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;left:18px!important;bottom:15px!important;padding:0!important;border:0!important;pointer-events:none}
+/* v142: consistent role picker on login, role mismatch, and account screen */
+.portal-role-switcher{margin:20px 0 15px;display:grid;gap:10px}
+.portal-role-switcher>small{color:#817087;font-size:10px;font-weight:800;letter-spacing:.13em}
+.portal-role-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.portal-role-choice{display:grid;justify-items:center;gap:7px;min-height:92px;padding:12px 7px;border-radius:14px;border:1px solid #e5d9e8;background:#fff;color:#55425d;text-decoration:none;font-size:12px;font-weight:800;transition:background .15s,border-color .15s,transform .15s}
+.portal-role-choice-icon{display:grid;place-items:center;width:35px;height:35px;border-radius:12px;background:#f3eef6;color:#691c74;font-size:15px;font-weight:800}
+.portal-role-choice.selected{background:#f6eef9;border-color:#9c6daa;color:#64116f;box-shadow:0 0 0 1px rgba(100,17,111,.09)}
+.portal-role-choice.selected .portal-role-choice-icon{background:#64116f;color:#fff}
+.portal-role-choice:hover{border-color:#a67ab1;transform:translateY(-1px)}
+.portal-role-choice:focus-visible,.settings-action-button:focus-visible,.portal-signout-choice:focus-visible{outline:3px solid #ae8bc2;outline-offset:3px}
+.portal-signout-choice{width:100%;min-height:48px;border:1px solid #dfb7bf;border-radius:12px;color:#a0293e;background:#fff6f6;font-size:13px;font-weight:800;cursor:pointer}
+.portal-settings .portal-role-switcher{margin:18px 0 0}
+.portal-settings .portal-role-choice{min-height:82px}
+.settings-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:22px}
+.settings-actions .settings-action-button{display:flex;align-items:center;justify-content:center;gap:9px;min-height:49px;border-radius:13px;border:1px solid #d5c1db;background:#fff;color:#64116f;font-size:13px;font-weight:800;padding:10px 15px;cursor:pointer;box-shadow:0 4px 14px rgba(45,28,46,.05);transition:transform .15s,box-shadow .15s}
+.settings-actions .settings-action-button:hover{transform:translateY(-1px);box-shadow:0 7px 18px rgba(45,28,46,.09)}
+.settings-actions .settings-action-button svg{width:18px;height:18px;flex:none}
+.settings-actions .store-action{background:#64116f;color:white;border-color:#64116f}
+.settings-actions .danger-settings-btn{grid-column:1/-1;min-height:47px}
+@media(max-width:560px){.separate-variants-upload{padding:15px!important}.settings-actions{grid-template-columns:1fr}.settings-actions .danger-settings-btn{grid-column:auto}.portal-role-choice{min-height:80px;font-size:11px;padding:9px 4px}.portal-role-choice-icon{width:32px;height:32px}}
