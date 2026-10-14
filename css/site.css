@@ -6567,3 +6567,8 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
  .simple-cart-page .cart-line-stepper button{width:26px!important;height:28px!important}
  .simple-cart-page .cart-line-stepper b{font-size:10px!important}
 }
+
+/* Press feedback on working buttons; keep existing button appearance. */
+#app button:not(:disabled){-webkit-tap-highlight-color:transparent;transition:filter .12s ease,transform .12s ease;}
+#app button:not(:disabled):active,#app button.one-line-tapped:not(:disabled){filter:brightness(.91);}
+#app [data-uniform-change-section]{scroll-margin-top:100px;}
