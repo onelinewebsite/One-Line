@@ -6569,8 +6569,7 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 }
 
 /* Press feedback on working buttons; keep existing button appearance. */
-#app button:not(:disabled){-webkit-tap-highlight-color:transparent;transition:filter .12s ease,transform .12s ease;}
-#app button:not(:disabled):active,#app button.one-line-tapped:not(:disabled){filter:brightness(.91);}
+/* Global long-press/pointer tap effect removed (v143): native controls and existing intent-specific transitions remain. */
 #app [data-uniform-change-section]{scroll-margin-top:100px;}
 
 
@@ -6594,3 +6593,20 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .custom-item-page .custom-item-title-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-width:0!important;width:100%!important;}
 .custom-item-page .custom-item-title-row h1{min-width:0!important;flex:1 1 auto!important;overflow-wrap:anywhere!important;}
 .custom-item-page .custom-item-title-row .custom-item-title-share{flex:0 0 auto!important;margin-left:auto!important;}
+
+/* v143: clearly separated customer profile overview above account shortcuts */
+.profile-overview-top{margin:0 0 22px;align-items:start;grid-template-columns:70px minmax(0,1fr)}
+.profile-overview-top .profile-identity-copy{min-width:0;width:100%}
+.profile-account-status{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:13px}
+.profile-verified-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#18814a}
+.profile-verified-label .icon{height:17px;width:17px;stroke-width:3;border:1px solid #bce6cc;border-radius:50%;padding:2px}
+.profile-account-id{font-size:11px;color:#756a78;overflow-wrap:anywhere}
+.profile-details-view h2{font-size:25px;letter-spacing:-.04em;margin:0 0 12px}
+.profile-details-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.profile-details-grid>span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.profile-details-grid small{font-size:10px;color:#827886}
+.profile-details-grid b{font-size:12px;overflow-wrap:anywhere}
+@media(max-width:650px){.profile-overview-top{grid-template-columns:48px minmax(0,1fr)!important;padding:16px!important;gap:10px!important}.profile-details-grid{grid-template-columns:1fr;gap:10px}.profile-account-status{display:grid;gap:5px}}
+
+.profile-delivery-overview{grid-column:1/-1;padding-top:9px;border-top:1px solid #f0ecf0}
+.profile-delivery-overview>button{align-self:flex-start;margin-top:5px;border:0;background:transparent;padding:3px 0;color:#64116f;font-size:11px;font-weight:800;cursor:pointer;text-align:left}

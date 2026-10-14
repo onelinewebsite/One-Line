@@ -1230,3 +1230,15 @@ html,body{background:#f6f2f7;color:#241c27}
 .settings-actions .store-action{background:#64116f;color:white;border-color:#64116f}
 .settings-actions .danger-settings-btn{grid-column:1/-1;min-height:47px}
 @media(max-width:560px){.separate-variants-upload{padding:15px!important}.settings-actions{grid-template-columns:1fr}.settings-actions .danger-settings-btn{grid-column:auto}.portal-role-choice{min-height:80px;font-size:11px;padding:9px 4px}.portal-role-choice-icon{width:32px;height:32px}}
+
+/* v143: per-size unlimited inventory switch in variant editor */
+.kids-uniform-size-row .uniform-unlimited-toggle{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;padding:5px 8px;border-radius:8px;background:#f3f8f4;color:#226342;font-weight:750;font-size:11px;cursor:pointer;min-width:0}
+.kids-uniform-size-row .uniform-unlimited-toggle input{margin:0;width:15px;min-width:15px;height:15px;accent-color:#21774d}
+.kids-uniform-size-row input[data-uniform-variant-stock]:disabled{opacity:.48;background:#f4f4f4;cursor:not-allowed}
+.kids-uniform-size-row:has(.uniform-unlimited-toggle){display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.kids-uniform-size-row:has(.uniform-unlimited-toggle)>input[data-uniform-variant-size]{flex:1 1 85px;min-width:65px}
+.kids-uniform-size-row:has(.uniform-unlimited-toggle)>input[data-uniform-variant-stock]{flex:1 1 70px;min-width:60px}
+.kids-uniform-size-row:has(.uniform-unlimited-toggle)>input[data-uniform-size-rate]{flex:1 1 80px;min-width:70px}
+
+/* v144: make variant/option names stand out in staff search results. */
+.portal-staff .staff-stock-main .staff-stock-option{display:block;font-size:13px;line-height:1.35;font-weight:800;color:#37233d;overflow-wrap:anywhere}
