@@ -10,7 +10,11 @@
     const doc=new window.jspdf.jsPDF({unit:'mm',format:[101.6,127],compress:true}),code=String(order.order_code||order.id||''),recipient=order.metadata?.deliveryRecipient||{},rows=[];
     for(const item of items||[]){
       const d=item.design_json||item.design||item.uniformOrder||{},name=item.item_name||item.name||'Item',rate=Number(item.unit_price??item.price??0);
-      if(d.selectedItems?.length){
+      if(d.kind==='printable_order'){
+        const garment=[name,d.garmentTypeName,d.fabricName,d.quality].filter(Boolean).join(' / ');
+        for(const z of d.printableSizes||[]){const qty=Number(z.qty||0);if(qty<=0)continue;const rate=Number(z.rate||0);rows.push({label:garment+' / '+z.size,qty,rate,total:qty*rate});}
+        for(const v of d.selectedPrints||[]){const qty=Number(v.qty||0);if(qty<=0)continue;const rate=Number(v.rate||0);rows.push({label:'PRINT / '+v.name+' / '+(v.sizeLabel||(v.size==='Standard'?'Name / Logo Size':v.size==='Large'?'Large Size':String(v.size||''))),qty,rate,total:qty*rate});}
+      }else if(d.selectedItems?.length){
         for(const v of d.selectedItems)for(const [size,quantity] of Object.entries(v.sizeQuantities||{})){
           const qty=Number(quantity);if(qty<=0)continue;
           const unit=Number(v.sizeRates?.[size]??v.rate??rate);

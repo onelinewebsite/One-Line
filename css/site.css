@@ -6866,3 +6866,60 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
     width: 102px;
   }
 }
+
+/* v155: stock stays beside the size, with separate measurement and rate lines */
+.uniform-size-stock-inline{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+.uniform-size-and-stock{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
+.uniform-size-and-stock small{font-size:11px;white-space:normal}
+.uniform-size-stock-inline .catalogue-size-measurements,
+.uniform-size-stock-inline .catalogue-special-size-rate{display:block;line-height:1.45}
+/* Ready Stock Printable - accessible quantity steppers without horizontal overflow */
+.printable-options,.printable-print-section,.printable-print-list{min-width:0;max-width:100%;width:100%}
+.printable-print-section{margin:20px 0 16px}
+.printable-print-list{display:grid;gap:12px}
+.printable-print-row{border:1px solid #e8e2ea;border-radius:16px;padding:14px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;min-width:0}
+.printable-print-row>b{font-weight:750;min-width:0;overflow-wrap:anywhere}
+.printable-print-choice{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid #f0edf2;padding-top:10px;min-width:0}
+.printable-print-label{display:flex;flex-direction:column;gap:3px;min-width:0}
+.printable-print-label>span{font-weight:700}
+.printable-print-label small{color:#6b6470;font-size:12px}
+.printable-print-choice .uniform-qty-stepper{flex:0 0 auto;max-width:100%;min-width:0}
+.printable-total-summary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:16px 12px;border-top:1px solid #ddd5e1;font-size:14px}
+.printable-total-summary strong{font-size:17px;white-space:normal}
+.printable-order-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}
+.printable-order-actions button{min-width:0}
+@media(max-width:420px){.printable-print-row{padding:12px}.printable-print-choice .uniform-qty-stepper{margin-left:auto}.printable-order-actions{grid-template-columns:1fr}.printable-print-label{flex:1 1 95px}.printable-print-choice{gap:8px}}
+@media(max-width:315px){.printable-print-choice .uniform-qty-stepper{width:100%;justify-content:space-between}}
+
+/* v156: accessible two-step print selection, phone-first and compact */
+.printable-print-types,.printable-size-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0;width:100%}
+.printable-type-card,.printable-size-card{font:inherit;cursor:pointer;text-align:left;appearance:none;border:1px solid #dfd4e2;background:#fff;border-radius:15px;min-width:0;padding:14px;display:flex;flex-direction:column;gap:7px;min-height:78px;align-items:flex-start;justify-content:center;overflow-wrap:anywhere;transition:border-color .15s,background .15s,box-shadow .15s}
+.printable-type-card .printable-type-title,.printable-size-card strong{font-size:14px;font-weight:750;color:#24152b;line-height:1.3}
+.printable-type-card small,.printable-size-card span,.printable-size-card small{font-size:12px;color:#766d7b;line-height:1.4}
+.printable-type-card.active,.printable-size-card.active{background:#f9f0fc;border-color:#78128c;box-shadow:inset 0 0 0 1px #78128c}
+.printable-type-card.active small,.printable-size-card.active span{color:#5a126d}
+.printable-type-card:focus-visible,.printable-size-card:focus-visible{outline:2px solid #78128c;outline-offset:3px}
+.printable-size-stage{border:1px solid #eadfeb;background:#fdfbfd;border-radius:18px;padding:14px;margin:12px 0 0;min-width:0}
+.printable-size-stage .custom-option-heading{margin:0 0 12px}
+.printable-active-quantity{background:#fff;border:1px solid #e7dce8;border-radius:14px;padding:13px;margin:12px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;min-width:0}
+.printable-active-quantity>div:first-child{display:grid;gap:4px;min-width:0;flex:1 1 115px}
+.printable-active-quantity b{font-size:13px;line-height:1.4}
+.printable-active-quantity small{font-size:11px;line-height:1.45;color:#756b7c}
+.printable-active-quantity .uniform-qty-stepper{flex:0 0 auto;max-width:100%;min-width:0}
+.printable-selected-prints{margin-top:14px;display:grid;gap:8px}
+.printable-selected-prints>b{font-size:13px;color:#321d38}
+.printable-selected-prints>div{display:grid;gap:8px}
+.printable-selected-prints span{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;border:1px solid #ece6ee;background:#fff;border-radius:10px;padding:9px 11px;font-size:12px;overflow-wrap:anywhere}
+.printable-selected-prints strong{margin-left:auto;white-space:nowrap}
+@media(max-width:380px){.printable-print-types,.printable-size-grid{gap:8px}.printable-type-card,.printable-size-card{padding:11px;min-height:72px}.printable-size-stage{padding:10px}.printable-active-quantity{padding:10px;gap:8px}}
+@media(max-width:300px){.printable-print-types,.printable-size-grid{grid-template-columns:minmax(0,1fr)}.printable-active-quantity .uniform-qty-stepper{width:100%;justify-content:space-between}}
+
+/* v157: responsive print sizes with independently editable quantities */
+.printable-size-quantity-list{display:grid;gap:9px;min-width:0}
+.printable-size-quantity-list .printable-active-quantity{margin:0;min-width:0}
+.printable-type-card{min-height:64px;align-items:center;text-align:center}
+.printable-type-title{width:100%;overflow-wrap:anywhere}
+@media(max-width:390px){.printable-size-quantity-list .printable-active-quantity{gap:10px}.printable-size-quantity-list .uniform-qty-stepper{max-width:100%}}
+@media(max-width:320px){.printable-size-quantity-list .printable-active-quantity{flex-direction:column;align-items:stretch}.printable-size-quantity-list .uniform-qty-stepper{width:100%;justify-content:space-between}}
+@media(max-width:380px){.printable-size-quantity-list .printable-qty-name{flex:0 1 auto;min-height:0}.printable-size-quantity-list .printable-active-quantity{align-items:stretch}}
+.printable-size-quantity-list .printable-active-quantity>.printable-qty-name{flex:0 1 auto;display:flex;flex-direction:column;justify-content:center;gap:4px}

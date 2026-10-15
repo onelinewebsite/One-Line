@@ -12,8 +12,8 @@ function decodeDataUrl(value:string){
 }
 function normalizeOrderItem(item:any){
   const type=String(item?.itemType||'product')
-  if(type==='team_design'||type==='custom_design'||type==='uniform_order'){
-    return {itemType:type,name:item?.name||(type==='uniform_order'?'Uniform':'Custom design'),code:item?.code||(type==='uniform_order'?'UNIFORM':'CUSTOM'),qty:Number(item?.qty||1),unitPrice:Number(item?.price||item?.unitPrice||0),design:item?.design||item?.customDesign||item?.uniformOrder||{},groupKey:item?.key||''}
+  if(type==='team_design'||type==='custom_design'||type==='uniform_order'||type==='printable_order'){
+    return {itemType:type,name:item?.name||(type==='uniform_order'?'Uniform':type==='printable_order'?'Printable item':'Custom design'),code:item?.code||(type==='uniform_order'?'UNIFORM':type==='printable_order'?'PRINT':'CUSTOM'),qty:Number(item?.qty||1),unitPrice:Number(item?.price||item?.unitPrice||0),design:item?.design||item?.customDesign||item?.uniformOrder||{},groupKey:item?.key||''}
   }
   if(item?.lines)return item
   return {itemType:'product',productId:item?.productId,name:item?.name||'',code:item?.code||'',lines:Array.isArray(item?.bulkLines)?item.bulkLines:[],groupKey:item?.key||''}
@@ -39,6 +39,69 @@ async function validateUniformOrder(db:any,item:any){
   design.itemId=q.data.id;design.itemTitle=q.data.title||item.name||'Uniform';design.cardImage=cardImage;design.images=images;design.selectedItems=selectedItems;design.itemQuantities=Object.fromEntries(selectedItems.map((v:any)=>[v.id,v.sizeQuantities]));design.sizeQuantities=aggregate;design.totalUnits=totalPieces;design.totalPieces=totalPieces;design.totalAmount=totalAmount;design.validatedAt=new Date().toISOString();
   return {...item,name:q.data.title||item.name||'Uniform',code:item.code||'UNIFORM',qty:totalPieces,unitPrice:totalPieces?totalAmount/totalPieces:0,lineTotal:totalAmount,design};
 }
+async function validatePrintableOrder(db:any,item:any){
+  const incoming=item?.design||{},itemId=String(incoming.itemId||'');
+  if(!itemId)throw new Error('Printable item is missing. Select it again.');
+  const iq=await db.from('custom_catalog_items').select('*').eq('id',itemId).maybeSingle();
+  if(iq.error)throw iq.error;
+  const saved=iq.data;if(!saved||saved.active===false)throw new Error('This printable item is no longer available.');
+  const cq=await db.from('custom_catalog_categories').select('name,active').eq('id',saved.category_id).maybeSingle();
+  if(cq.error)throw cq.error;
+  if(!cq.data?.active||String(cq.data.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()!=='ready stock printable items')throw new Error('This is not a printable item.');
+  const [tq,fq,pq]=await Promise.all([
+    db.from('custom_sportswear_types').select('*').eq('id',String(incoming.garmentTypeId||'')).maybeSingle(),
+    db.from('custom_catalog_fabrics').select('*').eq('id',String(incoming.fabricId||'')).maybeSingle(),
+    db.from('custom_print_types').select('*').eq('active',true)
+  ]);
+  if(tq.error)throw tq.error;if(fq.error)throw fq.error;if(pq.error)throw pq.error;
+  const type=tq.data,fabric=fq.data,quality=String(incoming.quality||'');
+  const qualityCol=quality==='Premium'?'premium_rate':quality==='Standard'?'standard_rate':quality==='Budget'?'budget_rate':'';
+  if(!type?.active||!fabric?.active||!qualityCol||fabric[qualityCol]===null||fabric[qualityCol]===undefined)throw new Error('Fabric, garment type or quality changed. Reconfigure item.');
+  const opts=saved.fabric_options||{};
+  if(opts.selection_mode==='custom'&&(!Array.isArray(opts[String(fabric.id)])||!opts[String(fabric.id)].includes(quality)))throw new Error('Selected fabric is not offered on this item.');
+  const base=Math.max(0,Number(fabric[qualityCol])+Number(type.price_adjustment||0));
+  if(!Number.isFinite(base))throw new Error('Garment price is not configured.');
+  const raw=Array.isArray(opts.sportswear_sizes)?opts.sportswear_sizes:['XS','S','M','L','XL','XXL'].map(size=>({size}));
+  const sizes=new Map(raw.map((r:any)=>[String((typeof r==='string'?r:r?.size)||'').trim(),typeof r==='string'?{size:r}:r]));
+  let garmentTotal=0,totalPieces=0;const printableSizes=[] as any[];
+  const requests=incoming.sizeQuantities||{};
+  for(const [size,rawQty] of Object.entries(requests)){
+    const qty=Number(rawQty);if(!Number.isInteger(qty)||qty<0||qty>10000)throw new Error('Invalid size quantity.');
+    if(!qty)continue;
+    const savedSize=sizes.get(size) as any;
+    if(!savedSize)throw new Error('Size '+size+' is no longer available.');
+    const rate=savedSize.rate===null||savedSize.rate===undefined||savedSize.rate===''?base:Number(savedSize.rate);
+    if(!Number.isFinite(rate)||rate<0)throw new Error('Invalid Admin size price.');
+    totalPieces+=qty;garmentTotal+=qty*rate;
+    printableSizes.push({size,qty,rate,length_cm:savedSize.length_cm??null,width_cm:savedSize.width_cm??null,separateRate:savedSize.rate!==null&&savedSize.rate!==undefined&&savedSize.rate!==''});
+  }
+  if(!totalPieces||totalPieces>10000)throw new Error('Select a valid size quantity.');
+  const printMap=new Map((pq.data||[]).map((row:any)=>[String(row.id),row]));
+  const selectedPrintTypeId=String(incoming.selectedPrintTypeId||((incoming.selectedPrints||[])[0]?.id||''));
+  const selectedPrintType=printMap.get(selectedPrintTypeId) as any;
+  if(!selectedPrintType)throw new Error('Selected print type is no longer available. Please choose again.');
+  const availableSizes=new Map((Array.isArray(selectedPrintType.sizes)?selectedPrintType.sizes:[])
+    .filter((row:any)=>row?.active!==false&&String(row?.name||'').trim())
+    .map((row:any)=>[String(row.id),row]));
+  if(!availableSizes.size)throw new Error('This print type currently has no available print sizes.');
+  let printsTotal=0,printsCount=0;const selectedPrints=[] as any[];
+  const found=new Set<string>();
+  for(const request of Array.isArray(incoming.selectedPrints)?incoming.selectedPrints:[]){
+    const id=String(request?.id||''),size=String(request?.size||'');
+    if(id!==selectedPrintTypeId)throw new Error('Select only one print type per order. Add this item again.');
+    if(found.has(size))throw new Error('Duplicate print size.');found.add(size);
+    const current=availableSizes.get(size) as any,qty=Number(request?.qty);
+    if(!current||!Number.isInteger(qty)||qty<1||qty>10000)throw new Error('Selected print size is no longer available.');
+    const rate=Number(current.rate);
+    if(!Number.isFinite(rate)||rate<0)throw new Error('Invalid Admin print price.');
+    printsCount+=qty;printsTotal+=qty*rate;
+    selectedPrints.push({id:selectedPrintTypeId,name:selectedPrintType.name,size,sizeLabel:String(current.name),qty,rate,total:qty*rate});
+  }
+  if(printsCount>10000)throw new Error('Too many prints selected.');
+  const totalAmount=garmentTotal+printsTotal;
+  const design={kind:'printable_order',itemId:saved.id,itemTitle:saved.title||'',categoryName:cq.data.name,garmentTypeId:type.id,garmentTypeName:type.name,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),printableSizes,sizeQuantities:Object.fromEntries(printableSizes.map(r=>[r.size,r.qty])),sizeRates:Object.fromEntries(printableSizes.map(r=>[r.size,r.rate])),selectedPrintTypeId,selectedPrintTypeName:selectedPrintType.name,selectedPrints,totalPieces,garmentTotal,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
+  return {...item,itemType:'printable_order',name:saved.title||'Printable item',code:saved.display_id||item.code||'',qty:totalPieces,unitPrice:totalAmount/totalPieces,lineTotal:totalAmount,design};
+}
 async function uploadOrderImage(db:any,customerId:string,value:any,label:string){
   const decoded=decodeDataUrl(String(value||''));if(!decoded)return '';const clean=String(label||'design').replace(/[^a-z0-9_-]+/gi,'-').slice(0,48)||'design';const path=`orders/${customerId}/${crypto.randomUUID()}-${clean}.${decoded.ext}`;const up=await db.storage.from('product-images').upload(path,decoded.bytes,{contentType:decoded.type,cacheControl:'31536000',upsert:false});if(up.error)throw up.error;return db.storage.from('product-images').getPublicUrl(path).data.publicUrl;
 }
@@ -56,8 +119,8 @@ Deno.serve(async(req)=>{
   try{
     const body=await req.json(),s=await resolveCustomerSession(String(body.token||''));if(!s)return json({error:'Session expired. Verify your number again.'},401);const db=admin(),customer=(s as any).customers||{},details=body.details||body;
     const cartQ=await db.from('customer_carts').select('items').eq('customer_id',s.customer_id).maybeSingle();if(cartQ.error)throw cartQ.error;const serverCart=Array.isArray(cartQ.data?.items)?cartQ.data.items:[],directOrder=body.directOrder===true,browserItems=Array.isArray(body.items)?body.items:[],sourceItems=directOrder?browserItems:(serverCart.length?serverCart:browserItems);let items=sourceItems.map(normalizeOrderItem);
-    if(!directOrder&&browserItems.length){const prepared=browserItems.map(normalizeOrderItem);for(let i=0;i<items.length;i++){const item=items[i];if(item?.itemType==='custom_design'||item?.itemType==='uniform_order'){const match=prepared.find((x:any)=>x?.itemType===item.itemType&&String(x.groupKey||'')&&String(x.groupKey)===String(item.groupKey||''))||prepared.filter((x:any)=>x?.itemType===item.itemType)[i];if(match?.design)item.design=match.design;}}}
-    const checked=[] as any[];for(const item of items){if(item?.itemType==='uniform_order')checked.push(await validateUniformOrder(db,item));else checked.push(item);}items=checked;
+    if(!directOrder&&browserItems.length){const prepared=browserItems.map(normalizeOrderItem);for(let i=0;i<items.length;i++){const item=items[i];if(item?.itemType==='custom_design'||item?.itemType==='uniform_order'||item?.itemType==='printable_order'){const match=prepared.find((x:any)=>x?.itemType===item.itemType&&String(x.groupKey||'')&&String(x.groupKey)===String(item.groupKey||''))||prepared.filter((x:any)=>x?.itemType===item.itemType)[i];if(match?.design)item.design=match.design;}}}
+    const checked=[] as any[];for(const item of items){if(item?.itemType==='uniform_order')checked.push(await validateUniformOrder(db,item));else if(item?.itemType==='printable_order')checked.push(await validatePrintableOrder(db,item));else checked.push(item);}items=checked;
     for(const item of items){if(item?.itemType==='team_design')item.design=await persistTeamDesignAssets(db,s.customer_id,item.design||{});else if(item?.itemType==='custom_design')item.design=await persistCustomDesignAssets(db,s.customer_id,item.design||{});}
     // Re-resolve saved address by ownership; never trust a client-supplied delivery recipient.
     let deliveryRecord:any=null

@@ -1272,3 +1272,28 @@ html,body{background:#f6f2f7;color:#241c27}
 .jersey-admin-size-row input{width:100%;min-width:0;height:40px;padding:0 9px;border-radius:8px;border:1px solid #ded5e1;background:#faf9fb;color:#231827;font-size:13px}
 .jersey-admin-size-row>button{height:40px;min-width:36px;border-radius:8px;border:1px solid #e8dae4;background:#fff2f4;color:#a32e51;font-weight:800;cursor:pointer}
 @media(max-width:680px){.jersey-admin-size-row{grid-template-columns:repeat(2,minmax(0,1fr)) 35px}.jersey-admin-size-row label:nth-child(4){grid-column:1 / 3}.jersey-admin-size-row>button{grid-column:3;grid-row:1}}
+
+/* v155: printable order specifics and admin print rates */
+.printable-admin-order-info{display:grid;gap:8px;margin:12px 0;padding:14px;border-radius:12px;background:#faf8fb;min-width:0}
+.printable-admin-order-info h3,.printable-admin-order-info h4{margin:4px 0}
+.printable-admin-order-info p{margin:4px 0;overflow-wrap:anywhere}
+.printable-admin-row .fabric-admin-main{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:760px){.printable-admin-row .fabric-admin-main{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.printable-admin-row .fabric-admin-main{grid-template-columns:1fr}}
+
+/* v157 print settings: editable type names and any number of priced print sizes */
+.printable-admin-row{display:block;min-width:0}
+.print-admin-title-row{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.print-admin-title-row>label:first-child{flex:1 1 180px;min-width:150px}
+.print-admin-title-row>label:first-child input{width:100%}
+.print-admin-title-row .active-check{min-width:90px}
+.print-admin-delete-type,.print-admin-size-remove{border:1px solid #f0d5d9;background:#fff;color:#9a2338;border-radius:10px;padding:10px 12px;display:inline-flex;align-items:center;justify-content:center;gap:5px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.print-admin-delete-type svg,.print-admin-size-remove svg{width:15px;height:15px}
+.print-admin-sizes-head{display:grid;gap:4px;margin:18px 0 10px}
+.print-admin-sizes-head small{font-size:12px;color:#827588}
+.print-admin-sizes{display:grid;gap:9px;min-width:0}
+.print-admin-size-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) auto;gap:10px;align-items:end;border:1px solid #eee7ef;background:#fcfafd;border-radius:12px;padding:10px;min-width:0}
+.print-admin-size-row>label{min-width:0}
+.print-admin-size-row input{width:100%;min-width:0}
+.print-admin-add-size{margin-top:10px}
+@media(max-width:550px){.print-admin-size-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.print-admin-size-remove{grid-column:1/-1}.print-admin-title-row>label:first-child{flex-basis:100%}}
