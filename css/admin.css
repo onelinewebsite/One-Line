@@ -1297,3 +1297,23 @@ html,body{background:#f6f2f7;color:#241c27}
 .print-admin-size-row input{width:100%;min-width:0}
 .print-admin-add-size{margin-top:10px}
 @media(max-width:550px){.print-admin-size-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.print-admin-size-remove{grid-column:1/-1}.print-admin-title-row>label:first-child{flex-basis:100%}}
+
+/* v159 — compact portal settings and distinct card/detail media uploads. */
+.portal-settings .settings-portal-strip{margin-top:18px;padding:12px;border:1px solid #eee5ef;border-radius:13px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fbfafc}
+.settings-portal-strip>span{font-size:12px;font-weight:800;color:#695b6e}
+.settings-portal-strip>div{display:flex;flex-wrap:wrap;gap:6px}
+.settings-portal-chip{display:inline-flex;align-items:center;justify-content:center;min-height:33px;padding:6px 12px;font-size:12px;font-weight:750;color:#615368;background:white;border:1px solid #e5dce7;border-radius:9px;text-decoration:none}
+.settings-portal-chip.active{color:#6c147e;background:#f6effa;border-color:#af85bb}
+.portal-settings .settings-actions{display:flex!important;gap:8px!important;margin-top:14px!important;flex-wrap:wrap!important}
+.portal-settings .settings-actions button{min-height:37px!important;width:auto!important;padding:8px 12px!important;font-size:12px!important;flex:0 1 auto!important;border-radius:9px!important;grid-column:auto!important}
+.portal-settings .settings-actions .danger-settings-btn{margin-left:auto}
+.custom-dual-media{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:14px;align-items:start}
+.custom-dual-media>*{min-width:0}
+.custom-cover-preview{width:min(180px,100%);aspect-ratio:3/4;border-radius:12px;border:1px solid #e9e1e9;overflow:hidden;background:#f9f7f9;display:grid;place-items:center;margin-top:12px}
+.custom-cover-preview img{width:100%;height:100%;object-fit:cover}
+.custom-cover-preview div{font-size:12px;color:#857a87;padding:10px;text-align:center}
+.custom-dual-media .image-chip img{aspect-ratio:1/1;object-fit:contain}
+.retail-card-cover-editor{display:grid;gap:9px;padding:12px;border:1px solid #e8e1e9;border-radius:13px;margin-bottom:14px}
+.retail-card-cover-editor img{width:120px;aspect-ratio:3/4;object-fit:cover;border-radius:10px}
+.retail-card-cover-editor label{font-size:12px;font-weight:750}
+@media(max-width:600px){.custom-dual-media{grid-template-columns:minmax(0,1fr)}.portal-settings .settings-actions .danger-settings-btn{margin-left:0}}
