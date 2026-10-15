@@ -365,8 +365,17 @@
   function customCategoryName(item){return String(customCategoryForItem(item)?.name||'').trim().toLowerCase();}
   // Category mode, not a stale uniform_config in the item, determines the flow.
   // Recognize the original category names even before the v144 SQL migration.
-  function inferCatalogueMode(name){const n=String(name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim();if(/\buniforms?\b/.test(n))return'uniform';if(/\b(t shirts?|tshirts?|tee shirts?)\b/.test(n))return'tshirt';if(/\b(jerseys?|sportswear|sports wear|sports kit)\b/.test(n))return'jersey';return'catalogue';}
-  function customCategoryMode(item){const c=customCategoryForItem(item);if(!c)return item?.fabric_options?.uniform_config?'uniform':'catalogue';const t=String(c.item_editor_type||'auto').toLowerCase();return ['catalogue','tshirt','jersey','uniform'].includes(t)?t:inferCatalogueMode(c.name);}
+  function inferCatalogueMode(name){
+    const n=String(name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim();
+    // Two original catalogue titles require their historical customer controls.
+    if(n==='ready stock printable items')return'tshirt';
+    if(n==='full sublimation jerseys')return'jersey';
+    if(/\buniforms?\b/.test(n))return'uniform';
+    if(/\b(t shirts?|tshirts?|tee shirts?)\b/.test(n))return'tshirt';
+    if(/\b(jerseys?|sportswear|sports wear|sports kit)\b/.test(n))return'jersey';
+    return'catalogue';
+  }
+  function customCategoryMode(item){const c=customCategoryForItem(item);if(!c)return item?.fabric_options?.uniform_config?'uniform':'catalogue';const matched=inferCatalogueMode(c.name);if(['ready stock printable items','full sublimation jerseys'].includes(String(c.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()))return matched;const t=String(c.item_editor_type||'auto').toLowerCase();return ['catalogue','tshirt','jersey','uniform'].includes(t)?t:matched;}
   function isTshirtCustomItem(item){return customCategoryMode(item)==='tshirt';}
   function isSportswearCustomItem(item){return customCategoryMode(item)==='jersey';}
   // Generic Custom Catalogue and Uniforms both use configurable variants,

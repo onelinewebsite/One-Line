@@ -237,6 +237,9 @@
   // with legacy name recognition retained so old sites work before the SQL upgrade.
   function inferCatalogueMode(name){
     const n=String(name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim();
+    // Restore these two legacy categories regardless of a stale saved editor mode.
+    if(n==='ready stock printable items')return'tshirt';
+    if(n==='full sublimation jerseys')return'jersey';
     if(/\buniforms?\b/.test(n))return'uniform';
     if(/\b(t shirts?|tshirts?|tee shirts?)\b/.test(n))return'tshirt';
     if(/\b(jerseys?|sportswear|sports wear|sports kit)\b/.test(n))return'jersey';
@@ -245,6 +248,8 @@
   function categoryMode(categoryOrId){
     const c=typeof categoryOrId==='object'?categoryOrId:state.customCatalogCategories.find(x=>String(x.id)===String(categoryOrId));
     if(!c)return'catalogue';
+    const named=String(c.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim();
+    if(named==='ready stock printable items'||named==='full sublimation jerseys')return inferCatalogueMode(c.name);
     const type=String(c.item_editor_type||'auto').toLowerCase();
     return ['catalogue','tshirt','jersey','uniform'].includes(type)?type:inferCatalogueMode(c.name);
   }
