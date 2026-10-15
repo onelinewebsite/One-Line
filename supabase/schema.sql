@@ -764,7 +764,7 @@ create table if not exists public.custom_catalog_fabrics (
 create index if not exists idx_custom_catalog_fabrics_sort on public.custom_catalog_fabrics(active,sort_order,name);
 alter table public.custom_catalog_fabrics enable row level security;
 drop policy if exists "public custom catalogue fabrics read" on public.custom_catalog_fabrics;
-create policy "public custom catalogue fabrics read" on public.custom_catalog_fabrics for select using(active or shareable or public.has_role(array['admin','management']));
+create policy "public custom catalogue fabrics read" on public.custom_catalog_fabrics for select using(active or public.has_role(array['admin','management']));
 drop policy if exists "custom catalogue fabrics admin insert" on public.custom_catalog_fabrics;
 create policy "custom catalogue fabrics admin insert" on public.custom_catalog_fabrics for insert with check(public.has_role(array['admin','management']));
 drop policy if exists "custom catalogue fabrics admin update" on public.custom_catalog_fabrics;
