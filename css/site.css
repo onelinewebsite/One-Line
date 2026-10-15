@@ -6740,3 +6740,129 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .jersey-size-summary small{color:#847687}
 .kids-uniform-description{margin-top:10px!important;margin-bottom:15px}
 @media(max-width:520px){.jersey-size-picker{padding:13px}.jersey-size-row .uniform-qty-stepper{grid-template-columns:33px 48px 33px}.jersey-size-row{gap:8px}.jersey-size-summary{flex-wrap:wrap}}
+
+/* v154 — mobile item-size layout: controls remain inside their cards at 320px+. */
+@media (max-width: 820px) {
+  .custom-item-page .product-full-inner,
+  .custom-item-page .product-full-info,
+  .custom-item-page .custom-item-info,
+  .custom-item-page .custom-tshirt-options,
+  .custom-item-page .jersey-size-picker,
+  .custom-item-page .jersey-size-list,
+  .uniform-custom-item-page .kids-uniform-item-size-groups,
+  .uniform-custom-item-page .kids-uniform-item-size-group,
+  .uniform-custom-item-page .kids-uniform-size-qty-grid {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .custom-item-page .jersey-size-picker {
+    width: 100%;
+    padding: 12px;
+  }
+  .custom-item-page .jersey-size-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .custom-item-page .jersey-size-label {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .custom-item-page .jersey-size-label .catalogue-size-measurements,
+  .custom-item-page .jersey-size-label .catalogue-special-size-rate {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .custom-item-page .jersey-size-row .uniform-qty-stepper {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 33px 44px 33px;
+    width: 112px;
+    min-width: 0;
+    max-width: 100%;
+    flex: 0 0 auto;
+    justify-self: end;
+  }
+  .custom-item-page .jersey-size-row .uniform-qty-stepper button,
+  .custom-item-page .jersey-size-row .uniform-qty-stepper input {
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 38px;
+    padding: 0;
+  }
+  .custom-item-page .jersey-size-summary {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 5px 10px;
+  }
+  .custom-item-page .jersey-size-summary > * { min-width: 0; overflow-wrap: anywhere; }
+  .uniform-custom-item-page .kids-uniform-item-size-group .kids-uniform-size-qty-row.stock-aware {
+    box-sizing: border-box;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 132px;
+    align-items: center;
+    gap: 8px !important;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+  .uniform-custom-item-page .kids-uniform-item-size-group .uniform-size-stock-inline {
+    box-sizing: border-box;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    justify-content: flex-start !important;
+    gap: 4px 7px !important;
+    min-width: 0 !important;
+    max-width: 100%;
+  }
+  .uniform-custom-item-page .kids-uniform-item-size-group .uniform-size-stock-inline > b {
+    min-width: 0 !important;
+    overflow-wrap: anywhere;
+  }
+  .uniform-custom-item-page .kids-uniform-item-size-group .uniform-size-stock-inline > small {
+    box-sizing: border-box;
+    flex: 1 1 100%;
+    order: 3;
+    min-width: 0;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+  .uniform-custom-item-page .kids-uniform-item-size-group .uniform-size-stock-inline > em {
+    min-width: 0;
+    white-space: normal !important;
+  }
+  .uniform-custom-item-page .kids-uniform-item-size-group .uniform-qty-stepper {
+    box-sizing: border-box;
+    grid-template-columns: 38px 54px 38px !important;
+    width: 132px;
+    min-width: 0;
+    max-width: 100%;
+    justify-self: end;
+  }
+  .uniform-custom-item-page .kids-uniform-item-size-group .uniform-qty-stepper > input,
+  .uniform-custom-item-page .kids-uniform-item-size-group .uniform-qty-stepper > button {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    width: 100% !important;
+  }
+}
+@media (max-width: 359px) {
+  .uniform-custom-item-page .kids-uniform-item-size-group .kids-uniform-size-qty-row.stock-aware {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px !important;
+  }
+  .uniform-custom-item-page .kids-uniform-item-size-group .uniform-qty-stepper { justify-self: start; }
+  .custom-item-page .jersey-size-row .uniform-qty-stepper {
+    grid-template-columns: 30px 40px 30px;
+    width: 102px;
+  }
+}
