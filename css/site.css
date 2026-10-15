@@ -1623,7 +1623,7 @@ footer { background:radial-gradient(circle at 80% 0,#57145f 0,#251029 35%,#150d1
 @media(max-width:1199px){.real-category-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 @media(max-width:899px){.real-category-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}.real-category-card.category-block{min-height:260px}.real-category-card .category-photo{min-height:185px}}
 @media(max-width:599px){.real-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.real-category-card.category-block:first-child{grid-column:span 2}.real-category-card.category-block{min-height:245px}.real-category-card .category-photo{min-height:175px}.real-category-card.category-block:first-child .category-photo{min-height:240px}.real-category-card>div:last-of-type h3{font-size:15px}}
-html,body{max-width:100%;overflow-x:hidden}
+
 *,*:before,*:after{box-sizing:border-box}
 img,svg,video,canvas{max-width:100%}
 .borderless-categories .real-category-card.category-block{border-radius:12px!important;box-shadow:0 8px 24px rgba(57,36,62,.07)!important}
@@ -5971,13 +5971,7 @@ html,body{max-width:100%;overflow-x:hidden}
   white-space:nowrap!important;
   opacity:1!important;
 }
-.uniform-custom-item-page .uniform-order-actions .uniform-add-cart-button{
-  opacity:1!important;
-  background:#fff!important;
-  color:#64116f!important;
-  border:1.5px solid #64116f!important;
-  box-shadow:none!important;
-}
+
 .uniform-custom-item-page .uniform-order-actions .primary{
   box-shadow:none!important;
 }
@@ -6594,23 +6588,11 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .custom-item-page .custom-item-title-row h1{min-width:0!important;flex:1 1 auto!important;overflow-wrap:anywhere!important;}
 .custom-item-page .custom-item-title-row .custom-item-title-share{flex:0 0 auto!important;margin-left:auto!important;}
 
-/* v143: clearly separated customer profile overview above account shortcuts */
-.profile-overview-top{margin:0 0 22px;align-items:start;grid-template-columns:70px minmax(0,1fr)}
+/* Current customer profile identity and verified-label styles (v151). */
+.profile-overview-top{margin:0 0 22px;align-items:center}
 .profile-overview-top .profile-identity-copy{min-width:0;width:100%}
-.profile-account-status{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:13px}
 .profile-verified-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#18814a}
 .profile-verified-label .icon{height:17px;width:17px;stroke-width:3;border:1px solid #bce6cc;border-radius:50%;padding:2px}
-.profile-account-id{font-size:11px;color:#756a78;overflow-wrap:anywhere}
-.profile-details-view h2{font-size:25px;letter-spacing:-.04em;margin:0 0 12px}
-.profile-details-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
-.profile-details-grid>span{display:flex;flex-direction:column;gap:4px;min-width:0}
-.profile-details-grid small{font-size:10px;color:#827886}
-.profile-details-grid b{font-size:12px;overflow-wrap:anywhere}
-@media(max-width:650px){.profile-overview-top{grid-template-columns:48px minmax(0,1fr)!important;padding:16px!important;gap:10px!important}.profile-details-grid{grid-template-columns:1fr;gap:10px}.profile-account-status{display:grid;gap:5px}}
-
-.profile-delivery-overview{grid-column:1/-1;padding-top:9px;border-top:1px solid #f0ecf0}
-.profile-delivery-overview>button{align-self:flex-start;margin-top:5px;border:0;background:transparent;padding:3px 0;color:#64116f;font-size:11px;font-weight:800;cursor:pointer;text-align:left}
-
 
 /* v149: profile layout cleanup – compact account identity, separate editable details card. */
 .profile-page .profile-compact-header{
@@ -6626,27 +6608,6 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 }
 .profile-page .profile-compact-header .profile-verified-label{font-size:11px}
 .profile-page .profile-login-button{margin-top:12px;min-height:42px;padding:0 14px}
-.profile-page .profile-personal-card{
-  width:100%;min-width:0;box-sizing:border-box;margin:0 0 14px;
-  padding:22px;border:1px solid #e5dde6;border-radius:20px;
-  background:#fff;box-shadow:0 10px 32px rgba(49,25,54,.045);
-}
-.profile-personal-card-header{
-  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
-  padding-bottom:15px;margin-bottom:17px;border-bottom:1px solid #f0eaf1;
-}
-.profile-personal-card-header>div{display:grid;justify-items:start;gap:6px}
-.profile-personal-card-header h2{font-size:21px;line-height:1.2;margin:0;letter-spacing:-.035em}
-.profile-personal-card-header .profile-edit-button{
-  margin:0;min-height:36px;padding:0 13px;border:1px solid #e6dce9;border-radius:10px;
-  background:#faf7fb;color:#64116f;font-size:12px;
-}
-.profile-personal-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px;margin:0}
-.profile-personal-details>div{min-width:0}
-.profile-personal-details dt{font-size:11px;color:#877a8a;margin:0 0 6px}
-.profile-personal-details dd{font-size:14px;font-weight:750;color:#34273a;margin:0;overflow-wrap:anywhere}
-.profile-personal-card .profile-full-form{max-width:100%!important;margin-top:0}
-.profile-personal-guest p{font-size:13px;line-height:1.6;color:#756878;margin:0 0 14px}
 .profile-page .profile-action-grid{margin-top:0}
 /* The mobile menu is fixed. Reserve its space within the dark footer instead of
    leaving a body-coloured empty strip after the footer. */
@@ -6664,10 +6625,6 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
     gap:12px!important;padding:16px!important;margin-bottom:12px;
   }
   .profile-page .profile-compact-header .profile-identity-copy h1{font-size:20px}
-  .profile-page .profile-personal-card{padding:17px;border-radius:17px;margin-bottom:12px}
-  .profile-personal-details{grid-template-columns:1fr;gap:14px}
-  .profile-personal-card-header{margin-bottom:14px}
-  .profile-page .profile-personal-card .profile-full-form{grid-template-columns:1fr}
 }
 
 
@@ -6740,4 +6697,31 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 @media(max-width:580px){
   .profile-details-form>.profile-fields-grid{grid-template-columns:minmax(0,1fr)!important;gap:16px!important}
   .profile-details-form>.profile-details-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px!important}
+}
+
+/* v151: match the icon's actual dimensions with the reserved grid track.
+   Prevent the icon touching/overlapping the name, number and verified status. */
+.profile-page .profile-compact-header{
+  grid-template-columns:86px minmax(0,1fr)!important;
+  column-gap:22px!important;
+  align-items:center;
+}
+.profile-page .profile-compact-header>.profile-avatar{
+  box-sizing:border-box;
+  width:86px;
+  min-width:86px;
+}
+.profile-page .profile-compact-header>.profile-identity-copy{
+  min-width:0;
+  padding-left:0;
+}
+@media(max-width:760px){
+  .profile-page .profile-compact-header{
+    grid-template-columns:66px minmax(0,1fr)!important;
+    column-gap:16px!important;
+  }
+  .profile-page .profile-compact-header>.profile-avatar{
+    width:66px!important;
+    min-width:66px!important;
+  }
 }
