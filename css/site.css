@@ -6725,3 +6725,18 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
     min-width:66px!important;
   }
 }
+
+/* v153 Jersey size & quantity picker */
+.jersey-size-picker{display:grid;gap:14px;margin-top:20px;padding:16px;border:1px solid #e7dce9;border-radius:16px;background:#fff}
+.jersey-size-list{display:grid;gap:0}
+.jersey-size-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid #f1ebf2}
+.jersey-size-row:last-child{border-bottom:0}
+.jersey-size-label{display:grid;gap:3px;min-width:0}
+.jersey-size-label>b{font-size:14px;color:#2c2131}
+.catalogue-size-measurements{display:block;color:#756777!important;font-size:11px!important;font-weight:500!important;line-height:1.45}
+.catalogue-special-size-rate{display:block;color:#671174!important;font-size:12px!important;font-weight:850!important}
+.jersey-size-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:3px;padding:12px;border-radius:10px;background:#f7f1f8;color:#513959;font-weight:650}
+.jersey-size-summary strong{font-weight:900;color:#661371}
+.jersey-size-summary small{color:#847687}
+.kids-uniform-description{margin-top:10px!important;margin-bottom:15px}
+@media(max-width:520px){.jersey-size-picker{padding:13px}.jersey-size-row .uniform-qty-stepper{grid-template-columns:33px 48px 33px}.jersey-size-row{gap:8px}.jersey-size-summary{flex-wrap:wrap}}

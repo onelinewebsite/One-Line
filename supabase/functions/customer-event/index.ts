@@ -46,8 +46,56 @@ async function authoritativeCatalogPayload(db:any,payload:any){
   if(!itemQ.data)throw new Error('Custom Catalogue item is no longer available.')
   const item=itemQ.data
   let category:any=null
-  if(item.category_id){const c=await db.from('custom_catalog_categories').select('id,name').eq('id',item.category_id).maybeSingle();if(c.error)throw c.error;category=c.data}
+  if(item.category_id){const c=await db.from('custom_catalog_categories').select('id,name,item_editor_type').eq('id',item.category_id).maybeSingle();if(c.error)throw c.error;category=c.data}
   const out={...payload,itemId:item.id,itemTitle:trim(item.title,240)||trim(payload?.itemTitle,240),itemDescription:trim(item.description,5000),categoryId:item.category_id||payload?.categoryId||'',categoryName:trim(category?.name||payload?.categoryName,200),image:cleanImages(item.images)[0]||trim(payload?.image,2000)}
+  // Sportswear enquiries use authoritative Admin fabric/type and size pricing.
+  // Never trust amounts or dimensions from the customer browser.
+  const categoryName=String(category?.name||'').toLowerCase()
+  if(category?.item_editor_type==='jersey'||/jersey|sportswear/.test(categoryName)){
+    const typeId=trim(payload?.garmentTypeId,100),fabricId=trim(payload?.fabricId,100)
+    const quality=trim(payload?.fabricQuality,24)
+    if(!typeId||!fabricId||!['Premium','Standard','Budget'].includes(quality))throw new Error('Select a valid Jersey type, fabric and quality.')
+    const [typeQ,fabricQ]=await Promise.all([
+      db.from('custom_sportswear_types').select('*').eq('id',typeId).maybeSingle(),
+      db.from('custom_sportswear_fabrics').select('*').eq('id',fabricId).maybeSingle()
+    ])
+    if(typeQ.error)throw typeQ.error
+    if(fabricQ.error)throw fabricQ.error
+    const type=typeQ.data,fabric=fabricQ.data
+    if(!type||!fabric||type.active===false||fabric.active===false)throw new Error('The selected Jersey style or fabric is no longer available.')
+    const opts=item.fabric_options||{}
+    if(opts.selection_mode==='custom'){
+      if(!Array.isArray(opts.types)||!opts.types.some((id:any)=>String(id)===typeId))throw new Error('This Jersey style is unavailable for the selected item.')
+      const permitted=opts.fabrics?.[fabricId]
+      if(!Array.isArray(permitted)||!permitted.includes(quality))throw new Error('This fabric and quality are unavailable for the item.')
+    }
+    const rateColumn=quality.toLowerCase()+'_rate'
+    const fabricBase=fabric[rateColumn]
+    if(fabricBase===null||fabricBase===undefined||fabricBase===''||!Number.isFinite(Number(fabricBase)))throw new Error('Selected quality has no current price.')
+    const baseRate=Math.max(0,num(fabricBase)+num(type.price_adjustment))
+    const savedRows=Array.isArray(opts.sportswear_sizes)?opts.sportswear_sizes:['XS','S','M','L','XL','XXL'].map(size=>({size}))
+    const sizeMap=new Map<string,any>()
+    for(const row of savedRows){const size=trim(typeof row==='string'?row:row?.size,32);if(size)sizeMap.set(size,row)}
+    const requested=payload?.jerseySizes?.sizeQuantities
+    if(!requested||typeof requested!=='object'||Array.isArray(requested))throw new Error('Select a quantity for at least one Jersey size.')
+    let totalQty=0,totalAmount=0
+    const sizes:any[]=[],sizeQuantities:Record<string,number>={},sizeRates:Record<string,number>={}
+    for(const [key,value] of Object.entries(requested)){
+      const size=trim(key,32),qty=Math.floor(num(value))
+      if(!Number.isFinite(qty)||qty<=0)continue
+      const row=sizeMap.get(size)
+      if(!row)throw new Error('Size '+size+' has changed. Please review the size selection.')
+      if(qty>1000000)throw new Error('The requested quantity is too large.')
+      const hasOwnRate=row?.rate!==null&&row?.rate!==undefined&&row?.rate!==''
+      const finalRate=hasOwnRate?Math.max(0,num(row.rate)):baseRate
+      const dim=(key:string)=>row?.[key]===null||row?.[key]===undefined||row?.[key]===''?null:Math.max(0,num(row[key]))
+      sizes.push({size,qty,rate:finalRate,separateRate:hasOwnRate,length_cm:dim('length_cm'),width_cm:dim('width_cm')})
+      sizeQuantities[size]=qty;sizeRates[size]=finalRate
+      totalQty+=qty;totalAmount+=qty*finalRate
+    }
+    if(!totalQty||totalQty>1000000)throw new Error('Select at least one valid Jersey size and quantity.')
+    return {...out,garmentTypeId:type.id,garmentTypeName:type.name,garmentTypeAdjustment:num(type.price_adjustment),fabricId:fabric.id,fabricName:fabric.name,fabricQuality:quality,baseFabricRate:num(fabricBase),fabricRate:baseRate,itemRate:baseRate,jerseySizes:{sizes,sizeQuantities,sizeRates,totalQty,totalAmount},jerseyRateVerifiedAt:new Date().toISOString()}
+  }
   if(!String(category?.name||payload?.categoryName||'').toLowerCase().includes('uniform'))return out
 
   const cfg=normalizeUniformConfig(item),client=payload?.uniformSelection&&typeof payload.uniformSelection==='object'?payload.uniformSelection:{},topOptions=cfg.top.filter((v:any)=>v.enabled),bottomOptions=cfg.bottom.filter((v:any)=>v.enabled)
@@ -89,6 +137,9 @@ async function saveCatalogEnquiry(db:any,s:any,payload:any){
   const stamp=new Date().toISOString().replace(/\D/g,'').slice(2,14)
   const orderCode='ENQ-'+stamp+'-'+random
   const rate=Math.max(0,num(savedPayload?.itemRate??savedPayload?.fabricRate))
+  const jersey=savedPayload?.jerseySizes?.totalQty? savedPayload.jerseySizes:null
+  const totalQty=jersey?Math.max(1,Math.floor(num(jersey.totalQty))):Math.max(1,Math.floor(num(savedPayload?.uniformSelection?.totalQty)||1))
+  const estimatedTotal=jersey?Math.max(0,num(jersey.totalAmount)):rate
   const metadata={custom_catalog_enquiry:true,enquiry_payload:savedPayload,source:'customization_catalogue',submitted_at:new Date().toISOString()}
 
   const orderQ=await db.from('orders').insert({
@@ -101,19 +152,20 @@ async function saveCatalogEnquiry(db:any,s:any,payload:any){
     delivery:'Custom Catalogue enquiry',
     payment:'Quote pending',
     status:'Enquiry',
-    total:rate,
+    total:estimatedTotal,
     metadata
   }).select('*').single()
   if(orderQ.error)throw orderQ.error
 
-  const uniformQty=Math.max(1,Math.floor(num(savedPayload?.uniformSelection?.totalQty)||1))
+  const uniformQty=totalQty
   const uniformSizeSummary=savedPayload?.uniformSelection?.sizeQuantities&&typeof savedPayload.uniformSelection.sizeQuantities==='object'?Object.entries(savedPayload.uniformSelection.sizeQuantities).filter(([,q])=>num(q)>0).map(([size,q])=>`${size} × ${Math.floor(num(q))}`).join(', '):trim(savedPayload?.uniformSelection?.size,400)
+  const sizeSummary=jersey?Object.entries(jersey.sizeQuantities||{}).filter(([,q])=>num(q)>0).map(([size,q])=>`${size} × ${Math.floor(num(q))}`).join(', '):uniformSizeSummary
   const lineQ=await db.from('order_items').insert({
     order_id:orderQ.data.id,
     product_id:null,
     item_type:'custom_catalog_enquiry',
     item_name:itemTitle||'Custom Catalogue enquiry',
-    item_code:'',color:[savedPayload?.uniformSelection?.top?.name,savedPayload?.uniformSelection?.bottom?.name].filter(Boolean).join(' + '),size:trim(uniformSizeSummary,400),qty:uniformQty,unit_price:rate,
+    item_code:'',color:[savedPayload?.uniformSelection?.top?.name,savedPayload?.uniformSelection?.bottom?.name].filter(Boolean).join(' + '),size:trim(sizeSummary,400),qty:uniformQty,unit_price:jersey?Math.round((estimatedTotal/totalQty)*100)/100:rate,
     design_json:savedPayload,
     group_key:'custom_catalog:'+itemId
   }).select('id').single()
