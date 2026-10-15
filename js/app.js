@@ -372,7 +372,7 @@
     if(/\b(jerseys?|sportswear|sports wear|sports kit)\b/.test(n))return'jersey';
     return'catalogue';
   }
-  function customCategoryMode(item){const c=customCategoryForItem(item);if(!c)return item?.fabric_options?.uniform_config?'uniform':'catalogue';const matched=inferCatalogueMode(c.name);if(['ready stock printable items','full sublimation jerseys'].includes(String(c.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()))return matched;const t=String(c.item_editor_type||'auto').toLowerCase();return ['catalogue','tshirt','jersey','uniform'].includes(t)?t:matched;}
+  function customCategoryMode(item){const c=customCategoryForItem(item);if(!c)return item?.fabric_options?.uniform_config?'uniform':'catalogue';if((c.catalogue_section||'custom')==='ready')return'uniform';const matched=inferCatalogueMode(c.name);if(['ready stock printable items','full sublimation jerseys'].includes(String(c.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()))return matched;const t=String(c.item_editor_type||'auto').toLowerCase();return ['catalogue','tshirt','jersey','uniform'].includes(t)?t:matched;}
   function isTshirtCustomItem(item){return customCategoryMode(item)==='tshirt';}
   function isSportswearCustomItem(item){return customCategoryMode(item)==='jersey';}
   // Generic Custom Catalogue and Uniforms both use configurable variants,

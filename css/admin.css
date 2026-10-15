@@ -1252,3 +1252,13 @@ html,body{background:#f6f2f7;color:#241c27}
 .catalog-options-mode{display:flex;gap:12px;align-items:center;padding:14px 16px;margin:12px 0 18px;background:#f8f8fa;border:1px solid #e5e5e9;border-radius:13px;cursor:pointer}
 .catalog-options-mode input{width:18px;height:18px;flex-shrink:0;accent-color:#64116f}
 .catalog-options-mode span{display:grid;gap:3px}.catalog-options-mode b{font-weight:750;font-size:13px}.catalog-options-mode small{font-size:12px;color:#666;line-height:1.5}
+
+/* v152: private fields are admin-only, with a responsive two-column input layout. */
+.catalogue-private-section .catalogue-private-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 20px;margin:12px 0;}
+.catalogue-private-grid label{display:flex;flex-direction:column;gap:8px;min-width:0;font-weight:650;}
+.catalogue-private-grid input{width:100%;min-width:0;}
+.catalogue-private-section .catalogue-private-save{margin-top:8px;}
+.catalogue-private-hint{display:block;margin-top:6px;}
+.ready-mode-help{display:flex;flex-direction:column;gap:5px;grid-column:1/-1;padding:12px 14px;border:1px solid var(--border,#e8e3eb);border-radius:12px;}
+.ready-mode-help small{font-weight:400;}
+@media(max-width:600px){.catalogue-private-section .catalogue-private-grid{grid-template-columns:minmax(0,1fr);gap:12px;}}
