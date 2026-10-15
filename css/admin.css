@@ -1242,3 +1242,13 @@ html,body{background:#f6f2f7;color:#241c27}
 
 /* v144: make variant/option names stand out in staff search results. */
 .portal-staff .staff-stock-main .staff-stock-option{display:block;font-size:13px;line-height:1.35;font-weight:800;color:#37233d;overflow-wrap:anywhere}
+
+/* v144 — category editor mode uses the same premium controls as category fields. */
+.custom-category-settings-form select{width:100%;min-height:52px;padding:13px 15px;font:inherit;font-size:16px;border:1px solid #ded4e1;border-radius:12px;background:#fff;color:#2d2632;min-width:0;}
+.custom-category-settings-form label>small,.category-create-grid label>small{display:block;margin-top:4px;color:#746a7c;font-weight:500;font-size:12px;line-height:1.55;}
+.category-create-grid label:has(select[name="item_editor_type"]){min-width:210px;}
+
+/* v146: Per-item live Admin option mode. */
+.catalog-options-mode{display:flex;gap:12px;align-items:center;padding:14px 16px;margin:12px 0 18px;background:#f8f8fa;border:1px solid #e5e5e9;border-radius:13px;cursor:pointer}
+.catalog-options-mode input{width:18px;height:18px;flex-shrink:0;accent-color:#64116f}
+.catalog-options-mode span{display:grid;gap:3px}.catalog-options-mode b{font-weight:750;font-size:13px}.catalog-options-mode small{font-size:12px;color:#666;line-height:1.5}

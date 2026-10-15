@@ -685,6 +685,8 @@ create table if not exists public.custom_catalog_categories (
 );
 
 alter table public.custom_catalog_categories add column if not exists shareable boolean not null default true;
+-- v144: configurable category editor modes (existing rows keep their data).
+alter table public.custom_catalog_categories add column if not exists item_editor_type text not null default 'auto';
 
 create table if not exists public.custom_catalog_items (
   id uuid primary key default gen_random_uuid(),
