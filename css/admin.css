@@ -1331,3 +1331,14 @@ html,body{background:#f6f2f7;color:#241c27}
 .editor-page .editor-savebar.editor-floating-close [data-custom-item-save]:disabled{
   opacity:.7;cursor:wait!important;
 }
+/* v164: compact redeem-code management, with no wide overflowing controls. */
+.redeem-admin-section{margin-top:18px}
+.redeem-admin-create,.redeem-admin-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;padding:14px 0;border-bottom:1px solid #eee6ef}
+.redeem-admin-create label,.redeem-admin-row label{display:grid;gap:5px;min-width:0;font-size:12px;font-weight:600}
+.redeem-admin-create input,.redeem-admin-row input:not([type=checkbox]){min-width:0;width:100%;box-sizing:border-box;border-radius:9px;border:1px solid #e2dbe8;padding:11px 10px;font:inherit}
+.redeem-admin-row>div{display:grid;gap:5px;min-width:0}
+.redeem-admin-row>div small{color:#796e81}
+.redeem-admin-active{display:flex!important;align-items:center;gap:6px}
+.redeem-admin-create button,.redeem-admin-row button{width:fit-content;white-space:nowrap}
+@media(min-width:1150px){.redeem-admin-row{grid-template-columns:1.2fr repeat(4,minmax(0,1fr)) auto auto}.redeem-admin-create{grid-template-columns:repeat(5,minmax(0,1fr)) auto}}
+@media(max-width:690px){.redeem-admin-create,.redeem-admin-row{grid-template-columns:repeat(2,minmax(0,1fr))}}

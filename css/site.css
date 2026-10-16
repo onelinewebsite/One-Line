@@ -7028,3 +7028,14 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
  .custom-item-page .uniform-size-and-stock b,.custom-item-page .jersey-size-label .uniform-size-and-stock b{font-size:17px!important}
  .custom-item-page .kids-uniform-size-qty-row.stock-aware,.custom-item-page .jersey-size-row{gap:7px!important}
 }
+/* v164: unobtrusive COD redeem entry, responsive down to 280px. */
+.redeem-checkout-section{margin-top:16px}
+.redeem-entry{display:flex;align-items:stretch;gap:10px;max-width:100%;min-width:0}
+.redeem-entry input{min-width:0;flex:1 1 140px;width:100%;max-width:100%;border:1px solid #ded5e4;border-radius:10px;padding:12px 14px;font:inherit;text-transform:uppercase;background:#fff}
+.redeem-entry button{flex:0 0 auto;border-radius:10px;padding:9px 17px}
+.redeem-applied{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;color:#136e42;font-size:14px}
+.redeem-applied button{border:0;background:transparent;color:#73248a;font:inherit;cursor:pointer}
+.redeem-error{margin:8px 0;color:#b43652;font-size:13px}
+.redeem-original{text-decoration:line-through;opacity:.65;margin-right:8px}
+.redeem-order-note{font-weight:600;color:#136e42}
+@media(max-width:340px){.redeem-entry{gap:7px}.redeem-entry input{padding:9px 8px;font-size:14px}.redeem-entry button{padding:8px 12px}}

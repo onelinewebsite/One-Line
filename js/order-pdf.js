@@ -57,7 +57,7 @@
       const top=blocks.map(b=>{doc.setFont('helvetica',b.bold?'bold':'normal');return {...b,lines:doc.splitTextToSize(String(b.text),89)};});
       doc.setFont('helvetica','normal');
       const table=rows.map(r=>({...r,lines:doc.splitTextToSize(String(r.label),43)}));
-      const height=top.reduce((n,b)=>n+b.lines.length*line+gap,0)+5+line+3+table.reduce((n,r)=>n+Math.max(line+1,r.lines.length*line+1),0)+8;
+      const height=top.reduce((n,b)=>n+b.lines.length*line+gap,0)+5+line+3+table.reduce((n,r)=>n+Math.max(line+1,r.lines.length*line+1),0)+8+(order.metadata?.redeem?.code?line+2:0);
       return {top,table,line,gap,size,height};
     }
     let plan=makePlan(8);
@@ -80,6 +80,7 @@
       y+=Math.max(plan.line+1,row.lines.length*plan.line+1);
       doc.setDrawColor(237);doc.line(5,y-plan.line+.4,96.6,y-plan.line+.4);
     }
+    if(order.metadata?.redeem?.code){y+=1;write('CODE '+String(order.metadata.redeem.code),6,y);write('-'+amount(order.metadata.redeem.discount||0),95,y,false,'right');y+=plan.line+1;}
     y+=2;write('TOTAL AMOUNT',6,y,true);write(amount(order.total),95,y,true,'right');
     doc.setDrawColor(180);doc.line(5,footerY,96.6,footerY);
     doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(56);

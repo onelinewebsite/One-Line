@@ -172,6 +172,7 @@
     const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');
     return invoke('customer-account',{token:s.token,action:'cart_mutate',operation:String(operation||''),itemKey:String(itemKey||item?.key||''),item:item||null},false);
   }
+  async function validateRedeem(redeemCode,subtotal){const s=session();if(!s?.token)throw new Error('Verify your number first.');return invoke('place-order',{action:'validate_redeem',token:s.token,redeemCode,subtotal},false);}
   async function placeOrder(payload){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');const data=await invoke('place-order',{token:s.token,...payload},false);return data?.order||data;}
   async function staffSignIn(username,password){const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');const clean=String(username||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'');if(!clean)throw new Error('Enter username.');const email=clean+'@staff.oneline.local';const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',data.user.id).single();if(pe)throw pe;if(!profile.active){await sb.auth.signOut();throw new Error('This account is suspended.');}return profile;}
   async function staffProfile(){
@@ -236,5 +237,5 @@
     await hydrate({force:true});return data;
   }
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate({force:true});}
-  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,updateCustomerProfile,mutateCustomerCart,placeOrder,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
+  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,updateCustomerProfile,mutateCustomerCart,placeOrder,validateRedeem,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
 })();

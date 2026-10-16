@@ -77,7 +77,7 @@ async function validateJerseyOrder(db:any,item:any){
     jerseySizes.push({size,qty,rate,length_cm:current?.length_cm??null,width_cm:current?.width_cm??null,separateRate:override!==null});
   }
   if(!totalPieces||totalPieces>10000)throw new Error('Select at least one Jersey size.');
-  const design={kind:'jersey_order',itemId:saved.id,itemTitle:saved.title,garmentTypeId:type.id,garmentTypeName:type.name,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),jerseySizes,totalPieces,totalAmount,validatedAt:new Date().toISOString()};
+  const design={kind:'jersey_order',itemId:saved.id,itemTitle:saved.title,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),jerseySizes,totalPieces,totalAmount,validatedAt:new Date().toISOString()};
   return {...item,itemType:'jersey_order',name:saved.title||'Jersey',code:saved.display_id||item.code||'JERSEY',qty:totalPieces,unitPrice:totalAmount/totalPieces,lineTotal:totalAmount,design};
 }
 async function validatePrintableOrder(db:any,item:any){
@@ -89,18 +89,17 @@ async function validatePrintableOrder(db:any,item:any){
   const cq=await db.from('custom_catalog_categories').select('name,active').eq('id',saved.category_id).maybeSingle();
   if(cq.error)throw cq.error;
   if(!cq.data?.active||String(cq.data.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()!=='ready stock printable items')throw new Error('This is not a printable item.');
-  const [tq,fq,pq]=await Promise.all([
-    db.from('custom_sportswear_types').select('*').eq('id',String(incoming.garmentTypeId||'')).maybeSingle(),
+  const [fq,pq]=await Promise.all([
     db.from('custom_catalog_fabrics').select('*').eq('id',String(incoming.fabricId||'')).maybeSingle(),
     db.from('custom_print_types').select('*').eq('active',true)
   ]);
-  if(tq.error)throw tq.error;if(fq.error)throw fq.error;if(pq.error)throw pq.error;
-  const type=tq.data,fabric=fq.data,quality=String(incoming.quality||'');
+  if(fq.error)throw fq.error;if(pq.error)throw pq.error;
+  const fabric=fq.data,quality=String(incoming.quality||'');
   const qualityCol=quality==='Premium'?'premium_rate':quality==='Standard'?'standard_rate':quality==='Budget'?'budget_rate':'';
-  if(!type?.active||!fabric?.active||!qualityCol||fabric[qualityCol]===null||fabric[qualityCol]===undefined)throw new Error('Fabric, garment type or quality changed. Reconfigure item.');
+  if(!fabric?.active||!qualityCol||fabric[qualityCol]===null||fabric[qualityCol]===undefined)throw new Error('Fabric or quality changed. Reconfigure item.');
   const opts=saved.fabric_options||{};
   if(opts.selection_mode==='custom'&&(!Array.isArray(opts[String(fabric.id)])||!opts[String(fabric.id)].includes(quality)))throw new Error('Selected fabric is not offered on this item.');
-  const base=Math.max(0,Number(fabric[qualityCol])+Number(type.price_adjustment||0));
+  const base=Math.max(0,Number(fabric[qualityCol]));
   if(!Number.isFinite(base))throw new Error('Garment price is not configured.');
   const raw=Array.isArray(opts.sportswear_sizes)?opts.sportswear_sizes:['XS','S','M','L','XL','XXL'].map(size=>({size}));
   const sizes=new Map(raw.map((r:any)=>[String((typeof r==='string'?r:r?.size)||'').trim(),typeof r==='string'?{size:r}:r]));
@@ -140,7 +139,7 @@ async function validatePrintableOrder(db:any,item:any){
   }
   if(printsCount>10000)throw new Error('Too many prints selected.');
   const totalAmount=garmentTotal+printsTotal;
-  const design={kind:'printable_order',itemId:saved.id,itemTitle:saved.title||'',categoryName:cq.data.name,garmentTypeId:type.id,garmentTypeName:type.name,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),printableSizes,sizeQuantities:Object.fromEntries(printableSizes.map(r=>[r.size,r.qty])),sizeRates:Object.fromEntries(printableSizes.map(r=>[r.size,r.rate])),selectedPrintTypeId,selectedPrintTypeName:selectedPrintType.name,selectedPrints,totalPieces,garmentTotal,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
+  const design={kind:'printable_order',itemId:saved.id,itemTitle:saved.title||'',categoryName:cq.data.name,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),printableSizes,sizeQuantities:Object.fromEntries(printableSizes.map(r=>[r.size,r.qty])),sizeRates:Object.fromEntries(printableSizes.map(r=>[r.size,r.rate])),selectedPrintTypeId,selectedPrintTypeName:selectedPrintType.name,selectedPrints,totalPieces,garmentTotal,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
   return {...item,itemType:'printable_order',name:saved.title||'Printable item',code:saved.display_id||item.code||'',qty:totalPieces,unitPrice:totalAmount/totalPieces,lineTotal:totalAmount,design};
 }
 async function uploadOrderImage(db:any,customerId:string,value:any,label:string){
@@ -159,6 +158,7 @@ Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:cors});
   try{
     const body=await req.json(),s=await resolveCustomerSession(String(body.token||''));if(!s)return json({error:'Session expired. Verify your number again.'},401);const db=admin(),customer=(s as any).customers||{},details=body.details||body;
+    if(body.action==='validate_redeem'){const code=String(body.redeemCode||'').trim().toUpperCase(),gross=Number(body.subtotal||0);if(!/^[A-Z0-9_-]{3,32}$/.test(code)||!Number.isFinite(gross)||gross<=0)return json({error:'Enter a valid code and select items first.'},400);const q=await db.from('redeem_codes').select('*').eq('code',code).maybeSingle();if(q.error)throw q.error;const v=q.data;if(!v||!v.active||v.expires_at&&new Date(v.expires_at).getTime()<=Date.now()||v.max_uses!==null&&v.used_count>=v.max_uses||gross<Number(v.min_order_total||0))return json({error:'Code is invalid, expired, or not eligible for this order.'},400);const uq=await db.from('redeem_redemptions').select('id',{count:'exact',head:true}).eq('customer_id',s.customer_id).eq('redeem_code_id',v.id);if(uq.error)throw uq.error;if(Number(uq.count||0)>=Number(v.per_customer_limit||1))return json({error:'This code has already been used on your account.'},400);return json({ok:true,code:v.code,discount:Math.min(gross,Number(v.amount||0)),preview:true});}
     const cartQ=await db.from('customer_carts').select('items').eq('customer_id',s.customer_id).maybeSingle();if(cartQ.error)throw cartQ.error;const serverCart=Array.isArray(cartQ.data?.items)?cartQ.data.items:[],directOrder=body.directOrder===true,browserItems=Array.isArray(body.items)?body.items:[],sourceItems=directOrder?browserItems:(serverCart.length?serverCart:browserItems);let items=sourceItems.map(normalizeOrderItem);
     if(!directOrder&&browserItems.length){const prepared=browserItems.map(normalizeOrderItem);for(let i=0;i<items.length;i++){const item=items[i];if(item?.itemType==='custom_design'||item?.itemType==='uniform_order'||item?.itemType==='printable_order'||item?.itemType==='jersey_order'){const match=prepared.find((x:any)=>x?.itemType===item.itemType&&String(x.groupKey||'')&&String(x.groupKey)===String(item.groupKey||''))||prepared.filter((x:any)=>x?.itemType===item.itemType)[i];if(match?.design)item.design=match.design;}}}
     const checked=[] as any[];for(const item of items){if(item?.itemType==='uniform_order')checked.push(await validateUniformOrder(db,item));else if(item?.itemType==='printable_order')checked.push(await validatePrintableOrder(db,item));else if(item?.itemType==='jersey_order')checked.push(await validateJerseyOrder(db,item));else checked.push(item);}items=checked;
@@ -172,13 +172,14 @@ Deno.serve(async(req)=>{
       deliveryRecord=aq.data
     }
     const formattedDelivery=deliveryRecord?[deliveryRecord.business_name,deliveryRecord.line1,deliveryRecord.line2,deliveryRecord.landmark,deliveryRecord.city,deliveryRecord.district,deliveryRecord.state,deliveryRecord.postal_code].filter(Boolean).join(', '):String(details.address||'')
-    if(items.some((x:any)=>!x.itemType||x.itemType==='product'))throw new Error('Ready-made items are no longer available. Remove them from your cart.');
+    // The existing stock-safe SQL ordering function validates Ready Made product lines too.
     const recipient=deliveryRecord?{name:deliveryRecord.recipient_name,phone:deliveryRecord.phone||customer.phone,label:deliveryRecord.label,businessName:deliveryRecord.business_name||'',address:formattedDelivery}: {name:String(details.recipientName||details.name||customer.name||''),phone:String(customer.phone||''),address:formattedDelivery}
     const customerName=String(customer.name||details.customerName||details.name||'').trim().slice(0,120),business=String(details.business||customer.business_name||'').trim().slice(0,160);
     // Every line, including Ready Made / Uniform sizes, is validated, deducted
     // and inserted atomically in one database transaction. This is the final
     // availability check immediately before confirming the whole order.
-    const placed=await db.rpc('place_bulk_order',{p_customer_id:s.customer_id,p_customer_name:customerName,p_phone:String(customer.phone||details.phone||''),p_address:formattedDelivery,p_business:business,p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:items});
+    const redeemCode=String(body.redeemCode||'').trim().toUpperCase();
+    const placed=redeemCode?await db.rpc('place_bulk_order_redeem',{p_customer_id:s.customer_id,p_customer_name:customerName,p_phone:String(customer.phone||details.phone||''),p_address:formattedDelivery,p_business:business,p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:items,p_redeem_code:redeemCode}):await db.rpc('place_bulk_order',{p_customer_id:s.customer_id,p_customer_name:customerName,p_phone:String(customer.phone||details.phone||''),p_address:formattedDelivery,p_business:business,p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:items});
     if(placed.error)throw placed.error;const order:any=placed.data;
     // Save images seen at the time of purchase for Ready Made lines as well.
     const placedLines=await db.from('order_items').select('id,product_id,color,size,design_json').eq('order_id',order.id).eq('item_type','product')
