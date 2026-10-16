@@ -196,16 +196,48 @@
       try{const blob=await designPNG();savePNGBlob(blob);reportExport('Your customized design PNG is ready.');}
       catch(err){reportExport(err.message||'Could not export this design.');}
     }
-    async function shareDesigner(){
-      reportExport('Preparing your customized image…');
+    // Share a rendered image plus an ordinary designer link. No uploads, snapshots,
+    // database records or server credentials are needed for sharing.
+    const designerLink='https://onelinesmart.com/#customize';
+    const designerShareText=()=>
+      'Designed with One-Line Touch Shopping\n' +
+      'Create custom T-shirts, polos and sportswear. Add your text and logos, choose colours and fabrics, and order online.\n' +
+      'Design yours: '+designerLink;
+    async function copyShareText(text){
+      if(navigator.clipboard?.writeText){try{await navigator.clipboard.writeText(text);return true;}catch(_){}}
       try{
-        const blob=await designPNG(),file=new File([blob],'One-Line-'+state.surface+'.png',{type:'image/png'});
-        if(navigator.share&&navigator.canShare?.({files:[file]})){
-          try{await navigator.share({files:[file],title:'My One-Line '+state.model.name+' design',text:'My customized apparel design'});reportExport('Customized image shared.');return;}
-          catch(err){if(err?.name==='AbortError'){reportExport('Sharing cancelled.');return;}}
+        const box=document.createElement('textarea');box.value=text;box.setAttribute('readonly','');
+        box.style.cssText='position:fixed;left:-10000px;top:0;opacity:0';
+        document.body.appendChild(box);box.select();const copied=document.execCommand('copy');box.remove();return !!copied;
+      }catch(_){return false;}
+    }
+    async function shareDesigner(){
+      reportExport('Preparing design image…');
+      try{
+        const blob=await designPNG();
+        const file=typeof File==='function'?new File([blob],'One-Line-'+state.model.name.replace(/[^a-z0-9]+/gi,'-')+'-'+state.surface+'.png',{type:'image/png'}):null;
+        const title='Design custom apparel with One-Line';
+        const text=designerShareText();
+        // Include the link in the text: many sharing apps discard the separate
+        // `url` field when a file is attached.
+        let filesSupported=false;
+        try{filesSupported=!!(file && navigator.share && navigator.canShare?.({files:[file]}));}catch(_){}
+        if(filesSupported){
+          try{
+            await navigator.share({title,text,files:[file]});
+            reportExport('Design image and Designer link shared.');
+            return;
+          }catch(err){
+            if(err?.name==='AbortError'){reportExport('Sharing cancelled.');return;}
+          }
         }
-        savePNGBlob(blob);reportExport('Image sharing is unavailable in this browser. The actual design PNG was downloaded—attach it in WhatsApp or Instagram.');
-      }catch(err){reportExport(err.message||'Could not prepare the design image.');}
+        // A browser without file sharing cannot attach the actual PNG to a
+        // WhatsApp or Instagram message. Download it for manual attachment.
+        savePNGBlob(blob);
+        const copied=await copyShareText(text);
+        if(copied)reportExport('PNG downloaded and Designer link copied. Attach the image when sharing.');
+        else reportExport('PNG downloaded. Share it with this Designer link: '+designerLink);
+      }catch(err){reportExport(err.message||'Could not prepare your design image.');}
     }
     function refreshPricingUI(){
       const qty=totalPieces(),amount=S.money(unitPrice()*qty),unit=S.money(unitPrice()),discount=quantityDiscount(qty),prints=printEntries(),large=prints.filter(x=>x.widthPct>printThreshold()).length;

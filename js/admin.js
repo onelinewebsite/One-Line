@@ -374,7 +374,7 @@
     return '<section class="clean-card custom-catalog-admin simple-workspace"><div class="panel-head"><div><p class="tag">CUSTOM OPTIONS</p><h1>Custom Catalogue options</h1><p>Manage T-Shirt fabrics, Sportswear types, Sportswear fabric pricing and Printable print types here. Normal Custom Catalogue and Uniform variant images, sizes and stock stay inside their own items.</p></div></div>'+fabricManagerHtml()+sportswearManagerHtml()+printablePrintManagerHtml()+'</section>';
   }
   function customCategoryPublicUrl(id){
-    const url=new URL(location.href);url.search='';url.hash='';url.pathname=url.pathname.replace(/\/(?:admin|management|staff)(?:\.html)?\/?$/i,'/index.html');url.searchParams.set('customCategory',String(id||''));url.hash='customCategory';return url.toString();
+    return new URL('/share/category/'+encodeURIComponent(String(id||'')),location.origin).toString();
   }
   // Dedicated settings page: catalogue grid stays clean and category settings remain editable.
   function customCatalogCategorySettingsView(){

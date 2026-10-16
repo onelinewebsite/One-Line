@@ -7195,3 +7195,7 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .printable-include-toggle>input:checked+.printable-toggle-track:after{transform:translateX(19px)}
 .printable-include-toggle>input:focus-visible+.printable-toggle-track{outline:3px solid #b580c4;outline-offset:3px}
 @media(max-width:320px){.printable-include-toggle{padding:11px;gap:8px}}
+
+/* v170: per-category share control should not obstruct name/image navigation */
+.real-category-card{position:relative}
+.real-category-card>.card-share-button{position:absolute;z-index:4;top:10px;right:10px;left:auto}
