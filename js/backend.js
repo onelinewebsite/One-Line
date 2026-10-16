@@ -186,7 +186,6 @@
   async function staffSignOut(){lastAdminFeed=null;const sb=supa();if(sb)await sb.auth.signOut();}
   async function adminCreateAccount(payload){return invoke('admin-user',{action:'create',...payload});}
   async function adminUpdateAccount(payload){return invoke('admin-user',{action:'update',...payload});}
-  async function adminBootstrapAccounts(){return invoke('admin-user',{action:'bootstrap_defaults'});}
   let lastAdminFeed=null,adminFeedFlight=null;
   async function adminFeed(){if(adminFeedFlight)return adminFeedFlight;adminFeedFlight=invoke('admin-user',{action:'admin_feed',syncToken:lastAdminFeed?.syncToken||''}).then(data=>{if(data?.unchanged&&lastAdminFeed)return lastAdminFeed;lastAdminFeed=data;return data;}).finally(()=>{adminFeedFlight=null;});return adminFeedFlight;}
   async function listProfiles(){const sb=supa();if(!sb)return[];const {data,error}=await sb.from('profiles').select('*').order('created_at',{ascending:false});if(error)throw error;return data||[];}
@@ -237,5 +236,5 @@
     await hydrate({force:true});return data;
   }
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate({force:true});}
-  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,updateCustomerProfile,mutateCustomerCart,placeOrder,validateRedeem,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminBootstrapAccounts,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
+  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,updateCustomerProfile,mutateCustomerCart,placeOrder,validateRedeem,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
 })();

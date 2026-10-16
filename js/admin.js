@@ -108,13 +108,84 @@
   const roleLink=(role)=>'<a class="portal-role-choice '+(role===requested?'selected':'')+'" href="'+role+'.html" '+(role===requested?'aria-current="page"':'')+'><span class="portal-role-choice-icon">'+(role==='admin'?'A':role==='management'?'M':'S')+'</span><span>'+labels[role]+'</span></a>';
   const roleSwitcher=()=>'<div class="portal-role-switcher"><small>SELECT PORTAL</small><div class="portal-role-choices">'+roles.map(roleLink).join('')+'</div></div>';
   function notify(msg){state.toast=msg;renderToast();clearTimeout(notify.t);notify.t=setTimeout(()=>{state.toast='';renderToast();},2400);}
+  // Portal navigation keeps a short history of visible screens, not form edits.
+  // This prevents the phone's Back button from leaving the Admin/Management/Staff PWA.
+  const portalNav={ready:false,restoring:false,position:0,lastKey:'',screens:new Map()};
+  function portalScreen(){
+    return {view:state.view,category:state.customCatalogCategoryOpen||'',categorySettings:state.customCatalogCategorySettings||'',
+      customEditor:state.customItemEditor||null,productEditor:state.editor||null,
+      categoryEditor:state.categoryEditor||'',customCategoryEditor:state.customCategoryEditor||'',
+      order:state.detailOrderId||'',enquiry:state.detailEnquiryId||''};
+  }
+  function portalScreenKey(s){
+    return [s.view,s.category,s.categorySettings,s.customEditor?('item:'+String(s.customEditor.id||'new')):'',
+      s.productEditor?('product:'+String(s.productEditor.id||'new')):'',s.categoryEditor,s.customCategoryEditor,s.order,s.enquiry].join('|');
+  }
+  function applyPortalScreen(s){
+    if(!s)return;
+    state.view=allowed(s.view)?s.view:(requested==='staff'?'stock':'customCatalog');
+    state.customCatalogCategoryOpen=s.category;
+    state.customCatalogCategorySettings=s.categorySettings;
+    state.customItemEditor=s.customEditor;
+    state.editor=s.productEditor;
+    state.categoryEditor=s.categoryEditor;
+    state.customCategoryEditor=s.customCategoryEditor;
+    state.detailOrderId=s.order;state.detailEnquiryId=s.enquiry;
+    state.menu=false;state.editFields={};
+  }
+  function rememberPortalScreen(){
+    if(portalNav.restoring||!state.profile||!roleOkay()||state.loading)return;
+    const screen=portalScreen(),key=portalScreenKey(screen);
+    if(!portalNav.ready){
+      portalNav.ready=true;portalNav.position=1;portalNav.lastKey=key;
+      portalNav.screens.set(0,{...screen,category:'',categorySettings:'',customEditor:null,productEditor:null,categoryEditor:'',customCategoryEditor:'',order:'',enquiry:''});
+      portalNav.screens.set(1,screen);
+      try{
+        history.replaceState({...history.state,oneLinePortal:true,portalRole:requested,portalPosition:0},'',location.href);
+        history.pushState({oneLinePortal:true,portalRole:requested,portalPosition:1},'',location.href);
+      }catch(_){}
+      return;
+    }
+    if(key===portalNav.lastKey){portalNav.screens.set(portalNav.position,screen);return;}
+    portalNav.position++;
+    portalNav.lastKey=key;
+    portalNav.screens.set(portalNav.position,screen);
+    // Keep only recent screen objects; no images or server data are duplicated.
+    if(portalNav.screens.size>45){for(const id of portalNav.screens.keys()){if(id>0&&id<portalNav.position-35)portalNav.screens.delete(id);}}
+    try{history.pushState({oneLinePortal:true,portalRole:requested,portalPosition:portalNav.position},'',location.href);}catch(_){}
+  }
+  function backInsidePortal(fallback){
+    if(portalNav.ready&&portalNav.position>1){history.back();return;}
+    fallback();
+  }
+  window.addEventListener('popstate',event=>{
+    if(!portalNav.ready||!state.profile||!roleOkay())return;
+    const entry=event.state;
+    if(entry?.oneLinePortal&&entry.portalRole===requested&&Number.isInteger(entry.portalPosition)){
+      const position=entry.portalPosition;
+      const next=portalNav.screens.get(position)||portalNav.screens.get(0);
+      portalNav.restoring=true;applyPortalScreen(next);
+      if(position===0){
+        // Re-arm a portal home entry, so another Back doesn't exit the PWA.
+        portalNav.position=1;
+        portalNav.lastKey=portalScreenKey(portalScreen());
+        portalNav.screens.set(1,portalScreen());
+        try{history.pushState({oneLinePortal:true,portalRole:requested,portalPosition:1},'',location.href);}catch(_){}
+      }else{
+        portalNav.position=position;
+        portalNav.lastKey=portalScreenKey(portalScreen());
+      }
+      render();portalNav.restoring=false;
+      window.scrollTo(0,0);
+    }
+  });
   function render(){
     if(!B?.configured?.()){root.innerHTML=setupScreen();return;}
     if(state.loading&&!state.profile){root.innerHTML=adminLoader('Loading portal');return;}
     if(!state.profile){root.innerHTML=loginScreen();bind();return;}
     if(!roleOkay()){root.innerHTML=wrongPortal();bind();return;}
     if(state.loading){root.innerHTML=adminLoader('Loading live data');return;}
-    root.innerHTML=shell();bind();renderToast();
+    root.innerHTML=shell();bind();renderToast();rememberPortalScreen();
   }
   function allowed(v){
     const r=requested;
@@ -792,8 +863,7 @@
   }
   function activityView(){return '<section class="clean-card"><div class="panel-head"><div><p class="tag">VERIFIED CUSTOMER ACTIVITY</p><h1>Customer activity</h1><p>Login, cart, checkout, profile and order actions recorded after OTP verification.</p></div><button class="ghost-btn" data-action="refresh-data">Refresh</button></div><div class="activity-list">'+(state.activity.length?state.activity.map(a=>'<article><div><b>'+esc(a.event_type.replaceAll('_',' '))+'</b><small>'+new Date(a.created_at).toLocaleString()+'</small></div><span>'+esc(a.customers?.name||'')+'<small>'+esc(a.customers?.phone||'')+'</small></span><pre>'+esc(JSON.stringify(a.payload||{},null,2))+'</pre></article>').join(''):'<div class="empty-admin">No verified customer activity yet.</div>')+'</div></section>';}
   function accountsView(){
-    const defaults=[['Admin','admin.html','adminhere','admin22'],['Management','management.html','managementhere','manage22'],['Staff','staff.html','staffhere','staff220']];
-    return '<section class="clean-card"><div class="panel-head"><div><p class="tag">ACCESS CONTROL</p><h1>Staff & management accounts</h1><p>Create portal accounts. Existing accounts stay locked until you tap Edit, and Done saves that account immediately.</p></div></div><div class="default-access-box"><header><div><h3>Default portal access</h3><p>Create or reset the standard access IDs for every portal in one click.</p></div><button class="primary-btn" type="button" data-action="bootstrap-default-accounts">Create / reset access</button></header><div class="default-access-grid">'+defaults.map(x=>'<article><b>'+x[0]+'</b><span>'+x[1]+'</span><code>'+x[2]+' / '+x[3]+'</code></article>').join('')+'</div></div><form id="accountCreate" class="account-create"><label>Name<input name="name" required></label><label>Username<input name="username" required></label><label>Role<select name="role">'+roles.map(r=>'<option value="'+r+'">'+labels[r]+'</option>').join('')+'</select></label><label>Password<input type="password" name="password" minlength="6" required></label><button class="primary-btn">Create account</button></form><div class="account-list">'+state.profiles.map(p=>{const key='account:'+p.id,editing=!!state.editSections[key];return '<article class="'+(editing?'editing':'')+'">'+(editing?'<div class="account-identity-fields"><input data-account-name="'+p.id+'" value="'+esc(p.name)+'" placeholder="Name"><input data-account-username="'+p.id+'" value="'+esc(p.username)+'" placeholder="Username"></div>':'<div><b>'+esc(p.name)+'</b><small>@'+esc(p.username)+'</small><small>User ID: '+esc(window.OneLineUserId(p.id,'STAFF'))+'</small></div>')+'<select data-account-role="'+p.id+'" '+(editing?'':'disabled')+'>'+roles.map(r=>'<option value="'+r+'" '+(p.role===r?'selected':'')+'>'+labels[r]+'</option>').join('')+'</select><label class="account-active"><input type="checkbox" data-account-active="'+p.id+'" '+(p.active?'checked':'')+' '+(editing?'':'disabled')+'> Active</label><input type="password" data-account-password="'+p.id+'" placeholder="New password optional" '+(editing?'':'disabled')+'><button class="account-edit-button '+(editing?'done':'')+'" data-action="edit-account" data-id="'+p.id+'">'+(editing?I('check')+' Done':I('edit')+' Edit')+'</button></article>';}).join('')+'</div></section>';
+    return '<section class="clean-card"><div class="panel-head"><div><p class="tag">ACCESS CONTROL</p><h1>Staff & management accounts</h1><p>Create portal accounts. Existing accounts stay locked until you tap Edit, and Done saves that account immediately.</p></div></div><form id="accountCreate" class="account-create"><label>Name<input name="name" required></label><label>Username<input name="username" required></label><label>Role<select name="role">'+roles.map(r=>'<option value="'+r+'">'+labels[r]+'</option>').join('')+'</select></label><label>Password<input type="password" name="password" minlength="12" maxlength="128" autocomplete="new-password" required></label><button class="primary-btn">Create account</button></form><div class="account-list">'+state.profiles.map(p=>{const key='account:'+p.id,editing=!!state.editSections[key];return '<article class="'+(editing?'editing':'')+'">'+(editing?'<div class="account-identity-fields"><input data-account-name="'+p.id+'" value="'+esc(p.name)+'" placeholder="Name"><input data-account-username="'+p.id+'" value="'+esc(p.username)+'" placeholder="Username"></div>':'<div><b>'+esc(p.name)+'</b><small>@'+esc(p.username)+'</small><small>User ID: '+esc(window.OneLineUserId(p.id,'STAFF'))+'</small></div>')+'<select data-account-role="'+p.id+'" '+(editing?'':'disabled')+'>'+roles.map(r=>'<option value="'+r+'" '+(p.role===r?'selected':'')+'>'+labels[r]+'</option>').join('')+'</select><label class="account-active"><input type="checkbox" data-account-active="'+p.id+'" '+(p.active?'checked':'')+' '+(editing?'':'disabled')+'> Active</label><input type="password" data-account-password="'+p.id+'" minlength="12" maxlength="128" autocomplete="new-password" placeholder="New password (12+ characters)" '+(editing?'':'disabled')+'><button class="account-edit-button '+(editing?'done':'')+'" data-action="edit-account" data-id="'+p.id+'">'+(editing?I('check')+' Done':I('edit')+' Edit')+'</button></article>';}).join('')+'</div></section>';
   }
 
   function localRedeemDate(input){if(!input)return '';const d=new Date(input),pad=n=>String(n).padStart(2,'0');return Number.isNaN(d.getTime())?'':d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
@@ -926,17 +996,17 @@
     
     root.querySelectorAll('[data-action="delete-custom-category"]').forEach(x=>x.addEventListener('click',async()=>{if(!confirm('Delete this customization category and all its items?'))return;const cat=state.customCatalogCategories.find(c=>String(c.id)===String(x.dataset.id)),items=state.customCatalogItems.filter(i=>String(i.category_id)===String(x.dataset.id)),files=[cat?.image_url,...items.flatMap(i=>i.images||[])].filter(Boolean);const r=await sb().from('custom_catalog_categories').delete().eq('id',x.dataset.id);if(r.error)notify(r.error.message);else{await B.deleteImages?.(files);state.customCategoryEditor=null;state.customCatalogCategorySettings='';await loadAll();notify('Custom category, items and owned images deleted.');}}));
     root.querySelectorAll('[data-action="custom-catalog-edit-category"]').forEach(button=>button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();state.customCatalogCategorySettings=String(button.dataset.id||'');state.customCatalogCategoryOpen='';render();window.scrollTo(0,0);}));
-    root.querySelectorAll('[data-action="close-custom-category-settings"]').forEach(button=>button.addEventListener('click',()=>{state.customCatalogCategorySettings='';render();window.scrollTo(0,0);}));
+    root.querySelectorAll('[data-action="close-custom-category-settings"]').forEach(button=>button.addEventListener('click',()=>backInsidePortal(()=>{state.customCatalogCategorySettings='';render();window.scrollTo(0,0);})));
     root.querySelector('#customCatalogCategorySettingsForm')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,fd=new FormData(form),id=String(state.customCatalogCategorySettings||''),current=state.customCatalogCategories.find(x=>String(x.id)===id),name=String(fd.get('name')||'').trim(),file=fd.get('image');if(!current)return;if(!name){notify('Category name is required.');return;}const saveButton=form.querySelector('[type="submit"]');if(saveButton)saveButton.disabled=true;try{const oldUrl=current.image_url||'',nextUrl=file?.size?await B.uploadImage(file,'custom-catalog/categories'):oldUrl;const payload={name,description:String(fd.get('description')||'').trim(),item_editor_type:String(fd.get('item_editor_type')||categoryMode(current)),image_url:nextUrl,active:fd.get('active')==='on',shareable:true,updated_at:new Date().toISOString()};const result=await sb().from('custom_catalog_categories').update(payload).eq('id',id);if(result.error)throw result.error;if(file?.size&&oldUrl&&oldUrl!==nextUrl)await B.deleteImage?.(oldUrl).catch(()=>{});state.customCatalogCategorySettings='';await loadAll();notify('Category saved.');}catch(err){notify(err.message||'Could not save category.');if(saveButton)saveButton.disabled=false;}});
     root.querySelectorAll('[data-action="open-custom-catalog-category"]').forEach(x=>x.addEventListener('click',()=>{state.customCatalogCategoryOpen=String(x.dataset.id||'');state.customCatalogQuery='';state.customCatalogSearchOpen=false;render();window.scrollTo(0,0);}));
     root.querySelectorAll('[data-custom-category-visible]').forEach(x=>x.addEventListener('change',async e=>{e.stopPropagation();const id=String(x.dataset.id||''),value=!!x.checked;try{const r=await sb().from('custom_catalog_categories').update({active:value,shareable:true,updated_at:new Date().toISOString()}).eq('id',id);if(r.error)throw r.error;const c=state.customCatalogCategories.find(v=>String(v.id)===id);if(c){c.active=value;c.shareable=true;}render();notify(value?'Category visible in public catalogue.':'Category hidden from public catalogue, accessible by its normal category link.');}catch(err){x.checked=!value;notify(err.message||'Could not update category visibility');}}));
     root.querySelectorAll('[data-copy-custom-category-link]').forEach(x=>x.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();const url=String(x.dataset.url||''),id=String(x.dataset.id||'');if(!url)return;const c=state.customCatalogCategories.find(v=>String(v.id)===id);if(c&&c.shareable===false){try{const r=await sb().from('custom_catalog_categories').update({shareable:true,updated_at:new Date().toISOString()}).eq('id',id);if(r.error)throw r.error;c.shareable=true;}catch(err){notify(err.message||'Could not enable the shared link.');return;}}try{await navigator.clipboard.writeText(url);notify('Normal category page link copied.');}catch(_){const input=x.closest('.custom-category-share-link')?.querySelector('input');input?.select?.();notify('Select and copy the category link.');}}));
-    root.querySelector('[data-action="custom-catalog-back-categories"]')?.addEventListener('click',()=>{state.customCatalogCategoryOpen='';state.customCatalogQuery='';state.customCatalogSearchOpen=false;render();window.scrollTo(0,0);});
+    root.querySelector('[data-action="custom-catalog-back-categories"]')?.addEventListener('click',()=>backInsidePortal(()=>{state.customCatalogCategoryOpen='';state.customCatalogQuery='';state.customCatalogSearchOpen=false;render();window.scrollTo(0,0);}));
     root.querySelector('[data-action="new-custom-item"]')?.addEventListener('click',()=>{if(!sectionCategories().length){state.categoryType=state.view==='readyMade'?'ready':'custom';state.editor=null;state.view='categories';render();notify('Add a Customizable category first.');return;}state.editor=null;const item=blankCustomItem(),openCategory=state.customCatalogCategories.find(c=>String(c.id)===String(state.customCatalogCategoryOpen||''));if(openCategory){item.category_id=openCategory.id;Object.assign(item,customItemDefaults(openCategory.id));const mode=categoryMode(openCategory);item.fabric_options=(['tshirt','jersey','printable'].includes(mode))?{selection_mode:'all',...(mode==='printable'?{sportswear_sizes:['XS','S','M','L','XL','XXL'].map(size=>({size,rate:null,length_cm:null,width_cm:null}))}:{})}:{uniform_config:defaultUniformConfig()};}state.customItemEditor=item;state.uniformOptionsOpen=false;state.editSections={};state.editFields={};render();});
     root.querySelectorAll('[data-action="edit-custom-item"]').forEach(x=>x.addEventListener('click',async()=>{const raw=state.customCatalogItems.find(v=>v.id===x.dataset.id);if(!raw)return;const editor={...structured(raw),images:[...(raw.images||[])]};try{await loadItemInternalFields(editor);}catch(err){notify(err.message||'Private details could not load.');return;}state.customCatalogCategoryOpen=String(raw.category_id||state.customCatalogCategoryOpen||'');state.customItemEditor=editor;state.uniformOptionsOpen=false;if(isTshirtCategory(raw.category_id)&&(raw.fabric_options==null||raw.fabric_options.uniform_config||Array.isArray(raw.fabric_options.types)))state.customItemEditor.fabric_options={selection_mode:'all'};if(isSportswearCategory(raw.category_id)&&(raw.fabric_options==null||raw.fabric_options.uniform_config))state.customItemEditor.fabric_options={selection_mode:'all'};state.editSections={};state.editFields={};render();}));
     root.querySelector('[data-action="toggle-custom-catalog-search"]')?.addEventListener('click',()=>{state.customCatalogSearchOpen=!state.customCatalogSearchOpen;if(!state.customCatalogSearchOpen)state.customCatalogQuery='';render();if(state.customCatalogSearchOpen)requestAnimationFrame(()=>root.querySelector('#customCatalogSearch')?.focus());});
     root.querySelector('#customCatalogSearch')?.addEventListener('input',e=>{state.customCatalogQuery=e.target.value;render();requestAnimationFrame(()=>{const input=root.querySelector('#customCatalogSearch');input?.focus();if(input)try{input.setSelectionRange(input.value.length,input.value.length);}catch(_){}});});
-    root.querySelectorAll('[data-action="close-custom-item"]').forEach(x=>x.addEventListener('click',e=>{e.preventDefault();state.customItemEditor=null;state.editFields={};render();}));
+    root.querySelectorAll('[data-action="close-custom-item"]').forEach(x=>x.addEventListener('click',e=>{e.preventDefault();backInsidePortal(()=>{state.customItemEditor=null;state.editFields={};render();});}));
     root.querySelector('#customItemEditor')?.addEventListener('submit',saveCustomItem);
     root.querySelectorAll('[data-internal-detail]').forEach(input=>input.addEventListener('input',()=>syncItemInternalFields()));
     root.querySelectorAll('[data-ci]').forEach(x=>x.addEventListener('change',()=>{const isCat=x.dataset.ci==='category_id';syncCustomItemEditor();if(isCat)render();}));
@@ -1050,7 +1120,6 @@
     hydrateAccurateCustomOrderPreviews();
 
     root.querySelector('#accountCreate')?.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(e.currentTarget);try{await B.adminCreateAccount(Object.fromEntries(fd.entries()));state.profiles=await B.listProfiles();render();notify('Account created.');}catch(err){notify(err.message||'Could not create account');}});
-    root.querySelector('[data-action="bootstrap-default-accounts"]')?.addEventListener('click',async()=>{if(!confirm('Create or reset the three default portal access accounts?'))return;try{await B.adminBootstrapAccounts();state.profiles=await B.listProfiles();render();notify('Default portal access is ready.');}catch(err){notify(err.message||'Could not create default access');}});
     root.querySelectorAll('[data-action="edit-account"]').forEach(x=>x.addEventListener('click',async()=>{const id=x.dataset.id,key='account:'+id;if(!state.editSections[key]){state.editSections={};state.editSections[key]=true;render();return;}const existing=state.profiles.find(p=>String(p.id)===String(id)),name=root.querySelector('[data-account-name="'+id+'"]')?.value?.trim()||existing?.name||'',username=root.querySelector('[data-account-username="'+id+'"]')?.value?.trim()||existing?.username||'',role=root.querySelector('[data-account-role="'+id+'"]')?.value,active=root.querySelector('[data-account-active="'+id+'"]')?.checked,password=root.querySelector('[data-account-password="'+id+'"]')?.value||'';try{await B.adminUpdateAccount({id,name,username,role,active,...(password?{password}:{})});state.profiles=await B.listProfiles();state.editSections={};render();notify('Account updated.');}catch(err){notify(err.message||'Could not update account');}}));
   }
   async function init(){

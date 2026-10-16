@@ -29,11 +29,16 @@ Deno.serve(async(req)=>{
     if(!/^91\d{10}$/.test(mobile)||!token)return json({error:'A verified Indian mobile number and MSG91 access token are required.'},400);
     const authkey=Deno.env.get('MSG91_AUTH_KEY');if(!authkey)return json({error:'MSG91 server verification is not configured. Add MSG91_AUTH_KEY in Supabase Edge Function secrets.'},500);
     const r=await fetch('https://control.msg91.com/api/v5/widget/verifyAccessToken',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({authkey,'access-token':token})});
-    const body=await r.json().catch(()=>({}));if(!r.ok||explicitFailure(body))return json({error:String(body?.message||body?.error||'MSG91 access token verification failed.')},401);
+    const body=await r.json().catch(()=>({}));if(!r.ok||explicitFailure(body)||Number(body?.code)===201)return json({error:String(body?.message||body?.error||'MSG91 access token verification failed.')},401);
 
     // MSG91 documents this endpoint as returning verified user information. Also inspect the already server-verified JWT payload as a compatibility fallback.
-    const verifiedIdentifier=findIdentifier(body)||findIdentifier(decodeJwtPayload(token));
-    if(verifiedIdentifier){const verifiedPhone=cleanPhone(verifiedIdentifier);if(/^91\d{10}$/.test(verifiedPhone)&&verifiedPhone!==mobile)return json({error:'Verified mobile number does not match the requested number.'},401)}
+    // MSG91's successful verifyAccessToken response may put the verified phone
+    // directly in `message`. Verify the signed-in phone instead of trusting
+    // the phone provided by the browser. Reject ambiguous responses (fail closed).
+    const message=String(body?.message||'').trim();
+    const verifiedIdentifier=findIdentifier(body)||(/^\+?\d{10,15}$/.test(message)?message:'')||findIdentifier(decodeJwtPayload(token));
+    const verifiedPhone=cleanPhone(verifiedIdentifier);
+    if(!/^91\d{10}$/.test(verifiedPhone)||verifiedPhone!==mobile)return json({error:'MSG91 did not confirm this exact mobile number. Please verify your OTP again.'},401)
 
     const db=admin(),now=new Date().toISOString();let {data:customer,error:lookupError}=await db.from('customers').select('*').eq('phone',mobile).maybeSingle();if(lookupError)throw lookupError;
     const newCustomer=!customer;

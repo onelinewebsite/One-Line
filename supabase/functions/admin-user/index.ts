@@ -18,34 +18,18 @@ async function requireAdmin(req:Request){
   return {user,profile:data}
 }
 
-async function upsertPortalAccount(db:any,spec:{name:string;username:string;password:string;role:string}){
-  const username=cleanUsername(spec.username),email=emailFor(username)
-  let {data:profile,error:profileError}=await db.from('profiles').select('*').eq('username',username).maybeSingle()
-  if(profileError)throw profileError
-  if(profile?.id){
-    const u=await db.auth.admin.updateUserById(profile.id,{email,password:spec.password,email_confirm:true,user_metadata:{username,name:spec.name,role:spec.role}})
-    if(u.error)throw u.error
-    const q=await db.from('profiles').update({name:spec.name,role:spec.role,active:true,updated_at:new Date().toISOString()}).eq('id',profile.id).select().single()
-    if(q.error)throw q.error
-    return q.data
-  }
-  const listed=await db.auth.admin.listUsers({page:1,perPage:1000})
-  if(listed.error)throw listed.error
-  const existing=(listed.data?.users||[]).find((u:any)=>String(u.email||'').toLowerCase()===email)
-  let userId=''
-  if(existing){
-    userId=existing.id
-    const u=await db.auth.admin.updateUserById(existing.id,{password:spec.password,email_confirm:true,user_metadata:{username,name:spec.name,role:spec.role}})
-    if(u.error)throw u.error
-  }else{
-    const created=await db.auth.admin.createUser({email,password:spec.password,email_confirm:true,user_metadata:{username,name:spec.name,role:spec.role}})
-    if(created.error)throw created.error
-    userId=created.data.user.id
-  }
-  const q=await db.from('profiles').upsert({id:userId,username,name:spec.name,role:spec.role,active:true,updated_at:new Date().toISOString()}).select().single()
-  if(q.error)throw q.error
-  return q.data
-}
+// Account creation is intentionally explicit. Never recreate/reset default users.
+// The server checks permission independently of the Admin UI.
+const strongPassword=(value:unknown,username:string)=>{
+  const password=String(value||'');
+  return password.length>=12&&password.length<=128&&/[A-Za-z]/.test(password)&&/\d/.test(password)
+    &&(!username||!password.toLowerCase().includes(username.toLowerCase()));
+};
+const validUsername=(value:unknown)=>{
+  const raw=String(value||'').trim().toLowerCase();
+  return raw.length>=3&&raw.length<=50&&/^[a-z0-9][a-z0-9._-]*$/.test(raw)?raw:'';
+};
+const validUUID=(value:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
 
 async function adminFeed(db:any,syncToken=''){
   // Compare compact change records before transferring potentially large design JSON.
@@ -83,24 +67,15 @@ Deno.serve(async(req)=>{
   try{
     const portal=await requireAdmin(req)
     if(!portal)return json({error:'Admin authorization required.'},403)
+    if(req.method!=='POST')return json({error:'Method not allowed.'},405)
     const body=await req.json(),action=String(body.action||''),db=admin()
 
     if(action==='admin_feed')return json({ok:true,...await adminFeed(db,String(body.syncToken||''))})
 
-    if(action==='bootstrap_defaults'){
-      const defaults=[
-        {name:'Admin',username:'adminhere',password:'admin22',role:'admin'},
-        {name:'Management',username:'managementhere',password:'manage22',role:'management'},
-        {name:'Staff',username:'staffhere',password:'staff220',role:'staff'},
-      ]
-      const profiles=[]
-      for(const spec of defaults)profiles.push(await upsertPortalAccount(db,spec))
-      return json({ok:true,profiles})
-    }
-
     if(action==='create'){
-      const username=cleanUsername(body.username),password=String(body.password||''),name=String(body.name||'').trim(),role=String(body.role||'staff')
-      if(!username||password.length<6||!name||!allowedRoles.includes(role))return json({error:'Name, username, role and a 6+ character password are required.'},400)
+      const username=validUsername(body.username),password=String(body.password||''),name=String(body.name||'').trim(),role=String(body.role||'staff')
+      if(!username||!name||name.length>120||!allowedRoles.includes(role))return json({error:'Enter a valid name, username and role.'},400)
+      if(!strongPassword(password,username))return json({error:'Use a unique 12–128 character password with letters and numbers, excluding the username.'},400)
       const created=await db.auth.admin.createUser({email:emailFor(username),password,email_confirm:true,user_metadata:{username,name,role}})
       if(created.error)throw created.error
       const q=await db.from('profiles').insert({id:created.data.user.id,username,name,role,active:true}).select().single()
@@ -109,24 +84,48 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='update'){
-      const id=String(body.id||''),patch:any={}
-      for(const k of ['name','role','active'])if(body[k]!==undefined)patch[k]=body[k]
-      if(body.username!==undefined){
-        const username=cleanUsername(body.username)
-        if(!username)return json({error:'Invalid username.'},400)
-        patch.username=username
-        const u=await db.auth.admin.updateUserById(id,{email:emailFor(username),email_confirm:true,user_metadata:{username}})
-        if(u.error)throw u.error
+      const id=String(body.id||'')
+      if(!validUUID(id))return json({error:'Invalid account ID.'},400)
+      const existingQ=await db.from('profiles').select('id,name,username,role,active').eq('id',id).maybeSingle()
+      if(existingQ.error)throw existingQ.error
+      const existing=existingQ.data
+      if(!existing)return json({error:'Account not found.'},404)
+      const patch:any={updated_at:new Date().toISOString()}
+      if(body.name!==undefined){
+        const name=String(body.name||'').trim()
+        if(!name||name.length>120)return json({error:'Enter a valid account name.'},400)
+        patch.name=name
       }
-      patch.updated_at=new Date().toISOString()
-      if(patch.role&&!allowedRoles.includes(patch.role))return json({error:'Invalid role.'},400)
+      if(body.role!==undefined){
+        const role=String(body.role)
+        if(!allowedRoles.includes(role))return json({error:'Invalid role.'},400)
+        patch.role=role
+      }
+      if(body.active!==undefined){
+        if(typeof body.active!=='boolean')return json({error:'Invalid account status.'},400)
+        patch.active=body.active
+      }
+      if(body.username!==undefined){
+        const username=validUsername(body.username)
+        if(!username)return json({error:'Invalid username. Use 3–50 lowercase letters, numbers, dots, hyphens or underscores.'},400)
+        patch.username=username
+      }
+      const password=body.password===undefined?'':String(body.password||'')
+      if(password&&!strongPassword(password,patch.username||existing.username))return json({error:'Use a unique 12–128 character password with letters and numbers, excluding the username.'},400)
+      // Do not lock out the last administrator or allow self-demotion.
+      if(existing.role==='admin'&&existing.active&&((patch.role&&patch.role!=='admin')||patch.active===false)){
+        if(id===portal.user.id)return json({error:'You cannot disable or demote your own administrator account.'},400)
+        const countQ=await db.from('profiles').select('id',{count:'exact',head:true}).eq('role','admin').eq('active',true)
+        if(countQ.error)throw countQ.error
+        if((countQ.count||0)<=1)return json({error:'Keep at least one active administrator.'},400)
+      }
+      // Only send changed credentials to Auth. Validate all inputs before updating anything.
+      const authPatch:any={}
+      if(patch.username&&patch.username!==existing.username){authPatch.email=emailFor(patch.username);authPatch.email_confirm=true;authPatch.user_metadata={username:patch.username}}
+      if(password)authPatch.password=password
+      if(Object.keys(authPatch).length){const u=await db.auth.admin.updateUserById(id,authPatch);if(u.error)throw u.error}
       const q=await db.from('profiles').update(patch).eq('id',id).select().single()
       if(q.error)throw q.error
-      if(body.password){
-        if(String(body.password).length<6)return json({error:'Password must be at least 6 characters.'},400)
-        const u=await db.auth.admin.updateUserById(id,{password:String(body.password)})
-        if(u.error)throw u.error
-      }
       return json({ok:true,profile:q.data})
     }
     return json({error:'Unsupported action.'},400)
