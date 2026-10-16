@@ -148,10 +148,65 @@
       root._openGarmentColourPicker=()=>{setFromHex(customColourValue());overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');document.documentElement.classList.add('fast-picker-lock');document.body.classList.add('fast-picker-lock');};
     }
 
+    const reportExport=(message)=>{const el=root.querySelector('[data-export-message]');if(el)el.textContent=message;};
+    const loadPicture=src=>new Promise((resolve,reject)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('Could not load design artwork'));im.src=src;});
+    async function designPNG(){
+      // Draw the real garment and live artwork from this side onto a transparent PNG.
+      syncCurrentScale();
+      const width=1024,canvas=document.createElement('canvas');canvas.width=width;canvas.height=width;
+      const ctx=canvas.getContext('2d',{alpha:true});if(!ctx)throw new Error('This browser cannot export an image');
+      ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+      const picture=await loadPicture(garmentSrc()),photo=root.querySelector('.compact-garment .garment-photo'),area=root.querySelector('[data-print-area]');
+      if(!photo||!area)throw new Error('Select the garment side first');
+      // Garment PNGs are square, transparent assets. No background is added.
+      ctx.save();ctx.filter='grayscale(1)';ctx.drawImage(picture,0,0,width,width);ctx.restore();
+      const mask=document.createElement('canvas');mask.width=width;mask.height=width;
+      const maskCtx=mask.getContext('2d',{alpha:true});maskCtx.drawImage(picture,0,0,width,width);
+      maskCtx.globalCompositeOperation='source-in';maskCtx.fillStyle=colourValue(state.color);maskCtx.fillRect(0,0,width,width);
+      ctx.save();ctx.globalAlpha=.88;ctx.globalCompositeOperation='multiply';ctx.drawImage(mask,0,0);ctx.restore();
+      const photoRect=photo.getBoundingClientRect(),areaRect=area.getBoundingClientRect();
+      // The displayed image uses object-fit:contain; account for image padding on tall/wide stages.
+      const fitted=Math.min(photoRect.width/Math.max(1,picture.naturalWidth),photoRect.height/Math.max(1,picture.naturalHeight));
+      const fittedW=picture.naturalWidth*fitted,fittedH=picture.naturalHeight*fitted;
+      const imgLeft=photoRect.left+(photoRect.width-fittedW)/2,imgTop=photoRect.top+(photoRect.height-fittedH)/2;
+      const scale=width/Math.max(1,fittedW);
+      for(const layer of current().layers){
+        const el=[...root.querySelectorAll('.design-layer[data-layer-id]')].find(node=>node.dataset.layerId===layer.id);
+        if(!el)continue;
+        const pos=layer.position||{x:50,y:50},x=(areaRect.left+areaRect.width*Number(pos.x||0)/100-imgLeft)*scale;
+        const y=(areaRect.top+areaRect.height*Number(pos.y||0)/100-imgTop)*scale;
+        ctx.save();ctx.translate(x,y);ctx.rotate(Number(layer.rotation||0)*Math.PI/180);
+        if(layer.type==='text'){
+          const computed=getComputedStyle(el),fontSize=Math.max(5,parseFloat(computed.fontSize)||Number(layer.size||30));
+          ctx.fillStyle=layer.color||'#fff';ctx.font='900 '+(fontSize*scale)+'px '+JSON.stringify(layer.font||'Impact');
+          ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(layer.value||''),0,0);
+        }else if(layer.type==='image'&&layer.src){
+          const art=await loadPicture(layer.src),drawW=Math.max(1,el.offsetWidth*scale),drawH=drawW*art.naturalHeight/Math.max(1,art.naturalWidth);
+          ctx.drawImage(art,-drawW/2,-drawH/2,drawW,drawH);
+        }
+        ctx.restore();
+      }
+      return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not create PNG')), 'image/png'));
+    }
+    function savePNGBlob(blob){
+      const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='One-Line-'+state.model.name.replace(/[^a-z0-9]+/gi,'-')+'-'+state.surface+'.png';
+      document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
+    }
+    async function downloadDesigner(){
+      reportExport('Preparing transparent PNG…');
+      try{const blob=await designPNG();savePNGBlob(blob);reportExport('Your customized design PNG is ready.');}
+      catch(err){reportExport(err.message||'Could not export this design.');}
+    }
     async function shareDesigner(){
-      const url=new URL(location.href);url.searchParams.delete('section');url.hash='customize';const value=url.toString();
-      try{if(navigator.share){await navigator.share({title:'One-Line apparel customizer',text:'Customize an apparel design',url:value});return;}if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(value);return;}}catch(err){if(err?.name==='AbortError')return;}
-      try{const ta=document.createElement('textarea');ta.value=value;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}catch(_){}
+      reportExport('Preparing your customized image…');
+      try{
+        const blob=await designPNG(),file=new File([blob],'One-Line-'+state.surface+'.png',{type:'image/png'});
+        if(navigator.share&&navigator.canShare?.({files:[file]})){
+          try{await navigator.share({files:[file],title:'My One-Line '+state.model.name+' design',text:'My customized apparel design'});reportExport('Customized image shared.');return;}
+          catch(err){if(err?.name==='AbortError'){reportExport('Sharing cancelled.');return;}}
+        }
+        savePNGBlob(blob);reportExport('Image sharing is unavailable in this browser. The actual design PNG was downloaded—attach it in WhatsApp or Instagram.');
+      }catch(err){reportExport(err.message||'Could not prepare the design image.');}
     }
     function refreshPricingUI(){
       const qty=totalPieces(),amount=S.money(unitPrice()*qty),unit=S.money(unitPrice()),discount=quantityDiscount(qty),prints=printEntries(),large=prints.filter(x=>x.widthPct>printThreshold()).length;
@@ -165,31 +220,34 @@
       }else if(discountRow)discountRow.remove();
       const printEl=root.querySelector('[data-print-charge]');if(printEl)printEl.textContent=S.money(printCostPerPiece())+' / piece · '+prints.length+' print'+(prints.length===1?'':'s')+(large?' · '+large+' large':'');
       const summaryEl=root.querySelector('[data-piece-summary]');if(summaryEl)summaryEl.textContent=state.model.name+' · '+state.material.name+' · '+prints.length+' print'+(prints.length===1?'':'s')+' · '+qty+' piece'+(qty===1?'':'s')+(sizeSummary()?' · '+sizeSummary():'');
-      const addHead=root.querySelector('.cart-button span');if(addHead)addHead.textContent='Add · '+amount;
-      const addButton=root.querySelector('.refined-add');if(addButton)addButton.disabled=qty<1;
+      
+      root.querySelectorAll('.designer-buy-actions button').forEach(button=>button.disabled=qty<1);
     }
 
     function render(){
       const sleeve=state.surface.includes("Sleeve"),src=garmentSrc(),dark=S.isDarkColor(state.color),maxSize=resizeMax();
-      root.innerHTML='<main class="designer-page compact-designer old-model-designer unlimited-layer-designer">'+
-        '<header class="sub-header refined-sub-header"><button class="designer-back" data-action="back" aria-label="Back to store">'+I('back')+'</button><div class="step-label"><span>01</span> CUSTOMIZE YOUR APPAREL</div><button class="cart-button" data-action="add"><span>Add · '+S.money(unitPrice()*totalPieces())+'</span>'+I('cart')+'</button></header>'+
+      root.innerHTML='<main class="designer-page compact-designer old-model-designer unlimited-layer-designer v165-designer">'+
+        '<div class="designer-simple-top"><button type="button" class="designer-back" data-action="back" aria-label="Back to store">'+I('back')+'</button><div class="designer-model-picker"><label>Choose garment</label>'+picker('model',state.model.name,models.map(m=>({value:m.name,label:m.name==='Crew T-Shirt'?'T-Shirt':m.name==='Sports Wear'?'Sportswear':m.name})),state.pickerOpen)+'</div></div>'+
+        '<div class="designer-view-tabs"><div class="compact-surface-tabs" aria-label="Garment side">'+surfaces.map(x=>'<button type="button" data-action="surface" data-value="'+x.id+'" class="'+(x.id===state.surface?'active':'')+'"><span class="full-label">'+(x.id==='leftSleeve'?'Left sleeve':x.id==='rightSleeve'?'Right sleeve':x.label)+'</span><span class="short-label">'+x.short+'</span>'+(state.designs[x.id].layers.length?'<i></i>':'')+'</button>').join('')+'</div></div>'+
         '<div class="designer-layout compact-designer-layout"><section class="designer-stage compact-stage locked-garment-stage" data-stage>'+
-          '<div class="compact-designer-bar"><section class="stage-garment-type"><label>Type</label><div class="garment-type-cards">'+models.map(m=>'<button data-action="model-card" data-value="'+S.esc(m.name)+'" class="'+(m.name===state.model.name?'active':'')+'"><b>'+S.esc(m.name)+'</b><small>Base '+S.money(n(m.baseKey,m.type==='Polo'?400:350))+'</small></button>').join('')+'</div></section><div class="compact-surface-tabs" aria-label="Choose print area">'+surfaces.map(x=>'<button data-action="surface" data-value="'+x.id+'" class="'+(x.id===state.surface?'active':'')+'"><span class="full-label">'+x.label+'</span><span class="short-label">'+x.short+'</span>'+(state.designs[x.id].layers.length?'<i></i>':'')+'</button>').join('')+'</div></div>'+
-          '<div class="stage-topline"><span>'+surfaceLabel()+'</span><span>GARMENT LOCKED · MOVE PRINT ONLY</span></div>'+
+          '<div class="stage-topline"><span>'+surfaceLabel()+'</span><span>Move and resize artwork</span></div>'+
           '<div class="shirt-canvas compact-shirt-canvas view-'+state.surface+'"><div class="live-garment compact-garment garment-'+state.surface+' locked-garment"><div class="garment-depth"></div>'+
             '<img class="garment-photo '+(sleeve?'sleeve-photo ':'')+(state.surface==='rightSleeve'?'mirror-sleeve':'')+'" src="'+src+'" alt="'+S.esc(state.model.name+' '+surfaceLabel())+'" draggable="false">'+
             '<div class="garment-tint '+(sleeve?'sleeve-tint ':'')+(state.surface==='rightSleeve'?'mirror-sleeve':'')+'" style="background:'+colourValue(state.color)+';mask-image:url('+src+');-webkit-mask-image:url('+src+')"></div>'+
             '<div class="print-area surface-'+state.surface+'" data-print-area>'+current().layers.map(layerHtml).join('')+'</div></div></div></section>'+
-          '<aside class="designer-controls compact-controls"><div class="control-head"><span>DESIGN CONTROLS</span><div class="control-head-actions"><small>'+surfaceLabel()+'</small><button type="button" class="designer-section-share" data-action="share-designer" aria-label="Share customizer">'+I('share')+'</button></div></div>'+
-            '<section class="control-block garment-colour-control"><label>Garment colour</label><div class="swatches garment-colour-swatches">'+presetColours.map(c=>'<button aria-label="'+c+'" title="'+c+'" data-action="color" data-value="'+c+'" class="'+(state.color===c?'active':'')+'" style="background:'+S.palette[c]+'">'+(state.color===c?I('check'):'')+'</button>').join('')+'<button type="button" aria-label="Choose any colour" title="Choose any colour" data-action="custom-color-open" class="custom-colour-swatch '+(usingCustomColour()?'active':'')+'"></button></div><button type="button" class="choose-any-colour-row" data-action="custom-color-open"><span><i style="background:'+customColourValue()+'"></i>Choose any colour</span>'+I('chevron')+'</button></section>'+
+          '<aside class="designer-controls compact-controls">'+
             '<div class="quick-layer-tools unlimited-add-tools"><button data-action="add-text">'+I('type')+'<span>Add text</span></button><button data-action="choose-image">'+I('image')+'<span>Add image</span></button><input data-file hidden type="file" accept="image/*" multiple></div>'+
-            '<section class="control-block material-quality-control"><label>Cloth type</label><div class="material-quality-cards">'+materials.map(m=>{const extra=m.extraKey?n(m.extraKey,m.name==='Premium'?100:50):0,total=modelBasePrice()+extra;return '<button data-action="material-card" data-value="'+S.esc(m.name)+'" class="'+(m.name===state.material.name?'active':'')+'"><span><b>'+S.esc(m.name)+'</b><strong>'+S.money(total)+'</strong></span><small>'+(extra?'Base + '+S.money(extra):'Same as base price')+' · '+S.esc(m.note)+'</small></button>';}).join('')+'</div></section>'+
-            '<section class="control-block custom-size-quantity-control"><div class="size-qty-heading"><div><label>Size quantities</label><small>Enter how many pieces you need for each size.</small></div><strong><span data-size-total>'+totalPieces()+'</span> piece'+(totalPieces()===1?'':'s')+'</strong></div><div class="custom-size-qty-grid">'+sizeLabels.map(size=>'<label><span>'+size+'</span><input type="number" min="0" max="999" inputmode="numeric" data-size-qty="'+size+'" value="'+Number(state.sizeQty[size]||0)+'" aria-label="'+size+' quantity"></label>').join('')+'</div><p class="size-qty-example">Example: S = 4 pieces and M = 13 pieces. Total updates automatically.</p></section>'+
             '<section class="control-block layer-manager"><div class="layer-manager-head"><label>Layers on '+surfaceLabel()+'</label><small>'+current().layers.length+' total</small></div>'+layerList()+'</section>'+
             activeControls(maxSize)+
+            '<section class="control-block garment-colour-control"><label>Garment colour</label><div class="swatches garment-colour-swatches">'+presetColours.map(c=>'<button aria-label="'+c+'" title="'+c+'" data-action="color" data-value="'+c+'" class="'+(state.color===c?'active':'')+'" style="background:'+S.palette[c]+'">'+(state.color===c?I('check'):'')+'</button>').join('')+'<button type="button" aria-label="Choose any colour" title="Choose any colour" data-action="custom-color-open" class="custom-colour-swatch '+(usingCustomColour()?'active':'')+'"></button></div><button type="button" class="choose-any-colour-row" data-action="custom-color-open"><span><i style="background:'+customColourValue()+'"></i>Choose any colour</span>'+I('chevron')+'</button></section>'+
+            '<section class="control-block material-quality-control"><label>Cloth type</label><div class="material-quality-cards">'+materials.map(m=>{const extra=m.extraKey?n(m.extraKey,m.name==='Premium'?100:50):0,total=modelBasePrice()+extra;return '<button data-action="material-card" data-value="'+S.esc(m.name)+'" class="'+(m.name===state.material.name?'active':'')+'"><span><b>'+S.esc(m.name)+'</b><strong>'+S.money(total)+'</strong></span><small>'+(extra?'Base + '+S.money(extra):'Same as base price')+' · '+S.esc(m.note)+'</small></button>';}).join('')+'</div></section>'+
             '<section class="control-block print-control"><label>Printing type</label><div class="print-options">'+state.printMethods.map(p=>{const disabled=!!(p.lightOnly&&dark),name=String(p.name||'').toLowerCase(),key=name.includes('embroid')?'embroidery':name.includes('screen')?'screen':name.includes('sublim')?'sublimation':'dtf',small=n('custom_'+key+'_small',key==='embroidery'?50:10),large=n('custom_'+key+'_large',key==='embroidery'?100:20);return '<button data-action="print" data-value="'+S.esc(p.name)+'" class="'+(state.printType===p.name?'active ':'')+(disabled?'disabled':'')+'" '+(disabled?'disabled aria-disabled="true"':'')+'><span>'+(state.printType===p.name?I('check'):'')+'</span><b>'+S.esc(p.name)+'</b><small>'+S.esc(p.note)+'</small><strong>'+S.money(small)+' small · '+S.money(large)+' large</strong></button>';}).join('')+'</div><p class="print-size-rule">Large print = artwork wider than '+Math.round(printThreshold())+'% of the shirt width. Every text/image layer is charged as one print.</p>'+darkPrintNote()+'</section>'+
-            '<div class="designer-price-breakdown"><span>Unit price <b data-unit-price>'+S.money(unitPrice())+'</b></span>'+(quantityDiscount(totalPieces())>0?'<span data-qty-discount-row>Quantity discount <b data-qty-discount>-'+S.money(quantityDiscount(totalPieces()))+' / piece</b></span>':'')+'<span data-print-row>Printing <b data-print-charge>'+S.money(printCostPerPiece())+' / piece</b></span></div><div class="designer-total refined-total"><div><small>Estimated total</small><strong data-estimated-total>'+S.money(unitPrice()*totalPieces())+'</strong><span data-piece-summary>'+state.model.name+' · '+state.material.name+' · '+printEntries().length+' print'+(printEntries().length===1?'':'s')+' · '+totalPieces()+' piece'+(totalPieces()===1?'':'s')+(sizeSummary()?' · '+S.esc(sizeSummary()):'')+'</span></div><div class="qty-static custom-total-pieces"><b data-size-total>'+totalPieces()+'</b><small>pcs</small></div></div><button class="primary wide refined-add" data-action="add" '+(totalPieces()<1?'disabled':'')+'>Add custom design to cart '+I('cart')+'</button>'+
-          '</aside></div></main>'+garmentColourPickerHtml();
+            '<section class="control-block custom-size-quantity-control"><div class="size-qty-heading"><div><label>Size quantities</label><small>Enter how many pieces you need for each size.</small></div><strong><span data-size-total>'+totalPieces()+'</span> piece'+(totalPieces()===1?'':'s')+'</strong></div><div class="custom-size-qty-grid">'+sizeLabels.map(size=>'<label><span>'+size+'</span><input type="number" min="0" max="999" inputmode="numeric" data-size-qty="'+size+'" value="'+Number(state.sizeQty[size]||0)+'" aria-label="'+size+' quantity"></label>').join('')+'</div><p class="size-qty-example">Example: S = 4 pieces and M = 13 pieces. Total updates automatically.</p></section>'+
+            '<div class="designer-price-breakdown"><span>Unit price <b data-unit-price>'+S.money(unitPrice())+'</b></span>'+(quantityDiscount(totalPieces())>0?'<span data-qty-discount-row>Quantity discount <b data-qty-discount>-'+S.money(quantityDiscount(totalPieces()))+' / piece</b></span>':'')+'<span data-print-row>Printing <b data-print-charge>'+S.money(printCostPerPiece())+' / piece</b></span></div><div class="designer-total refined-total"><div><small>Estimated total</small><strong data-estimated-total>'+S.money(unitPrice()*totalPieces())+'</strong><span data-piece-summary>'+state.model.name+' · '+state.material.name+' · '+printEntries().length+' print'+(printEntries().length===1?'':'s')+' · '+totalPieces()+' piece'+(totalPieces()===1?'':'s')+(sizeSummary()?' · '+S.esc(sizeSummary()):'')+'</span></div><div class="qty-static custom-total-pieces"><b data-size-total>'+totalPieces()+'</b><small>pcs</small></div></div>'+
+            '<div class="designer-buy-actions"><button type="button" class="primary refined-add" data-action="add" '+(totalPieces()<1?'disabled':'')+'>Add to Cart '+I('cart')+'</button><button type="button" class="designer-buy-now" data-action="buy-now" '+(totalPieces()<1?'disabled':'')+'>Buy Now '+I('arrow')+'</button></div>'+
+          '</aside></div>'+
+        '<section class="designer-sharing-bottom"><div><h2>Design controls & sharing</h2><p>Share or save the actual customised '+S.esc(state.model.name)+' image.</p><p class="designer-export-message" data-export-message role="status" aria-live="polite"></p></div><div class="designer-share-actions"><button type="button" data-action="share-designer">'+I('share')+' Share design</button><button type="button" class="designer-download" data-action="download-designer">'+I('download')+' Download PNG</button></div></section>'+
+        '</main>'+garmentColourPickerHtml();
       bind();bindGarmentColourPicker();requestAnimationFrame(syncCurrentScale);
     }
 
@@ -204,7 +262,7 @@
       syncCurrentScale();const front=legacySurface(state.designs.front),surfaceDesigns=Object.fromEntries(surfaces.map(s=>[s.id,legacySurface(state.designs[s.id])]));
       return{model:state.model.name,garmentType:state.model.type,materialQuality:state.material.name,materialPrice:modelBasePrice()+materialExtra(),garmentBasePrice:modelBasePrice(),materialExtra:materialExtra(),quantityDiscount:quantityDiscount(totalPieces()),printChargePerPiece:printCostPerPiece(),unitPrice:unitPrice(),largePrintThresholdPct:printThreshold(),garmentImage:state.model.image,garmentBackImage:state.model.backImage,leftSleeveImage:state.model.leftSleeveImage,rightSleeveImage:state.model.rightSleeveImage,sleeveImage:state.model.leftSleeveImage||sleeveImage,garmentColor:state.color,text:front.text,font:front.font,textColor:front.textColor,textSize:front.textSize,textScale:front.textScale,textRotation:front.textRotation,uploadedImage:front.uploadedImage,imageSize:front.imageSize,imageScale:front.imageScale,imageRotation:front.imageRotation,positions:front.positions,printType:state.printType,sizeQuantities:Object.fromEntries(selectedSizeEntries()),totalQty:totalPieces(),surfaceDesigns};
     }
-    function add(){const qty=totalPieces();if(qty<1){alert('Select at least one piece in the size quantities.');return;}const sizes=Object.fromEntries(selectedSizeEntries()),customDesign=makeDesign();hooks.onAdd({key:'custom-'+Date.now(),name:state.model.name+' · Custom',price:unitPrice(),qty,color:state.color,size:sizeSummary(),sizeQuantities:sizes,detail:state.material.name+' cloth · '+state.printType+' · '+printEntries().length+' print'+(printEntries().length===1?'':'s')+(quantityDiscount(qty)?' · '+S.money(quantityDiscount(qty))+' bulk discount/pc':'')+(sizeSummary()?' · '+sizeSummary():''),image:state.model.image,custom:true,customDesign});saveDraft();}
+    function add(buyNow=false){const qty=totalPieces();if(qty<1){alert('Select at least one piece in the size quantities.');return;}const sizes=Object.fromEntries(selectedSizeEntries()),customDesign=makeDesign();(buyNow?hooks.onBuy:hooks.onAdd)({key:'custom-'+Date.now(),name:state.model.name+' · Custom',price:unitPrice(),qty,color:state.color,size:sizeSummary(),sizeQuantities:sizes,detail:state.material.name+' cloth · '+state.printType+' · '+printEntries().length+' print'+(printEntries().length===1?'':'s')+(quantityDiscount(qty)?' · '+S.money(quantityDiscount(qty))+' bulk discount/pc':'')+(sizeSummary()?' · '+sizeSummary():''),image:state.model.image,custom:true,customDesign});saveDraft();}
     function compressImage(file){
       return new Promise((resolve,reject)=>{if(!file||!file.type.startsWith('image/')){reject(new Error('Not an image'));return;}const reader=new FileReader();reader.onerror=reject;reader.onload=()=>{const im=new Image();im.onerror=reject;im.onload=()=>{const scale=Math.min(1,1000/Math.max(im.width,im.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(im.width*scale));canvas.height=Math.max(1,Math.round(im.height*scale));const ctx=canvas.getContext('2d',{alpha:true});ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(im,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/webp',.76));};im.src=String(reader.result);};reader.readAsDataURL(file);});
     }
@@ -217,6 +275,18 @@
       }catch(err){console.error(err);alert('That image could not be added. Please try another image file.');}
     }
     function focusTextEditor(id){state.active=id;render();setTimeout(()=>{const input=root.querySelector('[data-active-text]');if(!input)return;input.focus({preventScroll:true});input.select();input.scrollIntoView({behavior:'auto',block:'nearest'});},20);}
+    function editTextOnGarment(id){
+      const layer=layerById(id),el=[...root.querySelectorAll('.design-layer[data-layer-id]')].find(x=>x.dataset.layerId===id);
+      if(!layer||layer.type!=='text'||!el||el.querySelector('.designer-onshirt-text-input'))return;
+      selectLayer(id);const span=el.querySelector('.layer-text-content');if(!span)return;
+      const input=document.createElement('input');input.type='text';input.className='designer-onshirt-text-input';input.maxLength=120;
+      input.value=layer.value||'';input.setAttribute('aria-label','Edit garment text');span.hidden=true;el.appendChild(input);
+      const finish=()=>{if(!input.isConnected)return;layer.value=input.value;input.remove();span.hidden=false;span.textContent=layer.value;saveDraft();refreshPricingUI();requestAnimationFrame(syncCurrentScale);};
+      input.addEventListener('pointerdown',e=>e.stopPropagation());input.addEventListener('click',e=>e.stopPropagation());
+      input.addEventListener('input',()=>{layer.value=input.value;saveDraft();});
+      input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape'){input.value=layer.value||'';input.blur();}});
+      input.addEventListener('blur',finish);input.focus({preventScroll:true});input.select();
+    }
     function applyLayerStyle(layer){
       const el=root.querySelector('[data-layer-id="'+CSS.escape(layer.id)+'"]');if(!el)return;
       el.style.left=layer.position.x+'%';el.style.top=layer.position.y+'%';el.style.transform='translate(-50%,-50%) rotate('+Number(layer.rotation||0)+'deg)';
@@ -231,9 +301,11 @@
         const a=el.dataset.action;
         if(a==='back'){syncCurrentScale();hooks.onBack();}
         else if(a==='add')add();
+        else if(a==='buy-now')add(true);
+        else if(a==='download-designer'){downloadDesigner();}
         else if(a==='surface'){syncCurrentScale();state.surface=el.dataset.value;state.active=null;state.pickerOpen=null;saveDraft();render();}
         else if(a==='toggle-picker'){e.stopPropagation();state.pickerOpen=state.pickerOpen===el.dataset.pickerName?null:el.dataset.pickerName;render();}
-        else if(a==='pick'){const n=el.dataset.pickerName,v=el.dataset.value;if(n==='font'&&activeLayer()?.type==='text')activeLayer().font=v;state.pickerOpen=null;saveDraft();render();}
+        else if(a==='pick'){const n=el.dataset.pickerName,v=el.dataset.value;if(n==='font'&&activeLayer()?.type==='text')activeLayer().font=v;if(n==='model')chooseModel(v);state.pickerOpen=null;saveDraft();render();}
         else if(a==='model-card'){chooseModel(el.dataset.value);render();}
         else if(a==='material-card'){chooseMaterial(el.dataset.value);render();}
         else if(a==='add-text'){const layer=makeText('YOUR TEXT',current().layers.length);current().layers.push(layer);state.active=layer.id;saveDraft();focusTextEditor(layer.id);}
@@ -256,6 +328,9 @@
 
       root.querySelectorAll('.design-layer[data-layer-id]').forEach(el=>{
         const id=el.dataset.layerId;
+        el.addEventListener('dblclick',e=>{if(e.target.closest('button'))return;e.stopPropagation();editTextOnGarment(id);});
+        let lastTap=0;
+        el.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'||e.target.closest('button'))return;const now=Date.now();if(now-lastTap<360){e.preventDefault();editTextOnGarment(id);}lastTap=now;});
         el.addEventListener('pointerdown',e=>{
           if(e.target.closest('button'))return;e.preventDefault();e.stopPropagation();const l=layerById(id);if(!l)return;
           selectLayer(id);try{el.setPointerCapture(e.pointerId);}catch(_){}
