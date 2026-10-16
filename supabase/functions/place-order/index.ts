@@ -91,7 +91,7 @@ async function validatePrintableOrder(db:any,item:any){
   if(!cq.data?.active||String(cq.data.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()!=='ready stock printable items')throw new Error('This is not a printable item.');
   const [fq,pq]=await Promise.all([
     db.from('custom_catalog_fabrics').select('*').eq('id',String(incoming.fabricId||'')).maybeSingle(),
-    db.from('custom_print_types').select('*').eq('active',true)
+    incoming.includePrinting===false?Promise.resolve({data:[],error:null}):db.from('custom_print_types').select('*').eq('active',true)
   ]);
   if(fq.error)throw fq.error;if(pq.error)throw pq.error;
   const fabric=fq.data,quality=String(incoming.quality||'');
@@ -116,30 +116,40 @@ async function validatePrintableOrder(db:any,item:any){
     printableSizes.push({size,qty,rate,length_cm:savedSize.length_cm??null,width_cm:savedSize.width_cm??null,separateRate:savedSize.rate!==null&&savedSize.rate!==undefined&&savedSize.rate!==''});
   }
   if(!totalPieces||totalPieces>10000)throw new Error('Select a valid size quantity.');
-  const printMap=new Map((pq.data||[]).map((row:any)=>[String(row.id),row]));
-  const selectedPrintTypeId=String(incoming.selectedPrintTypeId||((incoming.selectedPrints||[])[0]?.id||''));
-  const selectedPrintType=printMap.get(selectedPrintTypeId) as any;
-  if(!selectedPrintType)throw new Error('Selected print type is no longer available. Please choose again.');
-  const availableSizes=new Map((Array.isArray(selectedPrintType.sizes)?selectedPrintType.sizes:[])
-    .filter((row:any)=>row?.active!==false&&String(row?.name||'').trim())
-    .map((row:any)=>[String(row.id),row]));
-  if(!availableSizes.size)throw new Error('This print type currently has no available print sizes.');
-  let printsTotal=0,printsCount=0;const selectedPrints=[] as any[];
-  const found=new Set<string>();
-  for(const request of Array.isArray(incoming.selectedPrints)?incoming.selectedPrints:[]){
-    const id=String(request?.id||''),size=String(request?.size||'');
-    if(id!==selectedPrintTypeId)throw new Error('Select only one print type per order. Add this item again.');
-    if(found.has(size))throw new Error('Duplicate print size.');found.add(size);
-    const current=availableSizes.get(size) as any,qty=Number(request?.qty);
-    if(!current||!Number.isInteger(qty)||qty<1||qty>10000)throw new Error('Selected print size is no longer available.');
-    const rate=Number(current.rate);
-    if(!Number.isFinite(rate)||rate<0)throw new Error('Invalid Admin print price.');
-    printsCount+=qty;printsTotal+=qty*rate;
-    selectedPrints.push({id:selectedPrintTypeId,name:selectedPrintType.name,size,sizeLabel:String(current.name),qty,rate,total:qty*rate});
+  // An explicit no-print order is valid. Legacy orders without the flag still
+  // require the original print-type selection and rate verification.
+  const includePrinting=incoming.includePrinting!==false;
+  let selectedPrintTypeId='',selectedPrintTypeName='',printsTotal=0,printsCount=0;
+  const selectedPrints=[] as any[];
+  if(!includePrinting){
+    if(String(incoming.selectedPrintTypeId||'')||(Array.isArray(incoming.selectedPrints)&&incoming.selectedPrints.length))
+      throw new Error('Remove print choices to order without printing.');
+  }else{
+    const printMap=new Map((pq.data||[]).map((row:any)=>[String(row.id),row]));
+    selectedPrintTypeId=String(incoming.selectedPrintTypeId||((incoming.selectedPrints||[])[0]?.id||''));
+    const selectedPrintType=printMap.get(selectedPrintTypeId) as any;
+    if(!selectedPrintType)throw new Error('Selected print type is no longer available. Please choose again.');
+    selectedPrintTypeName=String(selectedPrintType.name||'');
+    const availableSizes=new Map((Array.isArray(selectedPrintType.sizes)?selectedPrintType.sizes:[])
+      .filter((row:any)=>row?.active!==false&&String(row?.name||'').trim())
+      .map((row:any)=>[String(row.id),row]));
+    if(!availableSizes.size)throw new Error('This print type currently has no available print sizes.');
+    const found=new Set<string>();
+    for(const request of Array.isArray(incoming.selectedPrints)?incoming.selectedPrints:[]){
+      const id=String(request?.id||''),size=String(request?.size||'');
+      if(id!==selectedPrintTypeId)throw new Error('Select only one print type per order. Add this item again.');
+      if(found.has(size))throw new Error('Duplicate print size.');found.add(size);
+      const current=availableSizes.get(size) as any,qty=Number(request?.qty);
+      if(!current||!Number.isInteger(qty)||qty<1||qty>10000)throw new Error('Selected print size is no longer available.');
+      const rate=Number(current.rate);
+      if(!Number.isFinite(rate)||rate<0)throw new Error('Invalid Admin print price.');
+      printsCount+=qty;printsTotal+=qty*rate;
+      selectedPrints.push({id:selectedPrintTypeId,name:selectedPrintTypeName,size,sizeLabel:String(current.name),qty,rate,total:qty*rate});
+    }
+    if(printsCount>10000)throw new Error('Too many prints selected.');
   }
-  if(printsCount>10000)throw new Error('Too many prints selected.');
   const totalAmount=garmentTotal+printsTotal;
-  const design={kind:'printable_order',itemId:saved.id,itemTitle:saved.title||'',categoryName:cq.data.name,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),printableSizes,sizeQuantities:Object.fromEntries(printableSizes.map(r=>[r.size,r.qty])),sizeRates:Object.fromEntries(printableSizes.map(r=>[r.size,r.rate])),selectedPrintTypeId,selectedPrintTypeName:selectedPrintType.name,selectedPrints,totalPieces,garmentTotal,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
+  const design={kind:'printable_order',itemId:saved.id,itemTitle:saved.title||'',categoryName:cq.data.name,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),printableSizes,sizeQuantities:Object.fromEntries(printableSizes.map(r=>[r.size,r.qty])),sizeRates:Object.fromEntries(printableSizes.map(r=>[r.size,r.rate])),includePrinting,selectedPrintTypeId,selectedPrintTypeName,selectedPrints,totalPieces,garmentTotal,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
   return {...item,itemType:'printable_order',name:saved.title||'Printable item',code:saved.display_id||item.code||'',qty:totalPieces,unitPrice:totalAmount/totalPieces,lineTotal:totalAmount,design};
 }
 async function uploadOrderImage(db:any,customerId:string,value:any,label:string){
