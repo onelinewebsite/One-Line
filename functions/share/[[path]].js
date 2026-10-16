@@ -55,7 +55,7 @@ function itemVariantPhotos(row){
   let raw=row?.fabric_options;
   if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(_){raw={};}}
   const cfg=raw?.uniform_config||{};
-  const variants=[...(cfg.top||[]),...(cfg.bottom||[]),...(cfg.items||[])];
+  const variants=[...(cfg.top||[]),...(cfg.bottom||[]),...(cfg.items||[]),...(cfg.variants||[])];
   return variants.flatMap(v=>[
     ...photos(v.images),...photos(v.image_url),...photos(v.image),...photos(v.card_image_url)
   ]);
@@ -130,11 +130,12 @@ function pageMeta(type,id,row,requestUrl){
   const title=String(row[TYPES[type].title]||'One-Line').slice(0,130);
   const description=String(row.description||row.subtitle||'View and order at One-Line Touch Shopping.').slice(0,180);
   const primary=sourceImage(type,row);
-  const image=ORIGIN+'/share/image/'+encodeURIComponent(type)+'/'+encodeURIComponent(id)+'?v='+hash(primary+'|'+String(row.updated_at||row.created_at||''));
+  const image=ORIGIN+'/share/image/'+encodeURIComponent(type)+'/'+encodeURIComponent(id)+'?social=1&v='+hash(primary+'|'+String(row.updated_at||row.created_at||''));
   return '<meta property="og:type" content="product"><meta property="og:site_name" content="One-Line Touch Shopping">'+
     '<meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(description)+'">'+
     '<meta property="og:image" content="'+esc(image)+'"><meta property="og:image:secure_url" content="'+esc(image)+'">'+
     '<meta property="og:image:alt" content="'+esc(title)+'">'+
+    '<meta name="twitter:image:alt" content="'+esc(title)+'">'+
     '<meta property="og:url" content="'+esc(requestUrl)+'">'+
     '<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="'+esc(title)+'">'+
     '<meta name="twitter:description" content="'+esc(description)+'"><meta name="twitter:image" content="'+esc(image)+'">'+
@@ -174,6 +175,12 @@ async function tryPhoto(url,request){
     if(!bytes.byteLength||bytes.byteLength>16*1024*1024)return null;
     const mime=contentType(bytes,response.headers.get('content-type'));
     if(!mime)return null;
+    // A deterministic, crawler-safe preview: WebP is excellent for the
+    // storefront but not reliably supported in WhatsApp/Instagram cards.
+    // social=1 tries existing JPG/PNG candidates and then the brand PNG.
+    // The plain image URL is unchanged for on-device JPEG sharing. This
+    // separate URL also avoids CDN cache mixing between crawlers and users.
+    if(mime==='image/webp'&&new URL(request.url).searchParams.get('social')==='1')return null;
     return new Response(request.method==='HEAD'?null:bytes,{status:200,headers:{
       'Content-Type':mime,'Cache-Control':'public,max-age=600,s-maxage=3600',
       'Content-Length':String(bytes.byteLength),'X-Content-Type-Options':'nosniff',
@@ -192,10 +199,16 @@ async function proxyImage(request,type,id,row,env){
   for(const url of related.filter(url=>!own.includes(url)).slice(0,6)){
     const result=await tryPhoto(url,request);if(result)return result;
   }
-  const fallback=await env.ASSETS.fetch(new URL('/share-logo-white-v166.png',request.url));
-  if(!fallback.ok)return new Response('Image unavailable',{status:404});
-  const h=new Headers(fallback.headers);h.set('Cache-Control','public,max-age=300,s-maxage=300');h.set('Content-Type','image/png');
-  return new Response(request.method==='HEAD'?null:fallback.body,{status:200,headers:h});
+  return serveLogo(request,env);
+}
+async function serveLogo(request,env){
+  try{
+    const fallback=await env.ASSETS.fetch(new Request(new URL('/share-logo-white-v166.png',request.url)));
+    if(!fallback.ok)throw new Error('Logo unavailable');
+    const h=new Headers(fallback.headers);h.set('Cache-Control','public,max-age=300,s-maxage=300');h.set('Content-Type','image/png');
+    h.set('X-Content-Type-Options','nosniff');
+    return new Response(request.method==='HEAD'?null:fallback.body,{status:200,headers:h});
+  }catch(_){return new Response('Image unavailable',{status:503,headers:{'Cache-Control':'no-store'}});}
 }
 export async function onRequestGet({request,params,env}){
   const seg=(Array.isArray(params.path)?params.path:String(params.path||'').split('/')).filter(Boolean);
@@ -204,9 +217,18 @@ export async function onRequestGet({request,params,env}){
   if(seg.length!==(img?3:2)||!TYPES[type]||!valid(id))return new Response('Not found',{status:404});
   try{
     const row=await getRow(type,id,env||{});
-    if(!row)return new Response('Shared item not found',{status:404,headers:{'Cache-Control':'no-store'}});
+    if(!row){
+      if(img)return serveLogo(request,env||{});
+      // A missing/private/deleted record still gets a valid site-logo preview
+      // rather than a broken card. The storefront handles the missing item.
+      const fallback={id,[TYPES[type].title]:'One-Line Touch Shopping',description:'Discover custom apparel at One-Line Touch Shopping.'};
+      return servePage(request,type,id,fallback,env||{});
+    }
     if(img)return proxyImage(request,type,id,row,env||{});
     return servePage(request,type,id,row,env||{});
-  }catch(e){return new Response('Unable to load shared item',{status:503,headers:{'Cache-Control':'no-store'}});}
+  }catch(e){
+    if(img)return serveLogo(request,env||{});
+    return new Response('Unable to load shared item',{status:503,headers:{'Cache-Control':'no-store'}});
+  }
 }
 export async function onRequestHead(context){return onRequestGet(context);}

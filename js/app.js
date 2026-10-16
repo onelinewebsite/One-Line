@@ -264,11 +264,11 @@
   function shareUrl(kind,value,extra){
     // Dedicated Cloudflare Pages share pages deliver per-item OG metadata to social crawlers.
     const base=location.origin+'/share/';
-    if(kind==='product')return base+'product/'+encodeURIComponent(String(value));
-    if(kind==='category')return base+'retail-category/'+encodeURIComponent(String(value));
-    if(kind==='subcategory')return base+'retail-category/'+encodeURIComponent(String(extra||value));
-    if(kind==='custom-category')return base+'category/'+encodeURIComponent(String(value));
-    if(kind==='custom-item')return base+'item/'+encodeURIComponent(String(value));
+    if(kind==='product')return base+'product/'+encodeURIComponent(String(value))+'?v=176';
+    if(kind==='category')return base+'retail-category/'+encodeURIComponent(String(value))+'?v=176';
+    if(kind==='subcategory')return base+'retail-category/'+encodeURIComponent(String(extra||value))+'?v=176';
+    if(kind==='custom-category')return base+'category/'+encodeURIComponent(String(value))+'?v=176';
+    if(kind==='custom-item')return base+'item/'+encodeURIComponent(String(value))+'?v=176';
     const url=new URL('/',location.origin);
     if(kind==='section'){url.searchParams.set('section',String(value));url.hash='home';}
     else if(kind==='designer')url.hash='customize';
@@ -276,9 +276,65 @@
     else url.hash='catalog';
     return url.toString();
   }
+  function shareImageUrl(kind,value,extra){
+    const u=shareUrl(kind,value,extra);
+    const parsed=new URL(u,location.href);
+    if(!/^\/share\/(?:item|category|product|retail-category)\/[^/]+$/.test(parsed.pathname))return '';
+    return location.origin+parsed.pathname.replace('/share/','/share/image/');
+  }
+  async function shareJpegFile(kind,value,extra,label){
+    // Convert the existing image locally only when Share is tapped. No uploads,
+    // background conversion, new database rows or Supabase storage copies.
+    const imageUrl=shareImageUrl(kind,value,extra);
+    if(!imageUrl||typeof File==='undefined')return null;
+    const response=await fetch(imageUrl,{cache:'default',credentials:'omit'});
+    if(!response.ok)throw new Error('Share image unavailable');
+    const image=await response.blob();
+    if(!image.type.startsWith('image/')||image.size>16*1024*1024)throw new Error('Invalid share image');
+    let bitmap=null,source=null,objectUrl='';
+    try{
+      if(typeof createImageBitmap==='function'){
+        try{bitmap=await createImageBitmap(image);source=bitmap;}catch(_){}
+      }
+      if(!source){
+        objectUrl=URL.createObjectURL(image);
+        source=await new Promise((resolve,reject)=>{
+          const el=new Image();el.onload=()=>resolve(el);el.onerror=()=>reject(new Error('Preview cannot be decoded'));el.src=objectUrl;
+        });
+      }
+      const w=Number(source.width||source.naturalWidth),h=Number(source.height||source.naturalHeight);
+      if(!w||!h)throw new Error('Empty share image');
+      const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1080;
+      const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('No image canvas');
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,1080,1080);
+      const scale=Math.min(1080/w,1080/h),dw=Math.round(w*scale),dh=Math.round(h*scale);
+      ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+      ctx.drawImage(source,Math.floor((1080-dw)/2),Math.floor((1080-dh)/2),dw,dh);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.87));
+      if(!blob||!blob.size)throw new Error('Could not prepare share image');
+      const filename=String(label||'One-Line').replace(/[^a-z0-9_-]+/gi,'-').slice(0,44)||'One-Line';
+      return new File([blob],filename+'.jpg',{type:'image/jpeg'});
+    }finally{bitmap?.close?.();if(objectUrl)URL.revokeObjectURL(objectUrl);}
+  }
   async function shareItem(kind,value,label,extra){
     const url=shareUrl(kind,value,extra),title=label||'One-Line catalogue';
-    try{if(navigator.share){await navigator.share({title,text:title,url});return;}if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);showToast('Share link copied');return;}}catch(err){if(err?.name==='AbortError')return;}
+    try{
+      if(navigator.share){
+        // Share the real image *with* its product/category link on supported
+        // Android/iOS share sheets, bypassing WebP-unfriendly link crawlers.
+        if(shareImageUrl(kind,value,extra)){
+          try{
+            const file=await shareJpegFile(kind,value,extra,title);
+            if(file&&(!navigator.canShare||navigator.canShare({files:[file]}))){
+              await navigator.share({title,text:title+'\n'+url,files:[file]});
+              return;
+            }
+          }catch(error){if(error?.name==='AbortError')return;}
+        }
+        await navigator.share({title,text:title,url});return;
+      }
+      if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);showToast('Share link copied');return;}
+    }catch(err){if(err?.name==='AbortError')return;}
     try{const ta=document.createElement('textarea');ta.value=url;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();showToast('Share link copied');}catch(_){showToast('Copy this page URL to share');}
   }
   function resetFilters(category){state.filterCategories=category&&category!=='All'?[category]:[];state.filterSubs=[];state.filterOptions=[];saveFilters();}

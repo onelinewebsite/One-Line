@@ -1,0 +1,9 @@
+# One-Line v176: Reliable sharing, no new storage
+
+1. Replace the currently deployed website files with this ZIP's contents in the GitHub repository. Preserve the `/functions/share/[[path]].js` file at its exact location, so Cloudflare Pages deploys it as a Pages Function.
+2. Wait for Cloudflare Pages deployment. Refresh installed PWAs as needed; the cache is versioned v176.
+3. Use the actual Share button on an item/category page. On phones that support native file sharing, it attaches a JPEG rendition of the **existing original** item/category photo and includes the direct item/category URL in the share message. This image is made in the browser **only on Share**, with no Supabase upload.
+4. If attachment sharing isn't available, Share sends/copies the usual item/category link. The link responds with item/category metadata. `/share/image/item/ITEM_UUID?social=1` or `/share/image/category/CATEGORY_UUID?social=1` returns a JPEG/PNG source where available, or the 1:1 One-Line logo if no compatible source is available; it will not return broken WebP to social crawlers.
+5. All newly shared item/category URLs use a new `?v=176` marker to avoid older WhatsApp preview caches. The unmodified original image, including PNG/WebP, can still be fetched at `/share/image/item/ITEM_UUID` or `/share/image/category/CATEGORY_UUID` without `social=1`. No new converted images are saved.
+
+No new Supabase SQL, Supabase Edge Function or Cloudflare secret is needed. Production WhatsApp/Instagram preview appearance is platform-controlled and still must be checked after deployment. If a preview is missing, first confirm that the *shared URL's HTML* contains `og:image`, and the image URL returns 200 on the public site. A GitHub deployment that excludes the `functions` directory cannot create the per-item previews.
