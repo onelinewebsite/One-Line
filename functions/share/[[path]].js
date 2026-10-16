@@ -11,40 +11,112 @@ const TYPES={
 };
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const valid=v=>typeof v==='string'&&v.length>0&&v.length<180&&!/[\/\\<>\x00-\x1f]/.test(v);
-const safeUrl=value=>{if(typeof value!=='string'||!value.trim())return '';
-  try{const u=new URL(value.trim(),ORIGIN+'/');return u.protocol==='https:'&&!/(^|\.)localhost$/.test(u.hostname)?u.toString():'';}catch{return '';}
-};
-const pic=value=>typeof value==='string'?value:(value&&typeof value==='object'?(value.url||value.src||value.image_url||value.publicUrl||''):'');
-function firstPhoto(images){
-  if(typeof images==='string'){try{images=JSON.parse(images);}catch{return safeUrl(images);}}
-  if(Array.isArray(images))return images.map(v=>safeUrl(pic(v))).find(Boolean)||'';
+// Images uploaded across older versions can be strings, objects, arrays or
+// Supabase public-storage paths. Resolve them without creating any new files.
+const asset=(v)=>{
+  if(typeof v==='string')return v.trim();
+  if(v&&typeof v==='object')return v.url||v.src||v.image_url||v.card_image_url||v.publicUrl||v.public_url||v.path||v.image||'';
   return '';
+};
+function safeUrl(value){
+  const raw=asset(value);
+  if(!raw)return '';
+  try{
+    let url=raw;
+    if(!/^https?:\/\//i.test(raw)){
+      if(raw.startsWith('data:')||raw.startsWith('blob:'))return '';
+      if(raw.startsWith('storage/v1/'))url=SUPABASE+'/'+raw;
+      else if(raw.startsWith('/storage/v1/'))url=SUPABASE+raw;
+      else if(raw.startsWith('product-images/'))url=SUPABASE+'/storage/v1/object/public/'+raw;
+      else url=new URL(raw,ORIGIN+'/').href;
+    }
+    const u=new URL(url);
+    if(u.protocol==='http:'&&u.hostname!=='localhost')u.protocol='https:';
+    if(u.protocol!=='https:'||u.username||u.password)return '';
+    if(/^(?:localhost|[^.]+\.localhost|127\.|10\.|192\.168\.|169\.254\.|0\.|\[)/i.test(u.hostname))return '';
+    const p=u.hostname.split('.').map(Number);
+    if(p.length===4&&p.every(n=>Number.isInteger(n)&&n>=0&&n<=255)){
+      if(p[0]===0||p[0]===10||p[0]===127||p[0]>=224||(p[0]===172&&p[1]>=16&&p[1]<=31)||(p[0]===192&&p[1]===168)||(p[0]===169&&p[1]===254))return '';
+    }
+    return u.toString();
+  }catch{return '';}
 }
-function sourceImage(type,row){
-  const candidates=type==='item'||type==='product'
-    ?[row.card_image_url,firstPhoto(row.images),row.image_url]
-    :[row.image_url,row.image,firstPhoto(row.images)];
-  if(type==='item'&&!candidates.some(Boolean)){
-    const opts=row.fabric_options?.uniform_config||{},variants=[...(opts.top||[]),...(opts.bottom||[])];
-    candidates.push(...variants.map(v=>firstPhoto(v.images)));
+function photos(value){
+  if(!value)return [];
+  if(typeof value==='string'){
+    try{const obj=JSON.parse(value);if(Array.isArray(obj))return photos(obj);}catch(_){}
+    const u=safeUrl(value);return u?[u]:[];
   }
-  return candidates.map(safeUrl).find(Boolean)||ORIGIN+'/share-logo-white-v166.png';
+  if(Array.isArray(value))return value.flatMap(photos);
+  const u=safeUrl(value);return u?[u]:[];
 }
+function uniq(urls){return [...new Set(urls.filter(Boolean))];}
+function itemVariantPhotos(row){
+  let raw=row?.fabric_options;
+  if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(_){raw={};}}
+  const cfg=raw?.uniform_config||{};
+  const variants=[...(cfg.top||[]),...(cfg.bottom||[]),...(cfg.items||[])];
+  return variants.flatMap(v=>[
+    ...photos(v.images),...photos(v.image_url),...photos(v.image),...photos(v.card_image_url)
+  ]);
+}
+function imageCandidates(type,row){
+  if(!row)return [];
+  if(type==='item')return uniq([...photos(row.card_image_url),...photos(row.images),...photos(row.image_url),...itemVariantPhotos(row)]);
+  if(type==='product')return uniq([...photos(row.card_image_url),...photos(row.images),...photos(row.image_url),...photos(row.image)]);
+  return uniq([...photos(row.image_url),...photos(row.image),...photos(row.card_image_url),...photos(row.images)]);
+}
+function sourceImage(type,row){return imageCandidates(type,row)[0]||ORIGIN+'/share-logo-white-v166.png';}
 const hash=v=>{let h=2166136261;for(const c of String(v)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0).toString(36);};
+async function readPublicRows(table,filters,select,env,limit=1){
+  const base=String(env.SUPABASE_URL||SUPABASE).replace(/\/$/,'');
+  const key=env.SUPABASE_PUBLISHABLE_KEY||PUBLIC_KEY;
+  const url=new URL(base+'/rest/v1/'+table);
+  url.searchParams.set('select',select||'*');
+  for(const [field,value] of Object.entries(filters))url.searchParams.set(field,value);
+  url.searchParams.set('limit',String(Math.min(8,Math.max(1,limit))));
+  const headers={'apikey':key,'Authorization':'Bearer '+key,'Accept':'application/json'};
+  let response=await fetch(url.toString(),{headers,cf:{cacheEverything:true,cacheTtl:120}});
+  // Some older Supabase gateways accept the API key alone, not as a bearer token.
+  if(response.status===401||response.status===403){
+    response=await fetch(url.toString(),{headers:{apikey:key,Accept:'application/json'},cf:{cacheEverything:true,cacheTtl:120}});
+  }
+  if(!response.ok)return [];
+  const data=await response.json();return Array.isArray(data)?data:[];
+}
 async function getRow(type,id,env){
   const cfg=TYPES[type];if(!cfg||!valid(id))return null;
-  const base=(env.SUPABASE_URL||SUPABASE).replace(/\/$/,'');
-  const u=new URL(base+'/rest/v1/'+cfg.table);
-  u.searchParams.set('select','*');u.searchParams.set(cfg.field,'eq.'+id);u.searchParams.set('limit','1');
-  const r=await fetch(u.toString(),{headers:{'apikey':env.SUPABASE_PUBLISHABLE_KEY||PUBLIC_KEY,'Accept':'application/json'},cf:{cacheEverything:true,cacheTtl:120}});
-  if(!r.ok)return null;
-  const rows=await r.json(),row=Array.isArray(rows)?rows[0]:null;
-  if(!row)return null;
+  const rows=await readPublicRows(cfg.table,{[cfg.field]:'eq.'+id},'*',env,1);
+  const row=rows[0];if(!row)return null;
   if(type==='item'&&row.active===false)return null;
   if(type==='category'&&row.active===false&&row.shareable!==true)return null;
   if(type==='product'&&(row.active===false||row.customer_visible===false))return null;
   if(type==='retail-category'&&row.active===false)return null;
   return row;
+}
+// Only query related data if an item/category has no usable image itself.
+// These are read-only lookups against existing data; no preview uploads.
+async function relatedImageCandidates(type,row,id,env){
+  try{
+    if(type==='product'){
+      const rows=await readPublicRows('product_variants',{product_id:'eq.'+id,active:'eq.true'},'image_url',env,8);
+      return uniq(rows.flatMap(r=>photos(r.image_url)));
+    }
+    if(type==='item'){
+      if(!row.category_id)return [];
+      const cats=await readPublicRows('custom_catalog_categories',{id:'eq.'+row.category_id},'image_url',env,1);
+      return uniq(cats.flatMap(r=>photos(r.image_url)));
+    }
+    if(type==='category'){
+      const rows=await readPublicRows('custom_catalog_items',{category_id:'eq.'+id,active:'eq.true'},'card_image_url,images,fabric_options',env,6);
+      return uniq(rows.flatMap(r=>imageCandidates('item',r)));
+    }
+    if(type==='retail-category'&&row.id){
+      const rows=await readPublicRows('products',{category_id:'eq.'+row.id,active:'eq.true'},'card_image_url,images',env,6);
+      return uniq(rows.flatMap(r=>imageCandidates('product',r)));
+    }
+  }catch(_){}
+  return [];
 }
 function canonical(type,id,row){
   const p=new URL('/',ORIGIN);
@@ -57,11 +129,11 @@ function canonical(type,id,row){
 function pageMeta(type,id,row,requestUrl){
   const title=String(row[TYPES[type].title]||'One-Line').slice(0,130);
   const description=String(row.description||row.subtitle||'View and order at One-Line Touch Shopping.').slice(0,180);
-  const image=ORIGIN+'/share/image/'+encodeURIComponent(type)+'/'+encodeURIComponent(id)+'?v='+hash(sourceImage(type,row)+'|'+String(row.updated_at||''));
+  const primary=sourceImage(type,row);
+  const image=ORIGIN+'/share/image/'+encodeURIComponent(type)+'/'+encodeURIComponent(id)+'?v='+hash(primary+'|'+String(row.updated_at||row.created_at||''));
   return '<meta property="og:type" content="product"><meta property="og:site_name" content="One-Line Touch Shopping">'+
     '<meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(description)+'">'+
     '<meta property="og:image" content="'+esc(image)+'"><meta property="og:image:secure_url" content="'+esc(image)+'">'+
-    '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="1200">'+
     '<meta property="og:image:alt" content="'+esc(title)+'">'+
     '<meta property="og:url" content="'+esc(requestUrl)+'">'+
     '<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="'+esc(title)+'">'+
@@ -80,41 +152,49 @@ async function servePage(request,type,id,row,env){
 }
 function contentType(bytes,header){
   const b=new Uint8Array(bytes);
-  if(b[0]===0xff&&b[1]===0xd8)return 'image/jpeg';
-  if(b[0]===0x89&&b[1]===0x50&&b[2]===0x4e&&b[3]===0x47)return 'image/png';
-  if(b[0]===0x52&&b[1]===0x49&&b[2]===0x46&&b[3]===0x46&&b[8]===0x57&&b[9]===0x45&&b[10]===0x42&&b[11]===0x50)return 'image/webp';
-  if(b[0]===0x47&&b[1]===0x49&&b[2]===0x46)return 'image/gif';
-  return String(header||'').startsWith('image/')?String(header).split(';')[0]:'';
+  if(b.length>=3&&b[0]===0xff&&b[1]===0xd8&&b[2]===0xff)return 'image/jpeg';
+  if(b.length>=8&&b[0]===0x89&&b[1]===0x50&&b[2]===0x4e&&b[3]===0x47)return 'image/png';
+  if(b.length>=12&&b[0]===0x52&&b[1]===0x49&&b[2]===0x46&&b[3]===0x46&&b[8]===0x57&&b[9]===0x45&&b[10]===0x42&&b[11]===0x50)return 'image/webp';
+  if(b.length>=4&&b[0]===0x47&&b[1]===0x49&&b[2]===0x46&&b[3]===0x38)return 'image/gif';
+  if(b.length>=12&&String.fromCharCode(...b.slice(4,12)).includes('ftypavif'))return 'image/avif';
+  return '';
+}
+async function tryPhoto(url,request){
+  try{
+    const source=safeUrl(url);if(!source)return null;
+    const response=await fetch(source,{
+      redirect:'follow',headers:{'Accept':'image/jpeg,image/png,image/webp,image/avif,image/*'},
+      cf:{cacheTtl:3600,cacheEverything:true}
+    });
+    if(!response.ok)return null;
+    const length=Number(response.headers.get('content-length')||0);
+    // This limit is only a safe bound for a social preview response, not an upload restriction.
+    if(length>16*1024*1024)return null;
+    const bytes=await response.arrayBuffer();
+    if(!bytes.byteLength||bytes.byteLength>16*1024*1024)return null;
+    const mime=contentType(bytes,response.headers.get('content-type'));
+    if(!mime)return null;
+    return new Response(request.method==='HEAD'?null:bytes,{status:200,headers:{
+      'Content-Type':mime,'Cache-Control':'public,max-age=600,s-maxage=3600',
+      'Content-Length':String(bytes.byteLength),'X-Content-Type-Options':'nosniff',
+      'Access-Control-Allow-Origin':'*'
+    }});
+  }catch(_){return null;}
 }
 async function proxyImage(request,type,id,row,env){
-  const source=sourceImage(type,row);
-  // Use the original public item/category image; no JPEG duplicate, no storage upload.
-  // Cloudflare caches this route so repeat social previews avoid repeated Storage reads.
-  try {
-    const u=new URL(source);
-    if (u.protocol==='https:' && !/^(localhost|127\.|10\.|192\.168\.|169\.254\.)/.test(u.hostname)) {
-      const response=await fetch(u.toString(),{
-        redirect:'follow',headers:{'Accept':'image/jpeg,image/png,image/webp,image/*'},
-        cf:{cacheTtl:3600,cacheEverything:true}
-      });
-      if(response.ok){
-        const length=Number(response.headers.get('content-length')||0);
-        if(!length||length<=8*1024*1024){
-          const bytes=await response.arrayBuffer();
-          if(bytes.byteLength<=8*1024*1024){
-            const detected=contentType(bytes,response.headers.get('content-type'));
-            if(detected)return new Response(request.method==='HEAD'?null:bytes,{status:200,headers:{
-              'Content-Type':detected,'Cache-Control':'public,max-age=3600,s-maxage=3600',
-              'Content-Length':String(bytes.byteLength),'X-Content-Type-Options':'nosniff'
-            }});
-          }
-        }
-      }
-    }
-  } catch(_) {}
+  const own=imageCandidates(type,row);
+  // Primary card/category picture first; try existing fallback photos on broken URLs.
+  for(const url of own.slice(0,6)){
+    const result=await tryPhoto(url,request);if(result)return result;
+  }
+  // Only fetch other existing item photos if no main/gallery/variant photo worked.
+  const related=await relatedImageCandidates(type,row,id,env);
+  for(const url of related.filter(url=>!own.includes(url)).slice(0,6)){
+    const result=await tryPhoto(url,request);if(result)return result;
+  }
   const fallback=await env.ASSETS.fetch(new URL('/share-logo-white-v166.png',request.url));
-  if(!fallback.ok)return new Response('No image',{status:404});
-  const h=new Headers(fallback.headers);h.set('Cache-Control','public,max-age=300');h.set('Content-Type','image/png');
+  if(!fallback.ok)return new Response('Image unavailable',{status:404});
+  const h=new Headers(fallback.headers);h.set('Cache-Control','public,max-age=300,s-maxage=300');h.set('Content-Type','image/png');
   return new Response(request.method==='HEAD'?null:fallback.body,{status:200,headers:h});
 }
 export async function onRequestGet({request,params,env}){
