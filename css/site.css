@@ -7099,7 +7099,6 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .v165-designer .designer-share-actions .designer-download{background:#651370;color:#fff}
 .v165-designer .designer-share-actions svg{width:16px;height:16px}
 .v165-designer .designer-export-message{font-size:11px;color:#5e176b;margin:8px 0 0}
-.v165-designer .designer-onshirt-text-input{position:absolute;inset:-8px;z-index:30;min-width:120px;max-width:50vw;width:max(120px,100%);height:calc(100% + 16px);font:inherit;color:inherit;text-align:center;background:rgba(255,255,255,.92);border:2px solid #761b84;border-radius:6px;padding:4px;transform:translateX(calc((120px - 100%) / -2));outline:none;touch-action:auto;cursor:text}
 @media(max-width:760px){
   .v165-designer .designer-simple-top{padding:14px 12px 8px;gap:10px}
   .v165-designer .designer-model-picker{max-width:none}
@@ -7148,4 +7147,38 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
   .styled-checkout-page .flat-checkout-body .checkout-option-section{padding:15px}
   .styled-checkout-page .flat-checkout-body .delivery-method-card,
   .styled-checkout-page .flat-checkout-body .cod-payment-card{min-height:70px}
+}
+
+/* v166: minimal designer toolbar, natural on-garment text editing, compact sharing and calmer layers. */
+.v165-designer .designer-simple-top{justify-content:space-between;gap:10px;padding-top:15px;padding-bottom:7px}
+.v165-designer .designer-model-picker{flex:0 1 190px;max-width:190px;min-width:135px;margin-left:auto}
+.v165-designer .designer-model-picker .picker-trigger{min-height:40px;height:40px;padding:0 12px;border-radius:11px;font-size:12px}
+.v165-designer .designer-model-picker .picker-menu button{padding:10px 12px;font-size:12px}
+.v165-designer .stage-topline{justify-content:flex-start}
+.v165-designer .compact-controls .layer-manager{padding:19px 17px 18px!important}
+.v165-designer .layer-manager-head{margin-bottom:12px!important;padding:0 2px 7px}
+.v165-designer .layer-stack{padding:3px 3px 12px;gap:11px;margin:0;scroll-padding:4px}
+.v165-designer .layer-stack>button{width:132px;min-height:66px;padding:11px 10px;column-gap:7px;border-radius:12px}
+.v165-designer .layer-stack>button>b{font-size:11px}
+.v165-designer .layer-stack>button>small{font-size:10px}
+.v165-designer .designer-sharing-bottom{background:transparent;border:0;box-shadow:none;border-radius:0;min-height:0;justify-content:flex-end;padding:0!important;margin:10px auto 18px!important;gap:12px}
+.v165-designer .designer-share-actions{margin-left:auto;gap:10px}
+.v165-designer .designer-export-message:empty{display:none}
+.v165-designer .designer-export-message:not(:empty){margin:0 auto 0 0;font-size:11px;max-width:440px}
+/* The original text itself becomes editable; no white input box, border or font replacement. */
+.v165-designer .design-layer.inline-editing,
+.v165-designer .compact-garment .design-layer.inline-editing{outline:none!important;box-shadow:none!important;border-color:transparent!important}
+.v165-designer .design-layer.inline-editing:after{display:none!important}
+.v165-designer .design-layer.inline-editing .layer-remove,
+.v165-designer .design-layer.inline-editing .layer-rotate{visibility:hidden!important;pointer-events:none!important}
+.v165-designer .design-layer.inline-editing .layer-text-content[contenteditable="true"]{outline:none!important;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;color:inherit!important;font:inherit!important;letter-spacing:inherit!important;text-shadow:inherit!important;padding:0!important;margin:0!important;white-space:inherit!important;user-select:text!important;-webkit-user-select:text!important;pointer-events:auto!important;touch-action:manipulation;display:block;cursor:text}
+@media(max-width:760px){
+  .v165-designer .designer-model-picker{flex:0 1 166px;max-width:166px;min-width:122px}
+  .v165-designer .designer-simple-top{padding:10px 12px 7px;justify-content:space-between}
+  .v165-designer .designer-model-picker .picker-trigger{min-height:38px;height:38px;font-size:11px}
+  .v165-designer .compact-controls .layer-manager{padding:15px 13px 14px!important}
+  .v165-designer .layer-stack{gap:9px;padding:3px 2px 10px}
+  .v165-designer .layer-stack>button{width:116px;min-height:62px;padding:9px}
+  .v165-designer .designer-sharing-bottom{flex-direction:row;align-items:center;flex-wrap:wrap;width:calc(100% - 24px);margin:10px auto 15px!important}
+  .v165-designer .designer-share-actions{width:100%;max-width:400px;margin-left:auto;grid-template-columns:repeat(2,minmax(0,1fr))}
 }
