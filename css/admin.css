@@ -1317,3 +1317,17 @@ html,body{background:#f6f2f7;color:#241c27}
 .retail-card-cover-editor img{width:120px;aspect-ratio:3/4;object-fit:cover;border-radius:10px}
 .retail-card-cover-editor label{font-size:12px;font-weight:750}
 @media(max-width:600px){.custom-dual-media{grid-template-columns:minmax(0,1fr)}.portal-settings .settings-actions .danger-settings-btn{margin-left:0}}
+
+/* v163: The floating Save is the sole item-editor save action.
+   Wrapper must not intercept editor controls; its child MUST accept clicks/taps. */
+.editor-page .editor-savebar.editor-floating-close [data-custom-item-save]{
+  pointer-events:auto!important;cursor:pointer!important;touch-action:manipulation;
+  min-width:112px;min-height:46px;border-radius:12px;
+  box-shadow:0 7px 21px rgba(36,17,39,.15);
+}
+.editor-page .editor-savebar.editor-floating-close [data-custom-item-save]:focus-visible{
+  outline:3px solid #bd92ca;outline-offset:3px;
+}
+.editor-page .editor-savebar.editor-floating-close [data-custom-item-save]:disabled{
+  opacity:.7;cursor:wait!important;
+}
