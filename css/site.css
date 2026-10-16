@@ -7000,3 +7000,31 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
  .uniform-custom-item-page .kids-uniform-item-size-group .uniform-qty-stepper,.custom-item-page .jersey-size-row .uniform-qty-stepper,.custom-item-page .printable-size-quantity-list .uniform-qty-stepper{grid-template-columns:28px 34px 28px!important;width:94px!important;min-width:94px!important;max-width:94px!important}
  .custom-item-page .uniform-qty-stepper button,.custom-item-page .uniform-qty-stepper input{height:35px!important;font-size:13px!important}
 }
+
+/* v160: compact size + available stock + explicitly different rate on one line.
+   Measurements are a distinct, properly spaced second line. */
+.custom-item-page .uniform-size-stock-inline,
+.custom-item-page .jersey-size-row .jersey-size-label{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:7px!important;min-width:0!important;overflow:visible!important}
+.custom-item-page .uniform-size-and-stock,
+.custom-item-page .jersey-size-label .uniform-size-and-stock{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:6px 9px!important;flex-wrap:wrap!important;min-width:0!important}
+.custom-item-page .uniform-size-and-stock b,
+.custom-item-page .jersey-size-label .uniform-size-and-stock b{font-size:18px!important;line-height:1.25!important;font-weight:850!important}
+.custom-item-page .uniform-size-and-stock small{font-size:11.5px!important;line-height:1.3!important;font-weight:650!important;white-space:normal!important}
+.custom-item-page .uniform-size-and-stock .catalogue-special-size-rate,
+.custom-item-page .jersey-size-label .uniform-size-and-stock .catalogue-special-size-rate{
+ display:inline-flex!important;align-items:center!important;white-space:nowrap!important;font-size:12px!important;font-weight:850!important;
+ line-height:1.3!important;color:#651272!important;margin:0!important;padding:0!important;
+}
+.custom-item-page .uniform-size-stock-inline>.catalogue-size-measurements,
+.custom-item-page .jersey-size-label>.catalogue-size-measurements{display:block!important;margin:0!important;font-size:11.5px!important;line-height:1.5!important;letter-spacing:.01em!important}
+.custom-item-page .kids-uniform-size-qty-row.stock-aware,.custom-item-page .jersey-size-row{padding-block:13px!important;min-width:0!important}
+/* All catalogue/detail main images use portrait 3:4. Individual variant thumbnails remain square. */
+.custom-item-page .product-full-media .detail-slider-frame,
+.product-fullscreen .product-full-media .detail-slider-frame{aspect-ratio:3 / 4!important;height:auto!important;max-width:100%!important;overflow:hidden!important}
+.custom-item-page .product-full-media .detail-slide img,
+.product-fullscreen .product-full-media .detail-slide img{object-fit:contain!important;object-position:center!important}
+@media(max-width:325px){
+ .custom-item-page .uniform-size-and-stock{column-gap:6px!important;row-gap:4px!important}
+ .custom-item-page .uniform-size-and-stock b,.custom-item-page .jersey-size-label .uniform-size-and-stock b{font-size:17px!important}
+ .custom-item-page .kids-uniform-size-qty-row.stock-aware,.custom-item-page .jersey-size-row{gap:7px!important}
+}
