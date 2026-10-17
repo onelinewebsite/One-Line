@@ -16,7 +16,7 @@
       else if(d.kind==='printable_order'){
         const garment=[name,d.garmentTypeName,d.fabricName,d.quality].filter(Boolean).join(' / ');
         for(const z of d.printableSizes||[]){const qty=Number(z.qty||0);if(qty<=0)continue;const rate=Number(z.rate||0);rows.push({label:garment+' / '+z.size,qty,rate,total:qty*rate});}
-        for(const v of d.selectedPrints||[]){const qty=Number(v.qty||0);if(qty<=0)continue;const rate=Number(v.rate||0);rows.push({label:'PRINT / '+v.name+' / '+(v.sizeLabel||(v.size==='Standard'?'Name / Logo Size':v.size==='Large'?'Large Size':String(v.size||''))),qty,rate,total:qty*rate});}
+        for(const v of d.selectedPrints||[]){const qty=Number(v.qty||0);if(qty<=0)continue;const rate=Number(v.rate||0);rows.push({label:'PRINT / '+v.name+' / '+(v.sizeLabel||(v.size==='Standard'?'Logo size':v.size==='Large'?'Number size':String(v.size||''))),qty,rate,total:qty*rate});}
       }else if(item.item_type==='team_design'||d.kind==='team_design'||(Array.isArray(d.roster)&&d.roster.length)){
         for(const player of d.roster||[]){
           const parts=['Team',player.size||'',player.name||'',player.number?'#'+player.number:''].filter(Boolean);

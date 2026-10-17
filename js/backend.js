@@ -124,14 +124,15 @@
       customSchemaReady=!cq[0].error&&!cq[1].error&&!cq[2].error;sportswearSchemaReady=!cq[3].error&&!cq[4].error;
       if(!cq[0].error&&!cq[1].error){
         customCategories=cq[0].data||[];customItems=cq[1].data||[];
-        // Optional public read of explicitly published details (Admin updates use separate, protected table).
+        // Optional read-only RPC from the scoped v179 SQL migration; RLS on the
+        // original catalogue_internal_details table remains unchanged.
         try{
-          const publicDetails=await sb.from('catalogue_internal_details').select('item_id,detail_1,detail_2');
-          if(!publicDetails.error){
-            const detailsById=new Map((publicDetails.data||[]).map(d=>[String(d.item_id),d]));
-            customItems=customItems.map(item=>{const detail=detailsById.get(String(item.id));return {...item,customer_detail_1:detail?.detail_1||'',customer_detail_2:detail?.detail_2||''};});
-          }
-        }catch(_){}
+          const visible=await sb.rpc('public_catalogue_display_details');
+          if(!visible.error&&Array.isArray(visible.data)){
+            const byId=new Map(visible.data.map(row=>[String(row.item_id),row]));
+            customItems=customItems.map(row=>{const details=byId.get(String(row.id));return {...row,public_detail_1:String(details?.detail_1||''),public_detail_2:String(details?.detail_2||'')};});
+          }else customItems=customItems.map(row=>({...row,public_detail_1:'',public_detail_2:''}));
+        }catch(_){customItems=customItems.map(row=>({...row,public_detail_1:'',public_detail_2:''}));}
         local('one-line-custom-catalog-categories-v1',customCategories);local('one-line-custom-catalog-items-v1',customItems);
       }
       if(!cq[2].error){customFabrics=cq[2].data||[];local('one-line-custom-catalog-fabrics-v1',customFabrics);}
