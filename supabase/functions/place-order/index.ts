@@ -126,7 +126,7 @@ async function validatePrintableOrder(db:any,item:any){
   const saved=iq.data;if(!saved||saved.active===false)throw new Error('This printable item is no longer available.');
   const cq=await db.from('custom_catalog_categories').select('name,active').eq('id',saved.category_id).maybeSingle();
   if(cq.error)throw cq.error;
-  if(!cq.data?.active||String(cq.data.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()!=='ready stock printable items')throw new Error('This is not a printable item.');
+  if(!cq.data?.active||!['ready stock printable items','corporate tee shirt'].includes(String(cq.data.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()))throw new Error('This is not a supported printable item.');
   const [fq,pq]=await Promise.all([
     db.from('custom_catalog_fabrics').select('*').eq('id',String(incoming.fabricId||'')).maybeSingle(),
     incoming.includePrinting===false?Promise.resolve({data:[],error:null}):db.from('custom_print_types').select('*').eq('active',true)

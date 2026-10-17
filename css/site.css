@@ -7206,3 +7206,15 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .printable-type-check{display:grid;place-items:center;flex:0 0 23px;width:23px;height:23px;border:1px solid #d4c4d9;border-radius:7px;background:#fff;color:#89768f;font-weight:800;font-size:14px}
 .printable-type-card.active .printable-type-check{background:#78128c;border-color:#78128c;color:#fff}
 .catalogue-public-details{display:grid;gap:5px;margin:0 0 12px;font-size:13px;line-height:1.45;color:#514657;overflow-wrap:anywhere}
+
+/* v183 — Larger corporate controls; selected options can be deselected. */
+.custom-item-page.corporate-tee-detail-page .custom-tshirt-options{padding:19px!important;margin:18px 0!important;gap:15px!important}
+.custom-item-page.corporate-tee-detail-page .custom-fabric-grid,.custom-item-page.corporate-tee-detail-page .custom-quality-grid{gap:12px!important}
+.custom-item-page.corporate-tee-detail-page .custom-fabric-choice,.custom-item-page.corporate-tee-detail-page .custom-quality-choice{min-height:84px!important;padding:17px 15px!important;border-radius:15px!important}
+.custom-item-page.corporate-tee-detail-page .custom-fabric-choice b{font-size:15px!important}
+.custom-item-page.corporate-tee-detail-page .custom-quality-choice span{font-size:15px!important}
+.custom-item-page.corporate-tee-detail-page .printable-type-card{min-height:79px!important;padding:16px!important}
+.custom-item-page.corporate-tee-detail-page .jersey-size-row{padding-block:17px!important}
+.custom-item-page.corporate-tee-detail-page .custom-option-heading h3{font-size:18px!important}
+.custom-item-page .custom-fabric-choice:focus-visible,.custom-item-page .custom-quality-choice:focus-visible{outline:2px solid #78128c;outline-offset:3px}
+@media(max-width:520px){.custom-item-page.corporate-tee-detail-page .custom-tshirt-options{padding:14px!important}.custom-item-page.corporate-tee-detail-page .custom-fabric-choice,.custom-item-page.corporate-tee-detail-page .custom-quality-choice{min-height:77px!important;padding:13px!important}}
