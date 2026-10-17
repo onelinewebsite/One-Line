@@ -122,7 +122,18 @@
         sb.from('custom_print_types').select('*').order('sort_order')
       ]);
       customSchemaReady=!cq[0].error&&!cq[1].error&&!cq[2].error;sportswearSchemaReady=!cq[3].error&&!cq[4].error;
-      if(!cq[0].error&&!cq[1].error){customCategories=cq[0].data||[];customItems=cq[1].data||[];local('one-line-custom-catalog-categories-v1',customCategories);local('one-line-custom-catalog-items-v1',customItems);}
+      if(!cq[0].error&&!cq[1].error){
+        customCategories=cq[0].data||[];customItems=cq[1].data||[];
+        // Optional public read of explicitly published details (Admin updates use separate, protected table).
+        try{
+          const publicDetails=await sb.from('catalogue_internal_details').select('item_id,detail_1,detail_2');
+          if(!publicDetails.error){
+            const detailsById=new Map((publicDetails.data||[]).map(d=>[String(d.item_id),d]));
+            customItems=customItems.map(item=>{const detail=detailsById.get(String(item.id));return {...item,customer_detail_1:detail?.detail_1||'',customer_detail_2:detail?.detail_2||''};});
+          }
+        }catch(_){}
+        local('one-line-custom-catalog-categories-v1',customCategories);local('one-line-custom-catalog-items-v1',customItems);
+      }
       if(!cq[2].error){customFabrics=cq[2].data||[];local('one-line-custom-catalog-fabrics-v1',customFabrics);}
       if(!cq[3].error){customSportswearFabrics=cq[3].data||[];local('one-line-custom-sportswear-fabrics-v1',customSportswearFabrics);}
       if(!cq[4].error){customSportswearTypes=cq[4].data||[];local('one-line-custom-sportswear-types-v1',customSportswearTypes);}

@@ -7199,3 +7199,10 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 /* v170: per-category share control should not obstruct name/image navigation */
 .real-category-card{position:relative}
 .real-category-card>.card-share-button{position:absolute;z-index:4;top:10px;right:10px;left:auto}
+
+/* Multi-select print types: selected border and state marker without changing size controls. */
+.printable-type-card{position:relative;flex-direction:row;align-items:center;justify-content:space-between;text-align:left;gap:8px}
+.printable-type-card.active{border:2px solid #78128c;box-shadow:inset 0 0 0 1px #78128c;background:#f9f0fc}
+.printable-type-check{display:grid;place-items:center;flex:0 0 23px;width:23px;height:23px;border:1px solid #d4c4d9;border-radius:7px;background:#fff;color:#89768f;font-weight:800;font-size:14px}
+.printable-type-card.active .printable-type-check{background:#78128c;border-color:#78128c;color:#fff}
+.catalogue-public-details{display:grid;gap:5px;margin:0 0 12px;font-size:13px;line-height:1.45;color:#514657;overflow-wrap:anywhere}
