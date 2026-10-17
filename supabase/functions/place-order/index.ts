@@ -39,6 +39,41 @@ async function validateUniformOrder(db:any,item:any){
   design.itemId=q.data.id;design.itemTitle=q.data.title||item.name||'Uniform';design.cardImage=cardImage;design.images=images;design.selectedItems=selectedItems;design.itemQuantities=Object.fromEntries(selectedItems.map((v:any)=>[v.id,v.sizeQuantities]));design.sizeQuantities=aggregate;design.totalUnits=totalPieces;design.totalPieces=totalPieces;design.totalAmount=totalAmount;design.validatedAt=new Date().toISOString();
   return {...item,name:q.data.title||item.name||'Uniform',code:item.code||'UNIFORM',qty:totalPieces,unitPrice:totalPieces?totalAmount/totalPieces:0,lineTotal:totalAmount,design};
 }
+// Corporate Tee Shirt uses the same Admin-managed multi-print price schedule
+// as Ready Stock Printable. Reprice every selection on the server at checkout.
+async function validateCorporatePrintExtras(db:any,incoming:any){
+  const includePrinting=incoming.includePrinting===true;
+  if(!includePrinting){
+    if((Array.isArray(incoming.selectedPrintTypeIds)&&incoming.selectedPrintTypeIds.length)||(Array.isArray(incoming.selectedPrints)&&incoming.selectedPrints.length))throw new Error('Remove selected prints before turning printing off.');
+    return {includePrinting:false,selectedPrintTypeIds:[],selectedPrints:[],printsTotal:0};
+  }
+  const pq=await db.from('custom_print_types').select('*').eq('active',true);
+  if(pq.error)throw pq.error;
+  const printMap=new Map<string,any>((pq.data||[]).map((row:any)=>[String(row.id),row]));
+  const rawIds=Array.isArray(incoming.selectedPrintTypeIds)?incoming.selectedPrintTypeIds:[];
+  const selectedPrintTypeIds=[...new Set<string>(rawIds.map((id:any)=>String(id||'').trim()).filter(Boolean))];
+  if(!selectedPrintTypeIds.length||selectedPrintTypeIds.length>printMap.size)throw new Error('Choose at least one valid print type.');
+  const sizeMaps=new Map<string,Map<string,any>>();
+  for(const id of selectedPrintTypeIds){
+    const type=printMap.get(id);
+    if(!type)throw new Error('A selected print type is no longer available.');
+    const sizes=new Map<string,any>((Array.isArray(type.sizes)?type.sizes:[]).filter((r:any)=>r?.active!==false&&String(r.name||'').trim()).map((r:any)=>[String(r.id),r]));
+    if(!sizes.size)throw new Error('A selected print type no longer has any available sizes.');
+    sizeMaps.set(id,sizes);
+  }
+  let printsTotal=0,printsCount=0;const selectedPrints=[] as any[],seen=new Set<string>();
+  for(const row of Array.isArray(incoming.selectedPrints)?incoming.selectedPrints:[]){
+    const id=String(row?.id||''),size=String(row?.size||''),key=id+'::'+size;
+    const current=sizeMaps.get(id)?.get(size),qty=Number(row?.qty);
+    if(!current||seen.has(key)||!Number.isInteger(qty)||qty<1||qty>10000)throw new Error('Invalid print size or quantity.');
+    seen.add(key);const rate=Number(current.rate);
+    if(!Number.isFinite(rate)||rate<0)throw new Error('Invalid Admin print rate.');
+    const total=qty*rate;printsCount+=qty;printsTotal+=total;
+    selectedPrints.push({id,name:String(printMap.get(id)?.name||''),size,sizeLabel:String(current.name),qty,rate,total});
+  }
+  if(printsCount>10000)throw new Error('Too many print units selected.');
+  return {includePrinting,selectedPrintTypeIds,selectedPrints,printsTotal};
+}
 async function validateJerseyOrder(db:any,item:any){
   const request=item?.design||{},itemId=String(request.itemId||'');
   if(!itemId)throw new Error('Jersey item is missing. Add it again.');
@@ -77,7 +112,10 @@ async function validateJerseyOrder(db:any,item:any){
     jerseySizes.push({size,qty,rate,length_cm:current?.length_cm??null,width_cm:current?.width_cm??null,separateRate:override!==null});
   }
   if(!totalPieces||totalPieces>10000)throw new Error('Select at least one Jersey size.');
-  const design={kind:'jersey_order',itemId:saved.id,itemTitle:saved.title,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),jerseySizes,totalPieces,totalAmount,validatedAt:new Date().toISOString()};
+  const corporate=String(cq.data?.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()==='corporate tee shirt';
+  const extra=corporate?await validateCorporatePrintExtras(db,request):{includePrinting:false,selectedPrintTypeIds:[] as string[],selectedPrints:[] as any[],printsTotal:0};
+  const garmentTotal=totalAmount;totalAmount+=extra.printsTotal;
+  const design={kind:'jersey_order',itemId:saved.id,itemTitle:saved.title,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),jerseySizes,totalPieces,garmentTotal,...extra,totalAmount,validatedAt:new Date().toISOString()};
   return {...item,itemType:'jersey_order',name:saved.title||'Jersey',code:saved.display_id||item.code||'JERSEY',qty:totalPieces,unitPrice:totalAmount/totalPieces,lineTotal:totalAmount,design};
 }
 async function validatePrintableOrder(db:any,item:any){
