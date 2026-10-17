@@ -12,11 +12,13 @@
       const d=item.design_json||item.design||item.uniformOrder||{},name=item.item_name||item.name||'Item',rate=Number(item.unit_price??item.price??0);
       if(d.kind==='jersey_order'){
         for(const z of d.jerseySizes||[]){const qty=Number(z.qty||0);if(qty<=0)continue;const rate=Number(z.rate||0);rows.push({label:[d.garmentTypeName,d.fabricName,d.quality,z.size].filter(Boolean).join(' / '),qty,rate,total:qty*rate});}
+        // v184: every selected print is applied to every ordered garment.
+        for(const v of d.selectedPrints||[]){const perGarment=Number(v.qty||0),qty=perGarment*(d.printsPerGarment!==undefined?Number(d.totalPieces||item.qty||0):1);if(qty<=0)continue;const rate=Number(v.rate||0);rows.push({label:'PRINT / '+v.name+' / '+(v.sizeLabel||String(v.size||'')),qty,rate,total:qty*rate});}
       }
       else if(d.kind==='printable_order'){
         const garment=[name,d.garmentTypeName,d.fabricName,d.quality].filter(Boolean).join(' / ');
         for(const z of d.printableSizes||[]){const qty=Number(z.qty||0);if(qty<=0)continue;const rate=Number(z.rate||0);rows.push({label:garment+' / '+z.size,qty,rate,total:qty*rate});}
-        for(const v of d.selectedPrints||[]){const qty=Number(v.qty||0);if(qty<=0)continue;const rate=Number(v.rate||0);rows.push({label:'PRINT / '+v.name+' / '+(v.sizeLabel||(v.size==='Standard'?'Name / Logo Size':v.size==='Large'?'Large Size':String(v.size||''))),qty,rate,total:qty*rate});}
+        for(const v of d.selectedPrints||[]){const perGarment=Number(v.qty||0),qty=perGarment*(d.printsPerGarment!==undefined?Number(d.totalPieces||item.qty||0):1);if(qty<=0)continue;const rate=Number(v.rate||0);rows.push({label:'PRINT / '+v.name+' / '+(v.sizeLabel||(v.size==='Standard'?'Logo Size':v.size==='Large'?'Name Size':String(v.size||''))),qty,rate,total:qty*rate});}
       }else if(item.item_type==='team_design'||d.kind==='team_design'||(Array.isArray(d.roster)&&d.roster.length)){
         for(const player of d.roster||[]){
           const parts=['Team',player.size||'',player.name||'',player.number?'#'+player.number:''].filter(Boolean);

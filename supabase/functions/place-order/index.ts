@@ -45,7 +45,7 @@ async function validateCorporatePrintExtras(db:any,incoming:any){
   const includePrinting=incoming.includePrinting===true;
   if(!includePrinting){
     if((Array.isArray(incoming.selectedPrintTypeIds)&&incoming.selectedPrintTypeIds.length)||(Array.isArray(incoming.selectedPrints)&&incoming.selectedPrints.length))throw new Error('Remove selected prints before turning printing off.');
-    return {includePrinting:false,selectedPrintTypeIds:[],selectedPrints:[],printsTotal:0};
+    return {includePrinting:false,selectedPrintTypeIds:[],selectedPrints:[],printsPerGarment:0};
   }
   const pq=await db.from('custom_print_types').select('*').eq('active',true);
   if(pq.error)throw pq.error;
@@ -72,7 +72,8 @@ async function validateCorporatePrintExtras(db:any,incoming:any){
     selectedPrints.push({id,name:String(printMap.get(id)?.name||''),size,sizeLabel:String(current.name),qty,rate,total});
   }
   if(printsCount>10000)throw new Error('Too many print units selected.');
-  return {includePrinting,selectedPrintTypeIds,selectedPrints,printsTotal};
+  if(selectedPrintTypeIds.some(id=>!selectedPrints.some(v=>v.id===id)))throw new Error('Choose print-size quantities for each selected print type or turn printing off.');
+  return {includePrinting,selectedPrintTypeIds,selectedPrints,printsPerGarment:printsTotal};
 }
 async function validateJerseyOrder(db:any,item:any){
   const request=item?.design||{},itemId=String(request.itemId||'');
@@ -113,9 +114,9 @@ async function validateJerseyOrder(db:any,item:any){
   }
   if(!totalPieces||totalPieces>10000)throw new Error('Select at least one Jersey size.');
   const corporate=String(cq.data?.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()==='corporate tee shirt';
-  const extra=corporate?await validateCorporatePrintExtras(db,request):{includePrinting:false,selectedPrintTypeIds:[] as string[],selectedPrints:[] as any[],printsTotal:0};
-  const garmentTotal=totalAmount;totalAmount+=extra.printsTotal;
-  const design={kind:'jersey_order',itemId:saved.id,itemTitle:saved.title,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),jerseySizes,totalPieces,garmentTotal,...extra,totalAmount,validatedAt:new Date().toISOString()};
+  const extra=corporate?await validateCorporatePrintExtras(db,request):{includePrinting:false,selectedPrintTypeIds:[] as string[],selectedPrints:[] as any[],printsPerGarment:0};
+  const garmentTotal=totalAmount,printsPerGarment=extra.printsPerGarment,printsTotal=printsPerGarment*totalPieces;totalAmount+=printsTotal;
+  const design={kind:'jersey_order',itemId:saved.id,itemTitle:saved.title,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),jerseySizes,totalPieces,garmentTotal,...extra,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
   return {...item,itemType:'jersey_order',name:saved.title||'Jersey',code:saved.display_id||item.code||'JERSEY',qty:totalPieces,unitPrice:totalAmount/totalPieces,lineTotal:totalAmount,design};
 }
 async function validatePrintableOrder(db:any,item:any){
@@ -195,9 +196,11 @@ async function validatePrintableOrder(db:any,item:any){
       selectedPrints.push({id,name:String((printMap.get(id) as any).name||''),size,sizeLabel:String(current.name),qty,rate,total:qty*rate});
     }
     if(printsCount>10000)throw new Error('Too many prints selected.');
+    if(selectedPrintTypeIds.some(id=>!selectedPrints.some(v=>v.id===id)))throw new Error('Choose print-size quantities for each selected print type or turn printing off.');
   }
+  const printsPerGarment=printsTotal;printsTotal=printsPerGarment*totalPieces;
   const totalAmount=garmentTotal+printsTotal;
-  const design={kind:'printable_order',itemId:saved.id,itemTitle:saved.title||'',categoryName:cq.data.name,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),printableSizes,sizeQuantities:Object.fromEntries(printableSizes.map(r=>[r.size,r.qty])),sizeRates:Object.fromEntries(printableSizes.map(r=>[r.size,r.rate])),includePrinting,selectedPrintTypeId,selectedPrintTypeName,selectedPrintTypeIds,selectedPrints,totalPieces,garmentTotal,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
+  const design={kind:'printable_order',itemId:saved.id,itemTitle:saved.title||'',categoryName:cq.data.name,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),printableSizes,sizeQuantities:Object.fromEntries(printableSizes.map(r=>[r.size,r.qty])),sizeRates:Object.fromEntries(printableSizes.map(r=>[r.size,r.rate])),includePrinting,selectedPrintTypeId,selectedPrintTypeName,selectedPrintTypeIds,selectedPrints,totalPieces,garmentTotal,printsPerGarment,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
   return {...item,itemType:'printable_order',name:saved.title||'Printable item',code:saved.display_id||item.code||'',qty:totalPieces,unitPrice:totalAmount/totalPieces,lineTotal:totalAmount,design};
 }
 async function uploadOrderImage(db:any,customerId:string,value:any,label:string){
