@@ -1,8 +1,8 @@
-const CACHE='one-line-catalogue-v184';
+const CACHE='one-line-catalogue-v185';
 const CORE=[
-  './index.html','./404.html','./admin.html','./staff.html','./management.html',
+  './index.html','./print-guide.html','./404.html','./admin.html','./staff.html','./management.html',
   './css/site.css','./css/admin.css',
-  './js/order-pdf.js','./js/config.js','./js/data.js','./js/msg91-widget.js','./js/backend.js','./js/designer.js','./js/app.js','./js/admin.js',
+  './js/order-pdf.js','./js/order-documents.js','./js/config.js','./js/data.js','./js/msg91-widget.js','./js/backend.js','./js/designer.js','./js/app.js','./js/admin.js',
   './one-line-logo.webp','./share-logo-white.png','./share-logo-white-v166.png','./favicon.png','./icon-192.png','./icon-512.png','./manifest.webmanifest',
   './assets/product-placeholder.svg','./assets/category-placeholder.svg','./assets/contact-support.webp','./assets/bulk-enquiry-discount.png'
 ];

@@ -116,7 +116,7 @@ async function validateJerseyOrder(db:any,item:any){
   const corporate=String(cq.data?.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()==='corporate tee shirt';
   const extra=corporate?await validateCorporatePrintExtras(db,request):{includePrinting:false,selectedPrintTypeIds:[] as string[],selectedPrints:[] as any[],printsPerGarment:0};
   const garmentTotal=totalAmount,printsPerGarment=extra.printsPerGarment,printsTotal=printsPerGarment*totalPieces;totalAmount+=printsTotal;
-  const design={kind:'jersey_order',itemId:saved.id,itemTitle:saved.title,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),jerseySizes,totalPieces,garmentTotal,...extra,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
+  const design={kind:'jersey_order',itemId:saved.id,itemTitle:saved.title,fabricId:fabric?.id||'',fabricName:fabric?.name||'',quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),jerseySizes,totalPieces,garmentTotal,...extra,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
   return {...item,itemType:'jersey_order',name:saved.title||'Jersey',code:saved.display_id||item.code||'JERSEY',qty:totalPieces,unitPrice:totalAmount/totalPieces,lineTotal:totalAmount,design};
 }
 async function validatePrintableOrder(db:any,item:any){
@@ -128,18 +128,22 @@ async function validatePrintableOrder(db:any,item:any){
   const cq=await db.from('custom_catalog_categories').select('name,active').eq('id',saved.category_id).maybeSingle();
   if(cq.error)throw cq.error;
   if(!cq.data?.active||!['ready stock printable items','corporate tee shirt'].includes(String(cq.data.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()))throw new Error('This is not a supported printable item.');
+  const categoryName=String(cq.data.name||'').toLowerCase().trim();
+  const isReadyStock=categoryName==='ready stock printable items';
   const [fq,pq]=await Promise.all([
-    db.from('custom_catalog_fabrics').select('*').eq('id',String(incoming.fabricId||'')).maybeSingle(),
+    isReadyStock?Promise.resolve({data:null,error:null}):db.from('custom_catalog_fabrics').select('*').eq('id',String(incoming.fabricId||'')).maybeSingle(),
     incoming.includePrinting===false?Promise.resolve({data:[],error:null}):db.from('custom_print_types').select('*').eq('active',true)
   ]);
   if(fq.error)throw fq.error;if(pq.error)throw pq.error;
-  const fabric=fq.data,quality=String(incoming.quality||'');
+  const fabric=fq.data,quality=isReadyStock?'':String(incoming.quality||'');
   const qualityCol=quality==='Premium'?'premium_rate':quality==='Standard'?'standard_rate':quality==='Budget'?'budget_rate':'';
-  if(!fabric?.active||!qualityCol||fabric[qualityCol]===null||fabric[qualityCol]===undefined)throw new Error('Fabric or quality changed. Reconfigure item.');
   const opts=saved.fabric_options||{};
-  if(opts.selection_mode==='custom'&&(!Array.isArray(opts[String(fabric.id)])||!opts[String(fabric.id)].includes(quality)))throw new Error('Selected fabric is not offered on this item.');
-  const base=Math.max(0,Number(fabric[qualityCol]));
-  if(!Number.isFinite(base))throw new Error('Garment price is not configured.');
+  if(!isReadyStock){
+    if(!fabric?.active||!qualityCol||fabric[qualityCol]===null||fabric[qualityCol]===undefined)throw new Error('Fabric or quality changed. Reconfigure item.');
+    if(opts.selection_mode==='custom'&&(!Array.isArray(opts[String(fabric.id)])||!opts[String(fabric.id)].includes(quality)))throw new Error('Selected fabric is not offered on this item.');
+  }
+  const base=isReadyStock?Number(saved.rate):Number(fabric[qualityCol]);
+  if((isReadyStock&&(saved.rate===null||saved.rate===undefined))||!Number.isFinite(base)||base<0)throw new Error('Garment price is not configured.');
   const raw=Array.isArray(opts.sportswear_sizes)?opts.sportswear_sizes:['XS','S','M','L','XL','XXL'].map(size=>({size}));
   const sizes=new Map(raw.map((r:any)=>[String((typeof r==='string'?r:r?.size)||'').trim(),typeof r==='string'?{size:r}:r]));
   let garmentTotal=0,totalPieces=0;const printableSizes=[] as any[];
@@ -200,7 +204,7 @@ async function validatePrintableOrder(db:any,item:any){
   }
   const printsPerGarment=printsTotal;printsTotal=printsPerGarment*totalPieces;
   const totalAmount=garmentTotal+printsTotal;
-  const design={kind:'printable_order',itemId:saved.id,itemTitle:saved.title||'',categoryName:cq.data.name,fabricId:fabric.id,fabricName:fabric.name,quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),printableSizes,sizeQuantities:Object.fromEntries(printableSizes.map(r=>[r.size,r.qty])),sizeRates:Object.fromEntries(printableSizes.map(r=>[r.size,r.rate])),includePrinting,selectedPrintTypeId,selectedPrintTypeName,selectedPrintTypeIds,selectedPrints,totalPieces,garmentTotal,printsPerGarment,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
+  const design={kind:'printable_order',itemId:saved.id,itemTitle:saved.title||'',categoryName:cq.data.name,fabricId:fabric?.id||'',fabricName:fabric?.name||'',quality,baseRate:base,cardImage:saved.card_image_url||saved.images?.[0]||'',images:(saved.images||[]).slice(0,20),printableSizes,sizeQuantities:Object.fromEntries(printableSizes.map(r=>[r.size,r.qty])),sizeRates:Object.fromEntries(printableSizes.map(r=>[r.size,r.rate])),includePrinting,selectedPrintTypeId,selectedPrintTypeName,selectedPrintTypeIds,selectedPrints,totalPieces,garmentTotal,printsPerGarment,printsTotal,totalAmount,validatedAt:new Date().toISOString()};
   return {...item,itemType:'printable_order',name:saved.title||'Printable item',code:saved.display_id||item.code||'',qty:totalPieces,unitPrice:totalAmount/totalPieces,lineTotal:totalAmount,design};
 }
 async function uploadOrderImage(db:any,customerId:string,value:any,label:string){
@@ -235,7 +239,7 @@ Deno.serve(async(req)=>{
     const formattedDelivery=deliveryRecord?[deliveryRecord.business_name,deliveryRecord.line1,deliveryRecord.line2,deliveryRecord.landmark,deliveryRecord.city,deliveryRecord.district,deliveryRecord.state,deliveryRecord.postal_code].filter(Boolean).join(', '):String(details.address||'')
     // The existing stock-safe SQL ordering function validates Ready Made product lines too.
     const recipient=deliveryRecord?{name:deliveryRecord.recipient_name,phone:deliveryRecord.phone||customer.phone,label:deliveryRecord.label,businessName:deliveryRecord.business_name||'',address:formattedDelivery}: {name:String(details.recipientName||details.name||customer.name||''),phone:String(customer.phone||''),address:formattedDelivery}
-    const customerName=String(customer.name||details.customerName||details.name||'').trim().slice(0,120),business=String(details.business||customer.business_name||'').trim().slice(0,160);
+    const remarks=String(body.remarks||'').trim();if(remarks.length>5000||remarks.split(/\s+/).filter(Boolean).length>300)throw new Error('Remarks are too long.');const customerName=String(customer.name||details.customerName||details.name||'').trim().slice(0,120),business=String(details.business||customer.business_name||'').trim().slice(0,160);
     // Every line, including Ready Made / Uniform sizes, is validated, deducted
     // and inserted atomically in one database transaction. This is the final
     // availability check immediately before confirming the whole order.
@@ -256,7 +260,7 @@ Deno.serve(async(req)=>{
     }
     const snapshot=await db.from('orders').select('metadata').eq('id',order.id).single()
     if(snapshot.error)throw snapshot.error
-    const detailsSaved=await db.from('orders').update({metadata:{...(snapshot.data?.metadata||{}),account:{id:s.customer_id,name:customer.name||customerName,phone:customer.phone||'',businessName:customer.business_name||''},deliveryRecipient:recipient}}).eq('id',order.id)
+    const detailsSaved=await db.from('orders').update({metadata:{...(snapshot.data?.metadata||{}),account:{id:s.customer_id,name:customer.name||customerName,phone:customer.phone||'',businessName:customer.business_name||''},deliveryRecipient:recipient,remarks}}).eq('id',order.id)
     if(detailsSaved.error)throw detailsSaved.error
     await db.from('customers').update({name:customerName||customer.name||'',business_name:business||customer.business_name||'',updated_at:new Date().toISOString(),last_seen_at:new Date().toISOString()}).eq('id',s.customer_id);
     if(!directOrder){const cleared=await db.rpc('customer_cart_mutate',{p_customer_id:s.customer_id,p_operation:'clear',p_item_key:null,p_item:null});if(cleared.error)console.error('Order placed but cart clear failed:',cleared.error.message);}

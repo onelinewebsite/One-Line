@@ -7218,3 +7218,20 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .custom-item-page.corporate-tee-detail-page .custom-option-heading h3{font-size:18px!important}
 .custom-item-page .custom-fabric-choice:focus-visible,.custom-item-page .custom-quality-choice:focus-visible{outline:2px solid #78128c;outline-offset:3px}
 @media(max-width:520px){.custom-item-page.corporate-tee-detail-page .custom-tshirt-options{padding:14px!important}.custom-item-page.corporate-tee-detail-page .custom-fabric-choice,.custom-item-page.corporate-tee-detail-page .custom-quality-choice{min-height:77px!important;padding:13px!important}}
+
+/* v185 Print guide and two-field item identifiers */
+.catalogue-public-details{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:10px!important;width:100%;margin-bottom:12px;}
+.catalogue-public-details>div{min-width:0;overflow-wrap:anywhere;text-align:center;margin:0!important;white-space:nowrap;font-size:clamp(11px,1.4vw,14px);}
+.printable-type-wrap{min-width:0;display:flex;align-items:stretch;position:relative;gap:5px;}
+.printable-type-wrap .printable-type-card{flex:1;min-width:0;text-align:left;padding-right:8px;}
+.print-info-trigger{border:none!important;background:transparent!important;flex:0 0 29px;align-self:center;display:grid;place-items:center;color:var(--primary,#74118a)!important;padding:4px!important;cursor:pointer;border-radius:50%;}
+.print-info-trigger:focus-visible,.print-info-more:focus-visible{outline:3px solid #7c2399;outline-offset:2px;}
+.print-info-backdrop{position:fixed;inset:0;background:#130d1c9c;z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.print-info-dialog{background:#fff;color:#24152b;position:relative;border-radius:18px;width:min(100%,430px);padding:24px;box-shadow:0 18px 50px #23082d44;}
+.print-info-close{background:none;border:0;color:#6c187e;cursor:pointer;font-weight:700;margin-bottom:18px;padding:0;}
+.print-info-tag{display:block;color:#75228e;font-size:11px;letter-spacing:1px;font-weight:800;}
+.print-info-dialog h2{font-size:21px;margin:7px 0 10px;}
+.print-info-dialog p{font-size:14px;line-height:1.65;margin:0 0 18px;}
+.print-info-more{display:inline-flex;gap:8px;color:#74118a;text-decoration:none;border-bottom:1px solid currentColor;font-weight:700;}
+.checkout-remarks-label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700;margin:14px 0;color:inherit;}
+.checkout-remarks-label textarea{width:100%;min-height:65px;padding:10px 12px;border:1px solid #ded6e1;border-radius:12px;resize:vertical;font:inherit;font-weight:400;}
