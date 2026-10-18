@@ -1340,3 +1340,6 @@ html,body{background:#f6f2f7;color:#241c27}
 .customer-address-card{border:1px solid #e7dbea;border-radius:12px;background:#fcf9fd;padding:11px;display:grid;gap:4px;min-width:0;}
 .customer-address-card b{color:#711a80;font-size:12px}.customer-address-card span{font-size:11px;color:#57485e}.customer-address-card p{font-size:12px;overflow-wrap:anywhere;line-height:1.5;margin:0;}
 .customer-data-error{padding:10px 12px;color:#852034;background:#fff1f2;border-radius:9px;}
+
+/* v186 saved / ordered delivery-address headings */
+.customer-address-group-label{font-size:11px;font-weight:800;letter-spacing:.03em;color:var(--primary,#75118a);margin:12px 0 6px;flex-basis:100%;width:100%}

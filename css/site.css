@@ -7235,3 +7235,11 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .print-info-more{display:inline-flex;gap:8px;color:#74118a;text-decoration:none;border-bottom:1px solid currentColor;font-weight:700;}
 .checkout-remarks-label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700;margin:14px 0;color:inherit;}
 .checkout-remarks-label textarea{width:100%;min-height:65px;padding:10px 12px;border:1px solid #ded6e1;border-radius:12px;resize:vertical;font:inherit;font-weight:400;}
+
+/* v186: small, in-card printing information icon; keeps both buttons separately accessible. */
+.printable-type-wrap{position:relative!important;gap:0!important}
+.printable-type-wrap .printable-type-card{width:100%;padding-right:59px!important;min-height:52px}
+.printable-type-wrap .print-info-trigger{position:absolute!important;z-index:3;right:7px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important;padding:0!important;border-radius:50%!important;background:transparent!important;color:var(--primary,#74118a)!important}
+.printable-type-wrap .print-info-trigger svg{width:15px!important;height:15px!important}
+.printable-type-wrap .printable-type-check{margin-right:21px}
+@media (max-width:420px){.printable-type-wrap .printable-type-card{padding-right:51px!important;min-height:49px}}
