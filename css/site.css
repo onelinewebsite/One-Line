@@ -7252,3 +7252,20 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .printable-type-name-row .print-info-trigger{position:static!important;z-index:3!important;transform:none!important;top:auto!important;right:auto!important;left:auto!important;flex:0 0 22px!important;width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;align-self:center!important;pointer-events:auto!important}
 .printable-type-name-row .print-info-trigger svg{width:14px!important;height:14px!important}
 @media(max-width:420px){.printable-type-wrap .printable-type-card{padding:10px 9px!important;min-height:49px}.printable-type-name-row{left:9px;right:40px;gap:3px}.printable-type-name-row .printable-type-title{font-size:13px}}
+
+
+/* v188: fit-to-screen image inspection; pinch/pan with anchored +/- controls. */
+.image-zoom-overlay .zoom-image-stage{touch-action:none!important;overscroll-behavior:contain!important}
+.image-zoom-overlay .zoom-image-stage img[data-zoom-view]{touch-action:none!important;user-select:none!important;-webkit-user-select:none!important;-webkit-user-drag:none!important;transform-origin:center center!important;transition:none!important}
+.image-zoom-overlay .zoom-controls{min-height:58px;padding-bottom:max(9px,env(safe-area-inset-bottom))!important}
+.image-zoom-overlay .zoom-controls button:disabled{opacity:.35;cursor:default}
+/* Public identifiers belong after the purchase actions, never over the item title. */
+.custom-item-page .catalogue-public-details-bottom{
+ display:flex!important;grid-template-columns:none!important;align-items:center!important;justify-content:center!important;
+ width:100%!important;min-width:0;gap:10px!important;margin:22px 0 14px!important;
+ font-size:13px!important;font-weight:700;color:#685771;
+}
+.custom-item-page .catalogue-public-details-bottom>span{min-width:0;white-space:nowrap!important;overflow-wrap:normal!important;font-size:inherit!important;line-height:1.5}
+.custom-item-page .catalogue-public-details-bottom>.catalogue-detail-separator{color:#b7aabb!important;font-weight:400}
+/* Variant-specific descriptions appear immediately after Choose and before Sizes. */
+.uniform-custom-item-page .kids-uniform-picker>.kids-uniform-description{margin:14px 0 14px!important}
