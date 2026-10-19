@@ -7269,3 +7269,8 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .custom-item-page .catalogue-public-details-bottom>.catalogue-detail-separator{color:#b7aabb!important;font-weight:400}
 /* Variant-specific descriptions appear immediately after Choose and before Sizes. */
 .uniform-custom-item-page .kids-uniform-picker>.kids-uniform-description{margin:14px 0 14px!important}
+
+/* v189 — clickable zoom target on Ready Made and Custom Catalogue item cards. */
+.product-card-slider .card-zoom-target{display:block;position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:inherit;cursor:zoom-in;touch-action:pan-y;outline-offset:-3px}
+.product-card-slider .card-zoom-target:focus-visible{outline:3px solid #64116f;outline-offset:-3px}
+.product-card-slider .card-zoom-target img{pointer-events:none}
