@@ -1343,3 +1343,18 @@ html,body{background:#f6f2f7;color:#241c27}
 
 /* v186 saved / ordered delivery-address headings */
 .customer-address-group-label{font-size:11px;font-weight:800;letter-spacing:.03em;color:var(--primary,#75118a);margin:12px 0 6px;flex-basis:100%;width:100%}
+
+/* v192: order detail contacts and optional expected-delivery date */
+.order-phone-contact{position:relative;min-width:0}
+.order-phone-number{display:inline-flex;align-items:center;border:0;background:none;color:#721580;padding:4px 0;text-align:left;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:inherit;font-weight:700}
+.order-phone-number:focus-visible{outline:2px solid #721580;outline-offset:3px;border-radius:3px}
+.order-phone-options:not([hidden]){display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 0}
+.order-phone-options[hidden]{display:none!important}
+.order-phone-options a{display:inline-flex;align-items:center;gap:5px;border:1px solid #e1d0e8;border-radius:9px;padding:7px 10px;color:#64116f;text-decoration:none;font-size:12px;font-weight:750;background:#fff}
+.order-phone-options a:hover{background:#f9effc}
+.order-phone-options svg{width:15px;height:15px}
+.order-expected-delivery{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.order-expected-delivery label{display:flex;flex-direction:column;gap:7px;min-width:170px}
+.order-expected-delivery input{min-height:38px;max-width:230px;padding:7px 10px;border:1px solid #e4d9e9;border-radius:10px;background:#fff;color:#29202b;font:inherit}
+.order-expected-delivery button{min-height:38px;padding:7px 12px;border:1px solid #64116f;border-radius:10px;background:#64116f;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.order-expected-delivery button:disabled{opacity:.5;cursor:wait}

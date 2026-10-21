@@ -7279,3 +7279,6 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 }
 .custom-item-page .catalogue-public-details-bottom>.catalogue-detail-separator{color:#ac9faf!important}
 @media(max-width:420px){.custom-item-page .catalogue-public-details-bottom{font-size:10px!important;gap:5px!important}}
+
+/* v192: compact client-side search results across Custom Catalogue and Ready Made. */
+.catalogue-search-section-title{font-size:16px;font-weight:800;margin:12px 0 16px;color:var(--text,#271a2e)}

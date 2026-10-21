@@ -32,17 +32,6 @@ function wrap(doc,text,width){return doc.splitTextToSize(clean(text)||'-',width)
 function drawText(doc,text,x,y,width,fontSize=10,bold=false,spacing=5){
  doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(fontSize);const rows=wrap(doc,text,width);doc.text(rows,x,y);return y+rows.length*spacing;
 }
-// Use the order snapshot's image URLs; browser image cache serves repeated requests.
-const orderPhotos=item=>{
- const d=item.design_json||item.design||{},out=[];
- const add=(src,label)=>{if(typeof src==='string'&&src&&!out.some(v=>v.src===src))out.push({src,label});};
- (Array.isArray(d.selectedItems)?d.selectedItems:[]).forEach(v=>(Array.isArray(v.images)?v.images:[]).forEach((src,n)=>add(src,(v.name||'Variant')+' '+(n+1))));
- add(d.frontCompositeUrl||d.frontCompositeDataUrl||d.design?.front?.compositeUrl||d.front?.compositeUrl,'Front artwork');
- add(d.backCompositeUrl||d.backCompositeDataUrl||d.design?.back?.compositeUrl||d.back?.compositeUrl,'Back artwork');
- (Array.isArray(d.images)?d.images:[]).forEach((src,n)=>add(src,'Product image '+(n+1)));
- add(item.image||d.image||d.cardImage||d.artworkUrl||'','Item photo');
- return out.slice(0,8);
-};
 async function documentImage(src){
  if(!src||typeof document==='undefined')return null;
  try{
@@ -80,17 +69,14 @@ window.OneLineCustomerPdf=async function(order,items){
  field('Business',d.businessName||d.business||order.business||'');field('Delivery address',d.address||order.address||'');
  field('Shipping',order.delivery||'Courier');field('Payment',order.payment||'Cash on delivery');
  if(order.metadata?.remarks){heading('REMARKS');field('Notes',order.metadata.remarks);}
- heading('ORDERED ITEMS & IMAGES');
+ heading('ORDERED ITEMS');
  for(let i=0;i<rows.length;i++){
-  const row=rows[i],source=(items||[])[i],photos=orderPhotos(source||{});need(29);
+  const row=rows[i];need(29);
   doc.setDrawColor(222,207,228);doc.setFillColor(255,255,255);doc.roundedRect(pad,y-7,182,28,3,3,'S');
   doc.setTextColor(...violet);doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text(doc.splitTextToSize((i+1)+'. '+row.name,135).slice(0,2),18,y);
   setInk();doc.setFontSize(9.5);doc.setFont('helvetica','normal');doc.text('Qty: '+row.qty+'  |  '+cash(row.rate)+' each',18,y+15);doc.setFont('helvetica','bold');doc.text(cash(row.total),192,y+15,{align:'right'});y+=29;
   if(row.code)field('Item ID',row.code);
   for(const note of row.notes){doc.setFontSize(9.5);field('Details',note);}
-  // Product images are embedded in the downloadable/shareable PDF, not external links.
-  if(photos.length){for(let n=0;n<photos.length;n+=2){const batch=photos.slice(n,n+2),loaded=await Promise.all(batch.map(x=>documentImage(x.src)));need(65);for(let j=0;j<batch.length;j++){const ph=loaded[j],x=18+j*90;doc.setFillColor(249,246,250);doc.roundedRect(x,y,83,57,3,3,'F');if(ph){const r=Math.min(79/ph.w,51/ph.h),dw=ph.w*r,dh=ph.h*r;doc.addImage(ph.data,'JPEG',x+(83-dw)/2,y+(52-dh)/2,dw,dh);}else{doc.setFontSize(8);setInk([111,100,116]);doc.text('Image unavailable',x+41,y+26,{align:'center'});setInk();}doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text(clean(batch[j].label).slice(0,42),x+3,y+62);}y+=70;}}
-  else {need(8);doc.setFont('helvetica','italic');doc.setFontSize(8.5);setInk([110,100,115]);doc.text('Item image not provided with this order',18,y);y+=8;setInk();}
   y+=6;
  }
  heading('PAYMENT SUMMARY');field('Items subtotal',cash(rows.reduce((n,r)=>n+r.total,0)));
