@@ -8,7 +8,7 @@
     bulkQty:{},
     teamStep:1,teamUnlockedStep:1,teamFront:{background:'',fileName:'',layers:[]},teamBack:{background:'',fileName:'',layers:[{id:'team-name',type:'fixedText',text:'NAME',x:50,y:24,sizePct:7},{id:'team-number',type:'fixedText',text:'99',x:50,y:55,sizePct:22}]},teamRows:[{name:'',number:'',size:'M'}],teamActiveLayer:'',teamCrop:null,teamEnquiryBusy:false,teamEnquirySuccess:false,pendingCustomItem:null,
     authModal:false,authStep:'phone',authPhone:'',authOtp:'',authName:'',authBusy:false,authError:'',pendingAction:'',customer:B?.customerSession?.()||null,
-    backendReady:false,backendError:'',catalogQuery:'',catalogueSearchQueries:{custom:'',ready:''},headerSearchOpen:false,headerSearchSection:'custom',addresses:[],addressEditor:null,selectedAddressId:'',orderDetailId:'',accountLoaded:false,accountSyncing:false,cartVersion:0,cartUpdatedAt:'',ordersStamp:'',enquiriesStamp:'',profileUpdatedAt:'',
+    backendReady:false,backendError:'',catalogQuery:'',catalogueSearchQueries:{custom:'',ready:''},headerSearchQuery:'',addresses:[],addressEditor:null,selectedAddressId:'',orderDetailId:'',accountLoaded:false,accountSyncing:false,cartVersion:0,cartUpdatedAt:'',ordersStamp:'',enquiriesStamp:'',profileUpdatedAt:'',
     toast:'',legal:'',checkoutStep:1,details:{name:'',phone:'',address:'',business:''},delivery:'Courier',payment:'Cash on delivery',paymentDemo:false,remarks:'',redeemInput:'',redeemApplied:null,redeemBusy:false,redeemError:'',
     orderPlaced:false,orderReference:'',orderSubmitting:false,directOrderItem:null,installPrompt:null,zoomImage:'',zoomAlt:'',zoomImages:[],zoomIndex:0,zoomScale:1,zoomX:0,zoomY:0
   };
@@ -102,12 +102,12 @@
     if(['catalog','categories','product'].includes(screen))screen='customCatalog';
     options=options||{};
     if(state.menu&&history.state?.oneLineModal==='menu'){try{const next={...(history.state||{})};delete next.oneLineModal;history.replaceState(next,'',location.href);}catch(_){}}
-    if(state.headerSearchOpen&&history.state?.oneLineModal==='catalogue-search'){try{const next={...(history.state||{})};delete next.oneLineModal;history.replaceState(next,'',location.href);}catch(_){}}
-    state.headerSearchOpen=false;state.menu=false;state.filterOpen=false;state.filterDraft=null;state.printInfoId='';
+    state.menu=false;state.filterOpen=false;state.filterDraft=null;state.printInfoId='';
     if(screen===state.screen&&!options.force){try{history.replaceState({...history.state,...routeState(screen,window.scrollY)},'',routeUrl(screen));}catch(_){}window.scrollTo(0,0);render();if(screen==='customItem')void refreshCustomerFabricPricing(state.customItemId);return;}
     const previous=state.screen;rememberScroll();state.screen=screen;
     if(!options.fromHistory){try{history.pushState({...routeState(screen,0),fromScreen:previous},'',routeUrl(screen));}catch(_){}}
     window.scrollTo(0,0);render();
+    if(screen==='search')requestAnimationFrame(()=>root.querySelector('[data-unified-catalogue-search]')?.focus({preventScroll:true}));
     if(screen==='customItem')void refreshCustomerFabricPricing(state.customItemId);
     if(accountView()&&Date.now()-lastAccountSyncAt>15000)void pollCustomerAccount(true);
   }
@@ -395,7 +395,7 @@
   }
   function hasReadyMadeItems(){return retailProducts().some(p=>p.active!==false&&p.customerVisible!==false);}
   const isStandalone=()=>window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true;
-  function fallbackForScreen(screen){return({product:'catalog',customCategory:(state.customCatalogCategories.find(c=>String(c.id)===String(state.customCategoryId))?.catalogue_section==='ready'?'readyMade':'customCatalog'),customItem:'customCategory',cart:'home',checkout:'cart',orders:'profile',addresses:'profile',profileDetails:'profile',profile:'home',customize:'home',teamUpload:'home',categories:'home',catalog:'home',customCatalog:'home'})[screen]||'home';}
+  function fallbackForScreen(screen){return({search:'home',product:'catalog',customCategory:(state.customCatalogCategories.find(c=>String(c.id)===String(state.customCategoryId))?.catalogue_section==='ready'?'readyMade':'customCatalog'),customItem:'customCategory',cart:'home',checkout:'cart',orders:'profile',addresses:'profile',profileDetails:'profile',profile:'home',customize:'home',teamUpload:'home',categories:'home',catalog:'home',customCatalog:'home'})[screen]||'home';}
   function header(){
     const customer=state.customer||B?.customerSession?.()||null,verified=!!customer?.token,isHome=state.screen==='home';
     const activeScreen=(...screens)=>screens.includes(state.screen)?' active-menu':'';
@@ -405,25 +405,12 @@
     const account=verified?'<button class="drawer-account" data-go="profile"><span class="drawer-account-icon">'+I('user')+'</span><span><b>'+S.esc(customer?.name||'My profile')+'</b><small>'+S.esc(String(customer?.phone||'').replace(/^91(?=\d{10}$)/,'+91 '))+'</small></span>'+I('chevron')+'</button>':'<button class="drawer-account" data-action="profile-login"><span class="drawer-account-icon">'+I('user')+'</span><span><b>Sign in / Sign up</b><small>Save designs, track orders and more.</small></span>'+I('chevron')+'</button>';
     const readyMadeDrawer=item('readyMade','Ready Made','tag',['readyMade']);
     const drawer='<div class="drawer-top"><button class="drawer-brand-button" data-go="home">'+logo(false)+'</button><button class="drawer-close" data-action="close-menu" aria-label="Close menu">'+I('close')+'</button></div><div class="drawer-links">'+
-      item('home','Home','home')+readyMadeDrawer+item('customCatalog','Custom Catalogue','sparkle',['customCatalog','customCategory','customItem'])+item('customize','Customize','type')+
+      item('home','Home','home')+readyMadeDrawer+item('customCatalog','Custom Catalogue','sparkle',['customCatalog','customCategory','customItem'])+item('customize','Customize','type')+item('teamUpload','Team Order','users')+
       '<span class="drawer-divider" aria-hidden="true"></span>'+item('cart','My Cart','cart',['cart','checkout'])+item('orders','My Orders','orders')+item('profile','My Profile','user')+
       '<button class="drawer-item" data-action="whatsapp" data-message="Hi, I need help with One-Line."><span class="drawer-icon">'+I('contact')+'</span><span>Help & Support</span>'+I('chevron')+'</button>'+installNav+'<button class="drawer-item" data-legal="About"><span class="drawer-icon">'+I('shield')+'</span><span>About OneLine</span>'+I('chevron')+'</button></div>'+account;
     const leading=isHome?'<button class="mobile-menu" data-action="menu" aria-label="Open menu">'+I('menu')+'</button>':'<button class="mobile-menu header-back-button" data-action="nav-back" data-fallback="'+fallbackForScreen(state.screen)+'" aria-label="Go back">'+I('back')+'</button>';
     const announcement=isHome?'<div class="announcement"><span>CUSTOM APPAREL · BULK ORDERS · TEAM KITS</span><b>ONE DESIGN. EVERY SIZE.</b></div>':'';
-    return announcement+'<header class="site-header '+(isHome?'home-site-header':'inner-site-header')+'">'+leading+'<button class="logo-button" data-go="home">'+logo(false)+'</button><nav class="'+(state.menu?'open':'')+'">'+drawer+'</nav><div class="header-actions">'+installHead+'<button data-go="profile" class="profile-head-link'+(['profile','profileDetails','orders'].includes(state.screen)?' active':'')+'" aria-label="Open profile">'+I('user')+'</button><button type="button" data-action="header-catalogue-search" class="header-search-link'+(state.headerSearchOpen?' active':'')+'" aria-label="Search Custom Catalogue and Ready Made" aria-haspopup="dialog">'+I('search')+'</button><button data-go="cart" class="cart-head-link" aria-label="Open cart">'+I('cart')+'</button></div></header>'+(state.menu?'<button class="menu-scrim" data-action="close-menu" aria-label="Close menu"></button>':'');
-  }
-  function openHeaderCatalogueSearch(){
-    if(state.headerSearchOpen)return;
-    const category=state.customCatalogCategories.find(x=>String(x.id)===String(state.customCategoryId));
-    const section=state.screen==='readyMade'||(['customItem','customCategory'].includes(state.screen)&&category?.catalogue_section==='ready')?'ready':'custom';
-    state.headerSearchSection=section;state.headerSearchOpen=true;state.menu=false;
-    try{history.pushState({...history.state,oneLineModal:'catalogue-search'},'',location.href);}catch(_){}
-    render();root.querySelector('[data-header-catalogue-search]')?.focus({preventScroll:true});
-  }
-  function closeHeaderCatalogueSearch(){
-    if(!state.headerSearchOpen)return;
-    if(history.state?.oneLineModal==='catalogue-search'){history.back();return;}
-    state.headerSearchOpen=false;render();
+    return announcement+'<header class="site-header '+(isHome?'home-site-header':'inner-site-header')+'">'+leading+'<button class="logo-button" data-go="home">'+logo(false)+'</button><nav class="'+(state.menu?'open':'')+'">'+drawer+'</nav><div class="header-actions">'+installHead+'<button data-go="profile" class="profile-head-link'+(['profile','profileDetails','orders'].includes(state.screen)?' active':'')+'" aria-label="Open profile">'+I('user')+'</button><button type="button" data-go="search" class="header-search-link'+(state.screen==='search'?' active':'')+'" aria-label="Search all catalogue items">'+I('search')+'</button><button data-go="cart" class="cart-head-link" aria-label="Open cart">'+I('cart')+'</button></div></header>'+(state.menu?'<button class="menu-scrim" data-action="close-menu" aria-label="Close menu"></button>':'');
   }
   function footer(){const readyMadeLink='<button data-go="readyMade">Ready Made</button>';return '<footer><div class="footer-main">'+logo(false)+'<p>Design custom apparel, upload front and back creative team artwork.</p><div><b>SHOP</b>'+readyMadeLink+'<button data-go="customCatalog">Customization catalogue</button><button data-go="customize">Custom designer</button><button data-go="teamUpload">Team order</button></div><div><b>INFORMATION</b>'+Object.keys(legalCopy).map(x=>'<button data-legal="'+x+'">'+x+'</button>').join('')+'</div><div><b>ACCOUNT</b><button data-go="profile">Profile</button><button data-go="cart">Cart</button><button data-go="orders">Orders</button></div></div><div class="footer-bottom"><span>© 2026 One-Line Touch Shopping</span><span>One-Line Touch Shopping</span><span>Developed by <a class="developer-credit-inline" href="'+QUARTZ_SITE+'" target="_blank" rel="noopener noreferrer">Quartz Web Solutions</a></span></div></footer>';}
   function bottom(){
@@ -556,14 +543,12 @@
     return (categoryMatches.length?'<div class="custom-category-grid full-custom-category-grid">'+categoryMatches.map((c,i)=>customCategoryCard(c,i,false)).join('')+'</div>':'')+
       (matches.length?'<h2 class="catalogue-search-section-title">Matching items ('+matches.length+')</h2>'+customCategoryGrid(matches):(!categoryMatches.length?'<div class="empty-state clean-empty"><h2>No matching items</h2><p>Try a name, rate, description, variant or item ID.</p></div>':''));
   }
-  // Reuse the same catalogue search matching logic for header search, with no extra Supabase requests.
-  function headerCatalogueSearchModal(){
-    if(!state.headerSearchOpen)return '';
-    const section=state.headerSearchSection==='ready'?'ready':'custom';
-    const cats=visibleCustomCatalogCategories(section);
-    const query=catalogueSearchValue(section);
-    const results=query.trim()?catalogueSearchResults(section,cats):'<div class="header-catalogue-search-hint">Search by name, item ID, variant, description or price.</div>';
-    return '<div class="header-catalogue-search-backdrop" data-header-search-backdrop><section class="header-catalogue-search-panel" role="dialog" aria-modal="true" aria-label="Search catalogues"><div class="header-catalogue-search-head"><div><span class="eyebrow">ONE-LINE</span><h2>Search catalogues</h2></div><button type="button" class="header-search-close" data-action="close-header-search" aria-label="Close search">'+I('close')+'</button></div><div class="header-catalogue-search-tabs" role="tablist" aria-label="Catalogue"><button type="button" role="tab" aria-selected="'+(section==='custom')+'" class="'+(section==='custom'?'active':'')+'" data-header-search-section="custom">Custom Catalogue</button><button type="button" role="tab" aria-selected="'+(section==='ready')+'" class="'+(section==='ready'?'active':'')+'" data-header-search-section="ready">Ready Made</button></div><label class="header-catalogue-search-field"><span>'+I('search')+'</span><input data-header-catalogue-search type="search" autocomplete="off" aria-label="Search '+(section==='ready'?'Ready Made':'Custom Catalogue')+'" placeholder="Search products, IDs, rates, variants..." value="'+S.esc(query)+'"></label><div class="header-catalogue-search-results" data-header-search-results>'+results+'</div><div class="header-catalogue-search-foot"><button type="button" data-action="view-header-search-catalogue">Browse all '+(section==='ready'?'Ready Made':'Custom Catalogue')+' '+I('arrow')+'</button></div></section></div>';
+  // Unified full-page search: Custom Catalogue and Ready Made share one cached index.
+  function unifiedCatalogueSearch(){
+    const query=String(state.headerSearchQuery||''),q=query.trim();
+    const accessibleIds=new Set([...visibleCustomCatalogCategories('custom'),...visibleCustomCatalogCategories('ready')].map(c=>String(c.id)));
+    const results=q?visibleCustomCatalogItems().filter(item=>accessibleIds.has(String(item.category_id))&&catalogueSearchMatches(item,q)):[];
+    return '<main class="header-unified-search-page section-wrap screen screen-enter"><label class="header-unified-search-field">'+I('search')+'<input type="search" data-unified-catalogue-search autocomplete="off" aria-label="Search all catalogue items" placeholder="Search items, variants, IDs, prices..." value="'+S.esc(query)+'"></label><div class="header-unified-search-results">'+(q?(results.length?customCategoryGrid(results):'<div class="empty-state clean-empty"><h2>No matching items</h2></div>'):'')+'</div></main>';
   }
   function readyMade(){const cats=visibleCustomCatalogCategories('ready');return '<main class="custom-catalog-page section-wrap screen screen-enter"><div class="catalog-title"><div><span class="eyebrow">READY TO ORDER</span><h1>Ready Made</h1><p>Find styles, sizes and prices.</p></div></div>'+catalogueSearchBox('ready')+(catalogueSearchResults('ready',cats)??(cats.length?'<div class="custom-category-grid full-custom-category-grid">'+cats.map((c,i)=>customCategoryCard(c,i,false)).join('')+'</div>':'<div class="empty-state clean-empty"><h2>Ready Made items coming soon</h2></div>'))+'</main>';}
   function readyMadeHomeSection(){const cats=visibleCustomCatalogCategories('ready').slice(0,4);if(!cats.length)return '';return '<section class="custom-catalog-home ready-made-home section-wrap"><div class="section-heading"><div><span class="eyebrow">READY TO ORDER</span><h2>Ready Made</h2></div><button data-go="readyMade">View all '+I('arrow')+'</button></div>'+(cats.length?'<div class="custom-category-grid home-custom-category-grid">'+cats.map((c,i)=>customCategoryCard(c,i,true)).join('')+'</div>':'<p>New ready-made collections coming soon.</p>')+'</section>';}
@@ -1372,14 +1357,14 @@
   function paymentModal(){return '<div class="overlay"><div class="payment-modal"><button class="close" data-action="close-payment">'+I('close')+'</button><div class="demo-tag">ORDER CONFIRMATION</div>'+I('card')+'<h2>'+S.money(subtotal())+'</h2><p>Online payment gateway can be connected after the client supplies the selected payment provider credentials.</p><button class="primary wide" data-action="complete-order">Confirm order</button><button class="text-button" data-action="close-payment">Cancel</button></div></div>';}
   function toast(){return state.toast?'<div class="toast">'+I('check')+S.esc(state.toast)+(state.toast==='Added to your cart'?'<button data-go="cart">View cart</button>':'')+'</div>':'';}
   function whatsappFloat(){if(state.screen==='customize')return'';return '<button class="whatsapp-float whatsapp-icon-only contact-float" data-whatsapp-float aria-label="Contact enquiry"><img src="assets/contact-support.webp" alt="Contact"></button>';}
-  function page(){if(['catalog','categories','product'].includes(state.screen))return customCatalog();return({home,readyMade,categories:categoriesPage,catalog,product,customCatalog,customCategory,customItem,cart,checkout,orders,profile,profileDetails,addresses:addressesPage,teamUpload})[state.screen]?.()||home();}
+  function page(){if(['catalog','categories','product'].includes(state.screen))return customCatalog();return({home,search:unifiedCatalogueSearch,readyMade,categories:categoriesPage,catalog,product,customCatalog,customCategory,customItem,cart,checkout,orders,profile,profileDetails,addresses:addressesPage,teamUpload})[state.screen]?.()||home();}
 
   function render(){
     state.products=S.getProducts();state.categories=S.getCategories();state.customCatalogCategories=(S.getCustomCatalogCategories?.()||state.customCatalogCategories||[]).map(c=>['uniform','kids uniform'].includes(String(c.name||'').trim().toLowerCase())?{...c,name:'Uniform'}:c);state.customCatalogItems=S.getCustomCatalogItems?.()||state.customCatalogItems||[];state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||state.customCatalogFabrics||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||state.customSportswearFabrics||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||state.customSportswearTypes||[];state.customPrintTypes=S.getCustomPrintTypes?.()||state.customPrintTypes||[];state.settings=S.getSettings();const sess=B?.customerSession?.();if(sess?.token)state.customer={...(state.customer||{}),...sess};
     if(state.screen==='customize'){root.innerHTML='<div class="view-root customizer-only-root"><div class="customizer-screen-wrap"><div id="designer-root"></div>'+footer()+'</div>'+authModal()+toast()+'</div>';window.OneLineDesigner.mount(document.getElementById('designer-root'),{onBack:()=>navigateBack('home'),onAdd:async item=>{item.itemType='custom_design';if(!(B?.customerSession?.()?.token)){state.pendingCustomItem=item;state.pendingAction='custom-add';state.authModal=true;state.authStep='phone';state.authError='';render();return false;}const added=await addCart(item,true);if(added)clearDesignerAfterCart();return added;},onBuy:async item=>{item.itemType='custom_design';if(!(B?.customerSession?.()?.token)){state.pendingCustomItem=item;state.pendingAction='custom-buy-now';state.authModal=true;state.authStep='phone';state.authError='';render();return false;}startDirectCheckout(item);return true;}});syncModalScrollLock();bind();return;}
     if(state.screen==='teamUpload'){root.innerHTML='<div class="view-root team-only-root">'+page()+authModal()+toast()+'</div>';syncModalScrollLock();bind();return;}
     const audience='retail';
-    root.innerHTML='<div class="view-root has-site-header">'+header()+page()+footer()+bottom()+headerCatalogueSearchModal()+filterModal(audience)+(state.legal?legal():'')+(state.paymentDemo?paymentModal():'')+authModal()+imageZoomModal()+printInfoModal()+toast()+whatsappFloat()+'</div>';syncModalScrollLock();bind();bindZoomViewer();positionWhatsapp();
+    root.innerHTML='<div class="view-root has-site-header">'+header()+page()+footer()+bottom()+filterModal(audience)+(state.legal?legal():'')+(state.paymentDemo?paymentModal():'')+authModal()+imageZoomModal()+printInfoModal()+toast()+whatsappFloat()+'</div>';syncModalScrollLock();bind();bindZoomViewer();positionWhatsapp();
   }
   function orderImageSource(src){
     const value=String(src||'').trim();if(!value)return'';
@@ -1463,11 +1448,30 @@
     sync();
   }
 
+  function openCustomCatalogueItem(itemId){
+    const idea=state.customCatalogItems.find(x=>String(x.id)===String(itemId));
+    if(!idea)return;
+    // A result opens details directly, but Back should show that item's own category cards.
+    if(state.screen==='search'&&idea.category_id){
+      rememberScroll();
+      state.customCategoryId=String(idea.category_id);
+      state.catalogueSearchQueries[catalogueSection(idea)]='';
+      try{history.pushState({...routeState('customCategory',0),fromScreen:'search'},'',routeUrl('customCategory'));}catch(_){}
+      state.screen='customCategory';
+      window.scrollTo(0,0);
+    }
+    state.customItemId=String(itemId);
+    state.customFabricId='';state.customQuality='';state.customSportswearTypeId='';state.sportswearSizeQty={};
+    state.printableIncludePrint=true;state.printablePrintQty={};state.printableSelectedPrintIds=[];state.printableActivePrintId='';state.printableActivePrintSize='';
+    state.uniformTopId='';state.uniformBottomId='';state.uniformOptionIds=[];state.uniformSizeQty={};state.uniformGalleryVariantId='';
+    if(idea.category_id)state.customCategoryId=String(idea.category_id);
+    go('customItem');
+  }
   function bindProductSliders(){
     root.querySelectorAll('[data-card-slider]').forEach(slider=>{
       const track=slider.querySelector('.product-slide-track'),card=slider.closest('[data-open-product],[data-open-custom-item]'),bars=card?.querySelectorAll('.product-slide-progress i');if(!track||!card)return;
       const sync=()=>{const w=track.clientWidth||1,idx=Math.max(0,Math.min((bars?.length||1)-1,Math.round(track.scrollLeft/w)));bars?.forEach((b,i)=>b.classList.toggle('active',i===idx));const progress=card.querySelector('.product-slide-progress');if(progress){progress.style.setProperty('--gallery-index',idx);progress.style.setProperty('--gallery-count',bars?.length||1);}};
-      bindHorizontalSlider(track,sync,()=>{if(card.dataset.openCustomItem){state.customItemId=card.dataset.openCustomItem;state.customFabricId='';state.customQuality='';state.customSportswearTypeId='';state.sportswearSizeQty={};state.printableIncludePrint=true;state.printablePrintQty={};state.printableSelectedPrintIds=[];state.printableActivePrintId='';state.printableActivePrintSize='';state.uniformTopId='';state.uniformBottomId='';state.uniformOptionIds=[];state.uniformSizeQty={};state.uniformGalleryVariantId='';const idea=state.customCatalogItems.find(i=>String(i.id)===String(state.customItemId));if(idea?.category_id)state.customCategoryId=idea.category_id;go('customItem');}else openProduct(card.dataset.openProduct,card.dataset.audience);});
+      bindHorizontalSlider(track,sync,()=>{if(card.dataset.openCustomItem){openCustomCatalogueItem(card.dataset.openCustomItem);}else openProduct(card.dataset.openProduct,card.dataset.audience);});
     });
   }
   function bindDetailSliders(){
@@ -1548,7 +1552,11 @@
     root.querySelectorAll('[data-category]').forEach(x=>{x.addEventListener('click',e=>{if(e.target.closest('[data-share-kind]'))return;resetFilters(x.dataset.category);go('catalog');});x.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('[data-share-kind]')){e.preventDefault();resetFilters(x.dataset.category);go('catalog');}});});
     
     root.querySelectorAll('[data-open-custom-category]').forEach(x=>{const open=e=>{if(e?.target?.closest?.('[data-share-kind]'))return;state.customCategoryId=x.dataset.openCustomCategory;go('customCategory');};x.addEventListener('click',open);x.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(e);}});});
-    root.querySelectorAll('[data-open-custom-item]').forEach(x=>x.addEventListener('click',e=>{if(e.target.closest('.product-slide-track,[data-share-kind]'))return;state.customItemId=x.dataset.openCustomItem;state.customFabricId='';state.customQuality='';state.customSportswearTypeId='';state.sportswearSizeQty={};state.printableIncludePrint=true;state.printablePrintQty={};state.printableSelectedPrintIds=[];state.printableActivePrintId='';state.printableActivePrintSize='';state.uniformTopId='';state.uniformBottomId='';state.uniformOptionIds=[];state.uniformSizeQty={};state.uniformGalleryVariantId='';const idea=state.customCatalogItems.find(i=>String(i.id)===String(state.customItemId));if(idea?.category_id)state.customCategoryId=idea.category_id;go('customItem');}));
+    root.querySelectorAll('[data-open-custom-item]').forEach(card=>{
+      const open=e=>{if(e?.target?.closest?.('.product-slide-track,[data-share-kind]'))return;openCustomCatalogueItem(card.dataset.openCustomItem);};
+      card.addEventListener('click',open);
+      card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('[data-share-kind]')){e.preventDefault();openCustomCatalogueItem(card.dataset.openCustomItem);}});
+    });
     root.querySelectorAll('[data-legal]').forEach(x=>x.addEventListener('click',()=>{if(x.closest('.site-header nav')&&state.menu)clearMenuModalState();openLegal(x.dataset.legal);}));
     const customCatalogueSearch=root.querySelector('[data-custom-catalogue-search]');
     if(customCatalogueSearch)customCatalogueSearch.addEventListener('input',e=>{
@@ -1559,24 +1567,14 @@
       const input=root.querySelector('[data-custom-catalogue-search="'+section+'"]');
       if(input){input.focus({preventScroll:true});try{input.setSelectionRange(pos,pos);}catch(_){}}
     });
-    const headerSearchInput=root.querySelector('[data-header-catalogue-search]');
-    if(headerSearchInput)headerSearchInput.addEventListener('input',e=>{
-      const section=state.headerSearchSection==='ready'?'ready':'custom';
-      state.catalogueSearchQueries[section]=e.target.value;
+    const unifiedSearchInput=root.querySelector('[data-unified-catalogue-search]');
+    if(unifiedSearchInput)unifiedSearchInput.addEventListener('input',e=>{
+      state.headerSearchQuery=e.target.value;
       const pos=e.target.selectionStart;
       render();
-      const input=root.querySelector('[data-header-catalogue-search]');
+      const input=root.querySelector('[data-unified-catalogue-search]');
       if(input){input.focus({preventScroll:true});try{input.setSelectionRange(pos,pos);}catch(_){}}
     });
-    root.querySelectorAll('[data-header-search-section]').forEach(tab=>tab.addEventListener('click',()=>{
-      const next=tab.dataset.headerSearchSection==='ready'?'ready':'custom';
-      const old=state.headerSearchSection==='ready'?'ready':'custom';
-      // Carry the current search to the second catalogue when it has no query yet.
-      if(!catalogueSearchValue(next))state.catalogueSearchQueries[next]=catalogueSearchValue(old);
-      state.headerSearchSection=next;render();root.querySelector('[data-header-catalogue-search]')?.focus({preventScroll:true});
-    }));
-    const searchBackdrop=root.querySelector('[data-header-search-backdrop]');
-    if(searchBackdrop)searchBackdrop.addEventListener('click',e=>{if(e.target===searchBackdrop)closeHeaderCatalogueSearch();});
     const catalogSearch=root.querySelector('[data-catalog-search]');if(catalogSearch)catalogSearch.addEventListener('input',e=>{state.catalogQuery=e.target.value;render();requestAnimationFrame(()=>{const n=root.querySelector('[data-catalog-search]');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length);}catch(_){}}});});
     root.querySelectorAll('[data-custom-sportswear-type]').forEach(x=>x.addEventListener('click',()=>{const item=state.customCatalogItems.find(v=>String(v.id)===String(state.customItemId));const printable=item&&isPrintableCustomItem(item);const next=String(x.dataset.customSportswearType);if(printable||isFullSublimationItem(item)){state.customSportswearTypeId=String(state.customSportswearTypeId)===next?'':next;state.customFabricId='';state.customQuality='';state.printableSelectedPrintIds=[];state.printableActivePrintId='';state.printablePrintQty={};state.sportswearSizeQty={};}else state.customSportswearTypeId=next;state.enquirySuccessId='';render();}));
     root.querySelectorAll('[data-custom-fabric]').forEach(x=>x.addEventListener('click',()=>{const item=state.customCatalogItems.find(v=>String(v.id)===String(state.customItemId));const next=String(x.dataset.customFabric);const same=String(state.customFabricId)===next;if(same){state.customFabricId='';state.customQuality='';state.sportswearSizeQty={};state.printableSelectedPrintIds=[];state.printablePrintQty={};}else{if(item&&(isPrintableCustomItem(item)||isSportswearCustomItem(item)||isCorporateTeeItem(item))){state.customQuality='';state.printableSelectedPrintIds=[];state.printableActivePrintId='';state.printablePrintQty={};state.sportswearSizeQty={};}state.customFabricId=next;}state.enquirySuccessId='';render();}));
@@ -1643,9 +1641,6 @@
       if(fromDrawer&&state.menu&&a!=='close-menu'&&a!=='menu')clearMenuModalState();
       if(a==='apply-redeem'){if(state.redeemBusy)return;const code=String(root.querySelector('[data-redeem-input]')?.value||state.redeemInput||'').trim().toUpperCase();if(!code){state.redeemError='Enter a code';render();return;}state.redeemBusy=true;state.redeemError='';try{const r=await B.validateRedeem(code,subtotal(checkoutItems()));state.redeemInput=code;state.redeemApplied={code:r.code,discount:Number(r.discount||0)};}catch(e){state.redeemApplied=null;state.redeemError=e.message||'Code is not valid';}finally{state.redeemBusy=false;render();}}
       else if(a==='remove-redeem'){state.redeemInput='';state.redeemApplied=null;state.redeemError='';render();}
-      else if(a==='header-catalogue-search'){openHeaderCatalogueSearch();}
-      else if(a==='close-header-search'){closeHeaderCatalogueSearch();}
-      else if(a==='view-header-search-catalogue'){const section=state.headerSearchSection;go(section==='ready'?'readyMade':'customCatalog');}
       else if(a==='menu'){if(state.menu)closeMenu(false);else openMenu();}
       else if(a==='close-menu'){closeMenu(false);}
       else if(a==='nav-back'){if(state.screen==='teamUpload'&&!state.teamEnquirySuccess&&state.teamStep>1){state.teamActiveLayer='';state.teamStep-=1;render();}else navigateBack(x.dataset.fallback||'home');}
@@ -1709,7 +1704,7 @@
     bindWhatsappDrag();bindProductSliders();bindDetailSliders();bindFastUniformCustomizer();
   }
   function syncModalScrollLock(){
-    const locked=!!(state.menu||state.headerSearchOpen||state.filterOpen||state.zoomImage||state.authModal||state.teamCrop);
+    const locked=!!(state.menu||state.filterOpen||state.zoomImage||state.authModal||state.teamCrop);
     document.documentElement.classList.toggle('modal-scroll-lock',locked);
     document.body.classList.toggle('modal-scroll-lock',locked);
   }
@@ -1780,9 +1775,9 @@
   window.addEventListener('one-line-change',()=>{state.products=S.getProducts();state.categories=S.getCategories();state.customCatalogCategories=(S.getCustomCatalogCategories?.()||[]).map(c=>['uniform','kids uniform'].includes(String(c.name||'').trim().toLowerCase())?{...c,name:'Uniform'}:c);state.customCatalogItems=S.getCustomCatalogItems?.()||[];state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||[];state.customPrintTypes=S.getCustomPrintTypes?.()||[];state.settings=S.getSettings();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){saveAddressDraft();flushAllCartQuantitySync();}else if(accountView()&&Date.now()-lastAccountSyncAt>30000)void pollCustomerAccount(true);});
   window.addEventListener('pagehide',()=>{saveAddressDraft();flushAllCartQuantitySync();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.headerSearchOpen){closeHeaderCatalogueSearch();}else if(e.key==='Escape'&&state.teamCrop){closeTeamCrop();}else if(e.key==='Escape'&&state.zoomImage){closeZoom();}else if(e.key==='Escape'&&state.filterOpen){closeFilter(false);}else if(e.key==='Escape'&&state.menu){closeMenu(false);}if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))e.preventDefault();});document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.teamCrop){closeTeamCrop();}else if(e.key==='Escape'&&state.zoomImage){closeZoom();}else if(e.key==='Escape'&&state.filterOpen){closeFilter(false);}else if(e.key==='Escape'&&state.menu){closeMenu(false);}if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))e.preventDefault();});document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
   try{
-    const valid=['home','readyMade','categories','catalog','product','customCatalog','customCategory','customItem','cart','checkout','orders','profile','profileDetails','addresses','customize','teamUpload'];const hash=location.hash.replace('#','');const params=new URLSearchParams(location.search);const sharePath=location.pathname.match(/^\/share\/(item|category|product|retail-category)\/([^/]+)\/?$/);if(sharePath){try{const shareId=decodeURIComponent(sharePath[2]);if(sharePath[1]==='item')params.set('customItem',shareId);if(sharePath[1]==='category')params.set('customCategory',shareId);if(sharePath[1]==='product')params.set('product',shareId);if(sharePath[1]==='retail-category')params.set('category',shareId);}catch(_){}}let initial=valid.includes(hash)?hash:'home';
+    const valid=['home','search','readyMade','categories','catalog','product','customCatalog','customCategory','customItem','cart','checkout','orders','profile','profileDetails','addresses','customize','teamUpload'];const hash=location.hash.replace('#','');const params=new URLSearchParams(location.search);const sharePath=location.pathname.match(/^\/share\/(item|category|product|retail-category)\/([^/]+)\/?$/);if(sharePath){try{const shareId=decodeURIComponent(sharePath[2]);if(sharePath[1]==='item')params.set('customItem',shareId);if(sharePath[1]==='category')params.set('customCategory',shareId);if(sharePath[1]==='product')params.set('product',shareId);if(sharePath[1]==='retail-category')params.set('category',shareId);}catch(_){}}let initial=valid.includes(hash)?hash:'home';
     const sharedCategory=params.get('category'),sharedSub=params.get('subcategory'),sharedProduct=params.get('product'),sharedSection=params.get('section'),sharedCustomCategory=params.get('customCategory'),sharedCustomItem=params.get('customItem');
     if(sharedCategory){state.filterCategories=[sharedCategory];state.filterSubs=sharedSub?[sharedSub]:[];state.filterOptions=[];saveFilters();initial='catalog';}
     if(sharedProduct){const p=state.products.find(x=>String(x.id)===String(sharedProduct));if(p){state.selected=p;state.previewImage='';state.color=p.colors?.[0]||p.colorVariants?.[0]?.color||'';const sizes=state.color?p.colorVariants?.find(v=>v.color===state.color)?.sizes:p.sizes;state.size=(sizes||p.sizes||[])[0]||'';initial='product';}}
@@ -1792,7 +1787,6 @@
     else history.replaceState({...routeState(initial,0),fromScreen:''},'',routeUrl(initial));
   }catch(_){}
   window.addEventListener('popstate',e=>{
-    if(state.headerSearchOpen){state.headerSearchOpen=false;render();return;}
     if(state.printInfoId){if(e.state?.oneLineModal==='print-info'){state.printInfoId=String(e.state.printInfoId||state.printInfoId);render();return;}state.printInfoId='';render();return;}
     if(state.teamCrop){state.teamCrop=null;state.teamActiveLayer='';render();return;}
     if(state.menu){state.menu=false;state.filterOpen=false;state.filterDraft=null;syncModalScrollLock();render();requestAnimationFrame(()=>window.scrollTo(0,Number(e.state?.scrollY||window.scrollY||0)));return;}
@@ -1802,7 +1796,7 @@
     if(e.state?.oneLineZoom){state.screen=next||state.screen;restoreRouteState(state.screen,e.state||{});const custom=state.screen==='customItem'?state.customCatalogItems.find(x=>String(x.id)===String(state.customItemId)):null;const gallery=custom?(isUniformCustomItem(custom)?uniformGalleryImages(custom,uniformSelection(custom)):[...(custom.images||[])].filter(Boolean)):(state.selected?productGallery(state.selected):[]);state.zoomImages=gallery.length?gallery:[e.state.zoomSrc].filter(Boolean);state.zoomIndex=Math.max(0,Math.min(state.zoomImages.length-1,Number(e.state.zoomIndex||0)));state.zoomImage=e.state.zoomSrc||state.zoomImages[state.zoomIndex]||'';state.zoomAlt=e.state.zoomAlt||'Product image';state.zoomScale=1;state.zoomX=0;state.zoomY=0;render();return;}
     resetZoomState();state.legal='';state.screen=next||'home';restoreRouteState(state.screen,e.state||{});state.menu=false;state.filterOpen=false;state.filterDraft=null;render();if(state.screen==='customItem')void refreshCustomerFabricPricing(state.customItemId,{silent:true});requestAnimationFrame(()=>window.scrollTo(0,Number(e.state?.scrollY||0)));
   });
-  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=192').catch(()=>{});
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=194').catch(()=>{});
   const initialStamp=()=>JSON.stringify([S.getProducts(),S.getCategories(),S.getCustomCatalogCategories?.()||[],S.getCustomCatalogItems?.()||[],S.getCustomCatalogFabrics?.()||[],S.getCustomSportswearFabrics?.()||[],S.getCustomSportswearTypes?.()||[],S.getSettings()]);
   let renderedStamp=initialStamp();render();
   B?.ready?.().then(async r=>{state.backendReady=true;if(r?.error)state.backendError=r.error.message||String(r.error);state.products=S.getProducts();state.categories=S.getCategories();state.customCatalogCategories=(S.getCustomCatalogCategories?.()||r?.customCategories||[]).map(c=>['uniform','kids uniform'].includes(String(c.name||'').trim().toLowerCase())?{...c,name:'Uniform'}:c);state.customCatalogItems=S.getCustomCatalogItems?.()||r?.customItems||[];state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||r?.customFabrics||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||r?.customSportswearFabrics||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||r?.customSportswearTypes||[];state.customPrintTypes=S.getCustomPrintTypes?.()||r?.customPrintTypes||[];state.settings=S.getSettings();restoreRouteState(state.screen,history.state||{});try{history.replaceState({...history.state,...routeState(state.screen,history.state?.scrollY||0)},'',routeUrl(state.screen));}catch(_){}let accountChanged=false;if(B?.customerSession?.()?.token){const before=JSON.stringify([state.customer,state.cart,state.orders,state.enquiries]);await refreshCustomerAccount(false);accountChanged=before!==JSON.stringify([state.customer,state.cart,state.orders,state.enquiries]);}const nextStamp=initialStamp(),accountVisible=['profile','profileDetails','cart','orders','addresses','checkout'].includes(state.screen);if(nextStamp!==renderedStamp||(accountChanged&&accountVisible)||state.backendError){renderedStamp=nextStamp;render();}if(state.screen==='customItem')void refreshCustomerFabricPricing(state.customItemId,{silent:true});setInterval(()=>pollCustomerAccount(false),ACCOUNT_POLL_MS);}).catch(e=>{state.backendReady=true;state.backendError=e.message||String(e);render();});if(state.sharedSection==='shirt-colour'){setTimeout(()=>document.querySelector('[data-fast-uniform]')?.scrollIntoView({behavior:'auto',block:'start'}),120);}
