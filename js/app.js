@@ -8,7 +8,7 @@
     bulkQty:{},
     teamStep:1,teamUnlockedStep:1,teamFront:{background:'',fileName:'',layers:[]},teamBack:{background:'',fileName:'',layers:[{id:'team-name',type:'fixedText',text:'NAME',x:50,y:24,sizePct:7},{id:'team-number',type:'fixedText',text:'99',x:50,y:55,sizePct:22}]},teamRows:[{name:'',number:'',size:'M'}],teamActiveLayer:'',teamCrop:null,teamEnquiryBusy:false,teamEnquirySuccess:false,pendingCustomItem:null,
     authModal:false,authStep:'phone',authPhone:'',authOtp:'',authName:'',authBusy:false,authError:'',pendingAction:'',customer:B?.customerSession?.()||null,
-    backendReady:false,backendError:'',catalogQuery:'',catalogueSearchQueries:{custom:'',ready:''},headerSearchQuery:'',addresses:[],addressEditor:null,selectedAddressId:'',orderDetailId:'',accountLoaded:false,accountSyncing:false,cartVersion:0,cartUpdatedAt:'',ordersStamp:'',enquiriesStamp:'',profileUpdatedAt:'',
+    backendReady:false,backendError:'',catalogQuery:'',catalogueSearchQueries:{custom:'',ready:''},headerSearchQuery:'',headerSearchOpen:false,addresses:[],addressEditor:null,selectedAddressId:'',orderDetailId:'',accountLoaded:false,accountSyncing:false,cartVersion:0,cartUpdatedAt:'',ordersStamp:'',enquiriesStamp:'',profileUpdatedAt:'',
     toast:'',legal:'',checkoutStep:1,details:{name:'',phone:'',address:'',business:''},delivery:'Courier',payment:'Cash on delivery',paymentDemo:false,remarks:'',redeemInput:'',redeemApplied:null,redeemBusy:false,redeemError:'',
     orderPlaced:false,orderReference:'',orderSubmitting:false,directOrderItem:null,installPrompt:null,zoomImage:'',zoomAlt:'',zoomImages:[],zoomIndex:0,zoomScale:1,zoomX:0,zoomY:0
   };
@@ -102,7 +102,7 @@
     if(['catalog','categories','product'].includes(screen))screen='customCatalog';
     options=options||{};
     if(state.menu&&history.state?.oneLineModal==='menu'){try{const next={...(history.state||{})};delete next.oneLineModal;history.replaceState(next,'',location.href);}catch(_){}}
-    state.menu=false;state.filterOpen=false;state.filterDraft=null;state.printInfoId='';
+    state.menu=false;state.filterOpen=false;state.filterDraft=null;state.printInfoId='';state.headerSearchOpen=false;
     if(screen===state.screen&&!options.force){try{history.replaceState({...history.state,...routeState(screen,window.scrollY)},'',routeUrl(screen));}catch(_){}window.scrollTo(0,0);render();if(screen==='customItem')void refreshCustomerFabricPricing(state.customItemId);return;}
     const previous=state.screen;rememberScroll();state.screen=screen;
     if(!options.fromHistory){try{history.pushState({...routeState(screen,0),fromScreen:previous},'',routeUrl(screen));}catch(_){}}
@@ -410,7 +410,7 @@
       '<button class="drawer-item" data-action="whatsapp" data-message="Hi, I need help with One-Line."><span class="drawer-icon">'+I('contact')+'</span><span>Help & Support</span>'+I('chevron')+'</button>'+installNav+'<button class="drawer-item" data-legal="About"><span class="drawer-icon">'+I('shield')+'</span><span>About OneLine</span>'+I('chevron')+'</button></div>'+account;
     const leading=isHome?'<button class="mobile-menu" data-action="menu" aria-label="Open menu">'+I('menu')+'</button>':'<button class="mobile-menu header-back-button" data-action="nav-back" data-fallback="'+fallbackForScreen(state.screen)+'" aria-label="Go back">'+I('back')+'</button>';
     const announcement=isHome?'<div class="announcement"><span>CUSTOM APPAREL · BULK ORDERS · TEAM KITS</span><b>ONE DESIGN. EVERY SIZE.</b></div>':'';
-    return announcement+'<header class="site-header '+(isHome?'home-site-header':'inner-site-header')+'">'+leading+'<button class="logo-button" data-go="home">'+logo(false)+'</button><nav class="'+(state.menu?'open':'')+'">'+drawer+'</nav><div class="header-actions">'+installHead+'<button data-go="profile" class="profile-head-link'+(['profile','profileDetails','orders'].includes(state.screen)?' active':'')+'" aria-label="Open profile">'+I('user')+'</button><button type="button" data-go="search" class="header-search-link'+(state.screen==='search'?' active':'')+'" aria-label="Search all catalogue items">'+I('search')+'</button><button data-go="cart" class="cart-head-link" aria-label="Open cart">'+I('cart')+'</button></div></header>'+(state.menu?'<button class="menu-scrim" data-action="close-menu" aria-label="Close menu"></button>':'');
+    return announcement+'<header class="site-header '+(isHome?'home-site-header':'inner-site-header')+'">'+leading+'<button class="logo-button" data-go="home">'+logo(false)+'</button><nav class="'+(state.menu?'open':'')+'">'+drawer+'</nav><div class="header-actions">'+installHead+'<button data-go="profile" class="profile-head-link'+(['profile','profileDetails','orders'].includes(state.screen)?' active':'')+'" aria-label="Open profile">'+I('user')+'</button><button type="button" data-action="toggle-header-search" class="header-search-link'+(state.headerSearchOpen?' active':'')+'" aria-label="Search all catalogue items" aria-expanded="'+!!state.headerSearchOpen+'" aria-controls="header-inline-search">'+I('search')+'</button><button data-go="cart" class="cart-head-link" aria-label="Open cart">'+I('cart')+'</button></div></header>'+(state.menu?'<button class="menu-scrim" data-action="close-menu" aria-label="Close menu"></button>':'');
   }
   function footer(){const readyMadeLink='<button data-go="readyMade">Ready Made</button>';return '<footer><div class="footer-main">'+logo(false)+'<p>Design custom apparel, upload front and back creative team artwork.</p><div><b>SHOP</b>'+readyMadeLink+'<button data-go="customCatalog">Customization catalogue</button><button data-go="customize">Custom designer</button><button data-go="teamUpload">Team order</button></div><div><b>INFORMATION</b>'+Object.keys(legalCopy).map(x=>'<button data-legal="'+x+'">'+x+'</button>').join('')+'</div><div><b>ACCOUNT</b><button data-go="profile">Profile</button><button data-go="cart">Cart</button><button data-go="orders">Orders</button></div></div><div class="footer-bottom"><span>© 2026 One-Line Touch Shopping</span><span>One-Line Touch Shopping</span><span>Developed by <a class="developer-credit-inline" href="'+QUARTZ_SITE+'" target="_blank" rel="noopener noreferrer">Quartz Web Solutions</a></span></div></footer>';}
   function bottom(){
@@ -549,6 +549,34 @@
     const accessibleIds=new Set([...visibleCustomCatalogCategories('custom'),...visibleCustomCatalogCategories('ready')].map(c=>String(c.id)));
     const results=q?visibleCustomCatalogItems().filter(item=>accessibleIds.has(String(item.category_id))&&catalogueSearchMatches(item,q)):[];
     return '<main class="header-unified-search-page section-wrap screen screen-enter"><label class="header-unified-search-field">'+I('search')+'<input type="search" data-unified-catalogue-search autocomplete="off" aria-label="Search all catalogue items" placeholder="Search items, variants, IDs, prices..." value="'+S.esc(query)+'"></label><div class="header-unified-search-results">'+(q?(results.length?customCategoryGrid(results):'<div class="empty-state clean-empty"><h2>No matching items</h2></div>'):'')+'</div></main>';
+  }
+  // v195: Search is inline, never a separate screen or popup. The active page stays visible.
+  function headerSearchMatches(){
+    const query=String(state.headerSearchQuery||'').trim();if(!query)return [];
+    const ids=new Set([...visibleCustomCatalogCategories('custom'),...visibleCustomCatalogCategories('ready')].map(c=>String(c.id)));
+    return visibleCustomCatalogItems().filter(item=>ids.has(String(item.category_id))&&catalogueSearchMatches(item,query));
+  }
+  function headerSearchMatchesHtml(){
+    const query=String(state.headerSearchQuery||'').trim();if(!query)return '';
+    const matches=headerSearchMatches();
+    if(!matches.length)return '<p class="inline-search-empty">No matching items</p>';
+    return matches.map(item=>{
+      const category=customCategoryForItem(item);
+      const thumbnail=item.card_image_url||item.images?.[0]||'assets/product-placeholder.svg';
+      return '<button type="button" class="inline-search-result" data-header-search-item="'+S.esc(item.id)+'">'+img(thumbnail,item.title||'Item','inline-search-thumb')+'<span class="inline-search-result-copy"><b>'+S.esc(item.title||'Item')+'</b><small>'+S.esc(category?.name||'')+'</small></span>'+I('arrow')+'</button>';
+    }).join('');
+  }
+  function inlineHeaderSearch(){
+    if(!state.headerSearchOpen)return '';
+    return '<section class="inline-header-search" id="header-inline-search" aria-label="Search both catalogues"><div class="inline-header-search-inner"><label class="inline-header-search-field">'+I('search')+'<input type="search" data-inline-header-search autocomplete="off" aria-label="Search items in both catalogues" placeholder="Search items, IDs, variants..." value="'+S.esc(state.headerSearchQuery||'')+'"></label><button type="button" class="inline-header-search-close" data-action="close-header-search" aria-label="Close search">'+I('close')+'</button></div><div class="inline-header-search-matches" data-inline-search-matches>'+headerSearchMatchesHtml()+'</div></section>';
+  }
+  function openHeaderSearchItem(id){
+    const item=state.customCatalogItems.find(x=>String(x.id)===String(id));if(!item)return;
+    const cat=customCategoryForItem(item);if(!customCategoryPubliclyAccessible(cat))return;
+    state.headerSearchOpen=false;state.customCategoryId=String(item.category_id);
+    state.catalogueSearchQueries[catalogueSection(item)]='';
+    go('customCategory'); // Entry before item details, so browser Back returns to matching category cards.
+    openCustomCatalogueItem(id);
   }
   function readyMade(){const cats=visibleCustomCatalogCategories('ready');return '<main class="custom-catalog-page section-wrap screen screen-enter"><div class="catalog-title"><div><span class="eyebrow">READY TO ORDER</span><h1>Ready Made</h1><p>Find styles, sizes and prices.</p></div></div>'+catalogueSearchBox('ready')+(catalogueSearchResults('ready',cats)??(cats.length?'<div class="custom-category-grid full-custom-category-grid">'+cats.map((c,i)=>customCategoryCard(c,i,false)).join('')+'</div>':'<div class="empty-state clean-empty"><h2>Ready Made items coming soon</h2></div>'))+'</main>';}
   function readyMadeHomeSection(){const cats=visibleCustomCatalogCategories('ready').slice(0,4);if(!cats.length)return '';return '<section class="custom-catalog-home ready-made-home section-wrap"><div class="section-heading"><div><span class="eyebrow">READY TO ORDER</span><h2>Ready Made</h2></div><button data-go="readyMade">View all '+I('arrow')+'</button></div>'+(cats.length?'<div class="custom-category-grid home-custom-category-grid">'+cats.map((c,i)=>customCategoryCard(c,i,true)).join('')+'</div>':'<p>New ready-made collections coming soon.</p>')+'</section>';}
@@ -1364,7 +1392,7 @@
     if(state.screen==='customize'){root.innerHTML='<div class="view-root customizer-only-root"><div class="customizer-screen-wrap"><div id="designer-root"></div>'+footer()+'</div>'+authModal()+toast()+'</div>';window.OneLineDesigner.mount(document.getElementById('designer-root'),{onBack:()=>navigateBack('home'),onAdd:async item=>{item.itemType='custom_design';if(!(B?.customerSession?.()?.token)){state.pendingCustomItem=item;state.pendingAction='custom-add';state.authModal=true;state.authStep='phone';state.authError='';render();return false;}const added=await addCart(item,true);if(added)clearDesignerAfterCart();return added;},onBuy:async item=>{item.itemType='custom_design';if(!(B?.customerSession?.()?.token)){state.pendingCustomItem=item;state.pendingAction='custom-buy-now';state.authModal=true;state.authStep='phone';state.authError='';render();return false;}startDirectCheckout(item);return true;}});syncModalScrollLock();bind();return;}
     if(state.screen==='teamUpload'){root.innerHTML='<div class="view-root team-only-root">'+page()+authModal()+toast()+'</div>';syncModalScrollLock();bind();return;}
     const audience='retail';
-    root.innerHTML='<div class="view-root has-site-header">'+header()+page()+footer()+bottom()+filterModal(audience)+(state.legal?legal():'')+(state.paymentDemo?paymentModal():'')+authModal()+imageZoomModal()+printInfoModal()+toast()+whatsappFloat()+'</div>';syncModalScrollLock();bind();bindZoomViewer();positionWhatsapp();
+    root.innerHTML='<div class="view-root has-site-header">'+header()+inlineHeaderSearch()+page()+footer()+bottom()+filterModal(audience)+(state.legal?legal():'')+(state.paymentDemo?paymentModal():'')+authModal()+imageZoomModal()+printInfoModal()+toast()+whatsappFloat()+'</div>';syncModalScrollLock();bind();bindZoomViewer();positionWhatsapp();
   }
   function orderImageSource(src){
     const value=String(src||'').trim();if(!value)return'';
@@ -1547,6 +1575,26 @@
   }
   function bind(){
     root.querySelectorAll('[data-go]').forEach(x=>x.addEventListener('click',()=>go(x.dataset.go)));
+    // Keep the current screen visible when opening the header search.
+    root.querySelector('[data-action="toggle-header-search"]')?.addEventListener('click',()=>{
+      state.headerSearchOpen=!state.headerSearchOpen;
+      const scroll=window.scrollY;render();window.scrollTo(0,scroll);
+      if(state.headerSearchOpen)requestAnimationFrame(()=>root.querySelector('[data-inline-header-search]')?.focus({preventScroll:true}));
+    });
+    root.querySelector('[data-action="close-header-search"]')?.addEventListener('click',()=>{
+      state.headerSearchOpen=false;const scroll=window.scrollY;render();window.scrollTo(0,scroll);
+    });
+    const inlineInput=root.querySelector('[data-inline-header-search]');
+    if(inlineInput)inlineInput.addEventListener('input',e=>{
+      state.headerSearchQuery=e.target.value;
+      const matches=root.querySelector('[data-inline-search-matches]');
+      if(matches)matches.innerHTML=headerSearchMatchesHtml(); // Does not re-render or reload the page.
+    });
+    root.querySelector('[data-inline-search-matches]')?.addEventListener('click',e=>{
+      const item=e.target.closest('[data-header-search-item]');
+      if(item)openHeaderSearchItem(item.dataset.headerSearchItem);
+    });
+
     root.querySelectorAll('[data-click-go]').forEach(x=>{const open=()=>go(x.dataset.clickGo);x.addEventListener('click',open);x.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});});
     root.querySelectorAll('[data-open-product]').forEach(x=>x.addEventListener('click',e=>{if(e.target.closest('.product-slide-track'))return;e.stopPropagation();openProduct(x.dataset.openProduct,x.dataset.audience);}));
     root.querySelectorAll('[data-category]').forEach(x=>{x.addEventListener('click',e=>{if(e.target.closest('[data-share-kind]'))return;resetFilters(x.dataset.category);go('catalog');});x.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('[data-share-kind]')){e.preventDefault();resetFilters(x.dataset.category);go('catalog');}});});
@@ -1775,7 +1823,7 @@
   window.addEventListener('one-line-change',()=>{state.products=S.getProducts();state.categories=S.getCategories();state.customCatalogCategories=(S.getCustomCatalogCategories?.()||[]).map(c=>['uniform','kids uniform'].includes(String(c.name||'').trim().toLowerCase())?{...c,name:'Uniform'}:c);state.customCatalogItems=S.getCustomCatalogItems?.()||[];state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||[];state.customPrintTypes=S.getCustomPrintTypes?.()||[];state.settings=S.getSettings();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){saveAddressDraft();flushAllCartQuantitySync();}else if(accountView()&&Date.now()-lastAccountSyncAt>30000)void pollCustomerAccount(true);});
   window.addEventListener('pagehide',()=>{saveAddressDraft();flushAllCartQuantitySync();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.teamCrop){closeTeamCrop();}else if(e.key==='Escape'&&state.zoomImage){closeZoom();}else if(e.key==='Escape'&&state.filterOpen){closeFilter(false);}else if(e.key==='Escape'&&state.menu){closeMenu(false);}if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))e.preventDefault();});document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.teamCrop){closeTeamCrop();}else if(e.key==='Escape'&&state.zoomImage){closeZoom();}else if(e.key==='Escape'&&state.filterOpen){closeFilter(false);}else if(e.key==='Escape'&&state.menu){closeMenu(false);}else if(e.key==='Escape'&&state.headerSearchOpen){state.headerSearchOpen=false;const y=window.scrollY;render();window.scrollTo(0,y);root.querySelector('[data-action="toggle-header-search"]')?.focus({preventScroll:true});}if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))e.preventDefault();});document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
   try{
     const valid=['home','search','readyMade','categories','catalog','product','customCatalog','customCategory','customItem','cart','checkout','orders','profile','profileDetails','addresses','customize','teamUpload'];const hash=location.hash.replace('#','');const params=new URLSearchParams(location.search);const sharePath=location.pathname.match(/^\/share\/(item|category|product|retail-category)\/([^/]+)\/?$/);if(sharePath){try{const shareId=decodeURIComponent(sharePath[2]);if(sharePath[1]==='item')params.set('customItem',shareId);if(sharePath[1]==='category')params.set('customCategory',shareId);if(sharePath[1]==='product')params.set('product',shareId);if(sharePath[1]==='retail-category')params.set('category',shareId);}catch(_){}}let initial=valid.includes(hash)?hash:'home';
     const sharedCategory=params.get('category'),sharedSub=params.get('subcategory'),sharedProduct=params.get('product'),sharedSection=params.get('section'),sharedCustomCategory=params.get('customCategory'),sharedCustomItem=params.get('customItem');
@@ -1796,7 +1844,7 @@
     if(e.state?.oneLineZoom){state.screen=next||state.screen;restoreRouteState(state.screen,e.state||{});const custom=state.screen==='customItem'?state.customCatalogItems.find(x=>String(x.id)===String(state.customItemId)):null;const gallery=custom?(isUniformCustomItem(custom)?uniformGalleryImages(custom,uniformSelection(custom)):[...(custom.images||[])].filter(Boolean)):(state.selected?productGallery(state.selected):[]);state.zoomImages=gallery.length?gallery:[e.state.zoomSrc].filter(Boolean);state.zoomIndex=Math.max(0,Math.min(state.zoomImages.length-1,Number(e.state.zoomIndex||0)));state.zoomImage=e.state.zoomSrc||state.zoomImages[state.zoomIndex]||'';state.zoomAlt=e.state.zoomAlt||'Product image';state.zoomScale=1;state.zoomX=0;state.zoomY=0;render();return;}
     resetZoomState();state.legal='';state.screen=next||'home';restoreRouteState(state.screen,e.state||{});state.menu=false;state.filterOpen=false;state.filterDraft=null;render();if(state.screen==='customItem')void refreshCustomerFabricPricing(state.customItemId,{silent:true});requestAnimationFrame(()=>window.scrollTo(0,Number(e.state?.scrollY||0)));
   });
-  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=194').catch(()=>{});
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=195').catch(()=>{});
   const initialStamp=()=>JSON.stringify([S.getProducts(),S.getCategories(),S.getCustomCatalogCategories?.()||[],S.getCustomCatalogItems?.()||[],S.getCustomCatalogFabrics?.()||[],S.getCustomSportswearFabrics?.()||[],S.getCustomSportswearTypes?.()||[],S.getSettings()]);
   let renderedStamp=initialStamp();render();
   B?.ready?.().then(async r=>{state.backendReady=true;if(r?.error)state.backendError=r.error.message||String(r.error);state.products=S.getProducts();state.categories=S.getCategories();state.customCatalogCategories=(S.getCustomCatalogCategories?.()||r?.customCategories||[]).map(c=>['uniform','kids uniform'].includes(String(c.name||'').trim().toLowerCase())?{...c,name:'Uniform'}:c);state.customCatalogItems=S.getCustomCatalogItems?.()||r?.customItems||[];state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||r?.customFabrics||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||r?.customSportswearFabrics||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||r?.customSportswearTypes||[];state.customPrintTypes=S.getCustomPrintTypes?.()||r?.customPrintTypes||[];state.settings=S.getSettings();restoreRouteState(state.screen,history.state||{});try{history.replaceState({...history.state,...routeState(state.screen,history.state?.scrollY||0)},'',routeUrl(state.screen));}catch(_){}let accountChanged=false;if(B?.customerSession?.()?.token){const before=JSON.stringify([state.customer,state.cart,state.orders,state.enquiries]);await refreshCustomerAccount(false);accountChanged=before!==JSON.stringify([state.customer,state.cart,state.orders,state.enquiries]);}const nextStamp=initialStamp(),accountVisible=['profile','profileDetails','cart','orders','addresses','checkout'].includes(state.screen);if(nextStamp!==renderedStamp||(accountChanged&&accountVisible)||state.backendError){renderedStamp=nextStamp;render();}if(state.screen==='customItem')void refreshCustomerFabricPricing(state.customItemId,{silent:true});setInterval(()=>pollCustomerAccount(false),ACCOUNT_POLL_MS);}).catch(e=>{state.backendReady=true;state.backendError=e.message||String(e);render();});if(state.sharedSection==='shirt-colour'){setTimeout(()=>document.querySelector('[data-fast-uniform]')?.scrollIntoView({behavior:'auto',block:'start'}),120);}

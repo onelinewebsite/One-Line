@@ -7301,3 +7301,27 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .header-unified-search-results{margin-top:24px}
 .header-unified-search-results:empty{display:none}
 @media(max-width:640px){.header-unified-search-page{padding-top:15px;padding-bottom:90px}.header-unified-search-field input{height:49px;font-size:14px}.header-unified-search-results{margin-top:18px}}
+
+/* v195: Compact header search expands beneath the header; never replaces page content. */
+.inline-header-search{position:sticky;top:76px;z-index:49;width:min(1120px,calc(100% - 28px));margin:10px auto 0;padding:0;border:0;background:transparent}
+.inline-header-search-inner{display:flex;gap:8px;align-items:center}
+.inline-header-search-field{height:49px;min-width:0;flex:1;display:flex;align-items:center;gap:9px;padding:0 13px;border:2px solid #7b2189!important;border-radius:13px;background:#fff;box-shadow:0 4px 18px rgba(90,20,100,.10)}
+.inline-header-search-field:focus-within{border-color:#74118a!important;box-shadow:0 0 0 3px rgba(116,17,138,.12)!important}
+.inline-header-search-field .icon{width:20px;height:20px;flex-shrink:0;color:#74118a}
+.inline-header-search-field input,.inline-header-search-field input:focus{flex:1;min-width:0;width:100%;height:100%;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;color:#2d2031;font-size:14px}
+.inline-header-search-close{width:43px;height:43px;flex:none;border:1px solid #a46eac!important;border-radius:12px;background:#fff;color:#74118a;display:grid;place-items:center;cursor:pointer}
+.inline-header-search-close .icon{width:18px;height:18px}
+.inline-header-search-matches{max-height:min(46dvh,450px);overflow-y:auto;overscroll-behavior:contain;margin:7px 0 0;border-radius:12px;background:#fff;box-shadow:0 8px 25px rgba(66,23,76,.10)}
+.inline-header-search-matches:empty{display:none}
+.inline-search-result{display:flex;align-items:center;text-align:left;gap:12px;padding:9px 11px;width:100%;border:0;border-bottom:1px solid #f1e9f3;background:#fff;cursor:pointer;color:#302534}
+.inline-search-result:last-child{border-bottom:0}
+.inline-search-result:hover,.inline-search-result:focus-visible{background:#f7edf9;outline:2px solid #7b2189;outline-offset:-2px}
+.inline-search-thumb{width:42px;height:46px;flex:none;object-fit:contain;background:#f9f7fa;border-radius:7px}
+.inline-search-result-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
+.inline-search-result-copy b{font-size:13px;line-height:1.3;overflow-wrap:anywhere}
+.inline-search-result-copy small{font-size:11px;color:#796d7f}
+.inline-search-result>.icon{width:17px;height:17px;color:#74118a}
+.inline-search-empty{margin:0;padding:17px;color:#78697c;font-size:13px}
+/* Both existing catalogue search fields also use the brand border, not browser black focus. */
+.catalog-code-search input:focus,.catalog-code-search input:focus-visible{border-color:#74118a!important;outline:2px solid rgba(116,17,138,.16)!important;outline-offset:0!important}
+@media(max-width:640px){.inline-header-search{top:72px;width:calc(100% - 20px);margin-top:7px}.inline-header-search-field{height:45px}.inline-header-search-close{width:40px;height:40px}.inline-header-search-matches{max-height:40dvh}}
