@@ -1,4 +1,4 @@
-/* v185: Customer A4 order summary and separately optimized courier 4x6 shipping label.
+/* v196: Compact, item-identifying customer A4 order summary; separate courier 4x6 shipping label.
    Both use already loaded order data; neither fetches new images or consumes Supabase bandwidth. */
 (function(){
 'use strict';
@@ -10,19 +10,28 @@ const fmtDate=o=>{const s=o.created_at||o.createdAt||o.time||'';const d=new Date
 function linesFor(order,items){
  const lines=[];
  for(const item of items||[]){
-   const d=item.design_json||item.design||item.uniformOrder||{},name=clean(item.item_name||item.name||'Item'),type=clean(item.item_type||item.itemType||'product'),qty=Number(item.qty||item.quantity||1),rate=Number(item.unit_price??item.price??0);
-   const entry={name,code:clean(item.item_code||item.code||''),type,qty,rate,total:Number(item.line_total??item.total??qty*rate),notes:[]};
-   if(d.fabricName||d.quality||d.garmentTypeName)entry.notes.push(['Garment',d.garmentTypeName,d.fabricName,d.quality].filter(Boolean).join(' / '));
-   const sizes=Array.isArray(d.jerseySizes)?d.jerseySizes:Array.isArray(d.printableSizes)?d.printableSizes:[];
-   if(sizes.length)entry.notes.push('Garment sizes: '+sizes.map(x=>x.size+' x '+x.qty+(x.rate!==undefined?' at '+cash(x.rate):'')).join(', '));
-   else if(d.sizeQuantities&&typeof d.sizeQuantities==='object')entry.notes.push('Sizes: '+Object.entries(d.sizeQuantities).filter(([,v])=>Number(v)>0).map(([k,v])=>k+' x '+v).join(', '));
-   if(Array.isArray(d.selectedPrints)&&d.selectedPrints.length){entry.notes.push('Prints on EACH garment: '+d.selectedPrints.map(x=>[x.name,x.sizeLabel||x.size,'x '+x.qty,cash(x.rate)+' each'].filter(Boolean).join(' / ')).join('; '));entry.notes.push('Printing: '+cash(d.printsPerGarment||0)+'/garment x '+Number(d.totalPieces||qty)+' garments = '+cash(d.printsTotal||0));}
-   else if(d.includePrinting===false)entry.notes.push('Printing: Not added');
-   if(Array.isArray(d.selectedItems))for(const variant of d.selectedItems){entry.notes.push('Variant: '+clean(variant.name||'')+' '+Object.entries(variant.sizeQuantities||{}).filter(([,v])=>Number(v)>0).map(([k,v])=>k+' x '+v).join(', '));}
-   if(d.roster?.length)entry.notes.push('Players: '+d.roster.map(r=>[r.name,r.number,r.size].filter(Boolean).join('/')).join(', '));
-   if(item.color||item.size)entry.notes.push([item.color,item.size].filter(Boolean).join(' / '));
-   if(d.detailTitle||d.detailDescription)entry.notes.push([d.detailTitle,d.detailDescription].filter(Boolean).join(': '));
-   lines.push(entry);
+  const d=item.design_json||item.design||item.uniformOrder||{},name=clean(item.item_name||item.name||'Item'),type=clean(item.item_type||item.itemType||'product'),qty=Number(item.qty??item.quantity??1),rate=Number(item.unit_price??item.price??0);
+  const entry={name,code:clean(item.item_code||item.code||''),type,qty,rate,total:Number(item.line_total??item.total??qty*rate),notes:[]};
+  const note=v=>{if(clean(v))entry.notes.push(clean(v));};
+  note([d.garmentTypeName,d.fabricName,d.quality].filter(Boolean).join(' / '));
+  if(d.garmentColor)note('Colour: '+d.garmentColor);
+  const sizes=Array.isArray(d.jerseySizes)?d.jerseySizes:Array.isArray(d.printableSizes)?d.printableSizes:[];
+  if(sizes.length)note('Sizes: '+sizes.filter(z=>Number(z.qty)>0).map(z=>z.size+' x '+z.qty+(z.rate!==undefined?' @ '+cash(z.rate):'')).join(', '));
+  else if(d.sizeQuantities&&typeof d.sizeQuantities==='object')note('Sizes: '+Object.entries(d.sizeQuantities).filter(([,v])=>Number(v)>0).map(([k,v])=>k+' x '+v).join(', '));
+  if(Array.isArray(d.selectedItems))for(const variant of d.selectedItems){
+   note('Variant: '+[variant.name,variant.code||variant.displayId].filter(Boolean).join(' / '));
+   note('Sizes: '+Object.entries(variant.sizeQuantities||{}).filter(([,v])=>Number(v)>0).map(([k,v])=>k+' x '+v).join(', '));
+  }
+  if(Array.isArray(d.selectedPrints)&&d.selectedPrints.length){
+   note('On every garment: '+d.selectedPrints.map(x=>[x.name,x.sizeLabel||x.size,'x '+x.qty].filter(Boolean).join(' / ')).join('; '));
+   if(d.printsPerGarment!==undefined)note('Printing: '+cash(d.printsPerGarment)+' per garment x '+Number(d.totalPieces||qty)+' garments = '+cash(d.printsTotal));
+  }else if(d.includePrinting===false)note('No printing');
+  if(d.printType||d.printTypeName)note('Print: '+(d.printTypeName||d.printType));
+  if(d.materialQuality)note('Cloth: '+d.materialQuality);
+  if(d.roster?.length)note('Players: '+d.roster.map(r=>[r.name,r.number,r.size].filter(Boolean).join('/')).join(', '));
+  if(item.color||item.size)note([item.color,item.size].filter(Boolean).join(' / '));
+  if(d.detailTitle||d.detailDescription)note([d.detailTitle,d.detailDescription].filter(Boolean).join(': '));
+  lines.push(entry);
  }
  return lines;
 }
@@ -45,44 +54,82 @@ async function documentImage(src){
  }catch(_){return null;}
 }
 window.OneLineCustomerPdf=async function(order,items){
- const doc=jsPdf('a4'),rows=linesFor(order,items),d=details(order),code=orderCode(order);
- const ink=[35,25,43],violet=[108,29,134],light=[250,245,251],pad=14,right=196;let y=42;
- const setInk=(rgb=ink)=>{doc.setTextColor(...rgb);};
- const pageStart=()=>{
-  doc.setFillColor(...violet);doc.rect(0,0,210,30,'F');
-  doc.setFillColor(...light);doc.rect(0,30,210,4,'F');
-  doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(255,255,255);doc.text('ONE-LINE',44,14);
-  doc.setFontSize(10);doc.text('TOUCH SHOPPING',44,20);
-  doc.setFontSize(8);doc.text('ORDER SUMMARY',195,15,{align:'right'});
-  setInk();
+ const doc=jsPdf('a4'),rows=linesFor(order,items),recipient=details(order),code=orderCode(order);
+ const violet=[108,29,134],ink=[42,34,47],soft=[250,246,251];
+ const left=14,right=196,contentWidth=182,bottom=278;let y=29;
+ const drawHeader=()=>{
+  doc.setFillColor(...violet);doc.rect(0,0,210,22,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('ONE-LINE',38,11);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('TOUCH SHOPPING',38,16);
+  doc.setFont('helvetica','bold');doc.text('ORDER DETAILS',195,13,{align:'right'});
+  doc.setTextColor(...ink);
  };
- pageStart();
- const logo=await documentImage('one-line-logo.webp');
- if(logo){doc.setFillColor(255,255,255);doc.roundedRect(12,5,26,22,3,3,'F');const r=Math.min(20/logo.w,20/logo.h);const w=logo.w*r,h=logo.h*r;doc.addImage(logo.data,'JPEG',25-w/2,16-h/2,w,h);}
- const another=()=>{doc.addPage();y=42;pageStart();if(logo){doc.setFillColor(255,255,255);doc.roundedRect(12,5,26,22,3,3,'F');const r=Math.min(20/logo.w,20/logo.h);doc.addImage(logo.data,'JPEG',25-logo.w*r/2,16-logo.h*r/2,logo.w*r,logo.h*r);}};
- const need=h=>{if(y+h>277)another();};
- const heading=t=>{need(17);doc.setFillColor(...light);doc.roundedRect(pad,y-5,182,11,2,2,'F');doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...violet);doc.text(t,pad+4,y+2);y+=15;setInk();};
- const field=(key,val)=>{if(!clean(val))return;doc.setFontSize(10);doc.setFont('helvetica','bold');const prefix=clean(key)+': ';const prefixW=doc.getTextWidth(prefix);doc.setFont('helvetica','normal');const lines=doc.splitTextToSize(clean(val),176-Math.min(prefixW,55));need(Math.max(1,lines.length)*5.7+4);doc.setFont('helvetica','bold');doc.text(prefix,18,y);doc.setFont('helvetica','normal');doc.text(lines,18+Math.min(prefixW,55),y);y+=Math.max(1,lines.length)*5.7+4;};
- heading('ORDER INFORMATION');field('Order reference',code);field('Date',fmtDate(order));field('Status',order.status||'Confirmed');field('Total',cash(order.total));
- heading('DELIVERY');field('Account',order.metadata?.account?.name||order.customer_name||order.customer||'');
- field('Recipient',d.name||order.customer_name||order.customer||'');field('Phone',d.phone||order.phone||'');
- field('Business',d.businessName||d.business||order.business||'');field('Delivery address',d.address||order.address||'');
- field('Shipping',order.delivery||'Courier');field('Payment',order.payment||'Cash on delivery');
- if(order.metadata?.remarks){heading('REMARKS');field('Notes',order.metadata.remarks);}
- heading('ORDERED ITEMS');
+ let logo=null;
+ drawHeader();
+ logo=await documentImage('one-line-logo.webp');
+ const drawLogo=()=>{if(!logo)return;doc.setFillColor(255,255,255);doc.roundedRect(10,2.5,23,17,2,2,'F');const ratio=Math.min(15/logo.w,15/logo.h);doc.addImage(logo.data,'JPEG',21.5-logo.w*ratio/2,11-logo.h*ratio/2,logo.w*ratio,logo.h*ratio);};
+ drawLogo();
+ const nextPage=()=>{doc.addPage();y=29;drawHeader();drawLogo();};
+ const ensure=height=>{if(y+height>bottom)nextPage();};
+ const section=label=>{
+  ensure(11);doc.setFillColor(...soft);doc.roundedRect(left,y-3,contentWidth,7,1.5,1.5,'F');
+  doc.setTextColor(...violet);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(label,left+3,y+1.5);
+  doc.setTextColor(...ink);y+=9;
+ };
+ const wrapLines=(text,width,size=8.5,bold=false)=>{
+  doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);
+  return doc.splitTextToSize(clean(text)||'-',width);
+ };
+ const printWrapped=(text,x,width,size=8.5,lineHeight=4.4,bold=false)=>{
+  const lines=wrapLines(text,width,size,bold);
+  doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.setTextColor(...ink);
+  for(const line of lines){ensure(lineHeight);doc.text(line,x,y);y+=lineHeight;}
+ };
+ const field=(label,value)=>{
+  if(!clean(value))return;
+  const prefix=label+': ';
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);
+  const pw=Math.min(46,doc.getTextWidth(prefix)+1);
+  const lines=wrapLines(value,contentWidth-8-pw,8.5);
+  ensure(lines.length*4.4+1);
+  doc.setTextColor(...ink);doc.setFont('helvetica','bold');doc.text(prefix,left+3,y);
+  doc.setFont('helvetica','normal');doc.text(lines,left+3+pw,y);y+=lines.length*4.4+1;
+ };
+ // Keep order and delivery in a few lines; only create another page if genuinely necessary.
+ section('ORDER & DELIVERY');
+ field('Order',code);
+ field('Placed',fmtDate(order));
+ field('Recipient',recipient.name||order.customer_name||order.customer||'Customer');
+ field('Phone',recipient.phone||order.phone||'');
+ field('Address',recipient.address||order.address||'');
+ if(order.metadata?.expected_delivery_date){const raw=String(order.metadata.expected_delivery_date);field('Expected delivery',/^\d{4}-\d{2}-\d{2}$/.test(raw)?raw.split('-').reverse().join('-'):raw);}
+ field('Status',order.status||'Confirmed');
+ if(order.metadata?.remarks)field('Remarks',order.metadata.remarks);
+ y+=2;section('ITEMS ORDERED');
  for(let i=0;i<rows.length;i++){
-  const row=rows[i];need(29);
-  doc.setDrawColor(222,207,228);doc.setFillColor(255,255,255);doc.roundedRect(pad,y-7,182,28,3,3,'S');
-  doc.setTextColor(...violet);doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text(doc.splitTextToSize((i+1)+'. '+row.name,135).slice(0,2),18,y);
-  setInk();doc.setFontSize(9.5);doc.setFont('helvetica','normal');doc.text('Qty: '+row.qty+'  |  '+cash(row.rate)+' each',18,y+15);doc.setFont('helvetica','bold');doc.text(cash(row.total),192,y+15,{align:'right'});y+=29;
-  if(row.code)field('Item ID',row.code);
-  for(const note of row.notes){doc.setFontSize(9.5);field('Details',note);}
-  y+=6;
+  const row=rows[i];
+  ensure(11);doc.setFont('helvetica','bold');doc.setFontSize(9.4);doc.setTextColor(...violet);
+  const label=(i+1)+'. '+row.name+(row.code?'  ['+row.code+']':'');
+  // Reserve the right-hand portion for the item total without covering long names.
+  const titles=wrapLines(label,121,9.4,true);
+  for(const line of titles){ensure(4.8);doc.text(line,left+2,y);y+=4.8;}
+  doc.setFont('helvetica','bold');doc.setTextColor(...ink);doc.setFontSize(9);
+  doc.text(cash(row.total),right-2,y-4.8,{align:'right'});
+  printWrapped('Quantity '+row.qty+(row.qty>0?'  |  '+cash(row.rate)+' per garment/item':''),left+3,contentWidth-6,8.2,4.2);
+  for(const note of row.notes){printWrapped(note,left+3,contentWidth-7,8.2,4.1);}
+  y+=2;ensure(3);doc.setDrawColor(230,220,234);doc.line(left+2,y-1,right-2,y-1);y+=2;
  }
- heading('PAYMENT SUMMARY');field('Items subtotal',cash(rows.reduce((n,r)=>n+r.total,0)));
- if(order.metadata?.redeem?.code)field('Discount',order.metadata.redeem.code+'  -'+cash(order.metadata.redeem.discount));
- field('AMOUNT PAYABLE',cash(order.total));
- const total=doc.getNumberOfPages();for(let i=1;i<=total;i++){doc.setPage(i);doc.setDrawColor(221,215,225);doc.line(14,281,196,281);setInk([109,100,113]);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('One-Line Touch Shopping | Omanoor PO, Malappuram, Kerala 673645 | 9562886916 / 9562886917',14,286);doc.text(i+' / '+total,196,293,{align:'right'});}
+ section('TOTAL');
+ if(order.metadata?.redeem?.code)field('Discount',String(order.metadata.redeem.code)+' -'+cash(order.metadata.redeem.discount||0));
+ doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...violet);
+ ensure(7);doc.text('Amount payable',left+3,y);doc.text(cash(order.total),right-3,y,{align:'right'});y+=7;
+ const pages=doc.getNumberOfPages();
+ for(let page=1;page<=pages;page++){
+  doc.setPage(page);doc.setDrawColor(225,220,226);doc.line(left,282,right,282);
+  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(110,104,114);
+  doc.text('One-Line Touch Shopping | Order summary',left,287);
+  doc.text(page+' / '+pages,right,287,{align:'right'});
+ }
  return doc;
 };
 // Code39 scanner-readable internal order reference (not a carrier-issued AWB / airway bill).
