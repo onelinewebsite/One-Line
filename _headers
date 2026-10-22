@@ -15,10 +15,10 @@
   Cache-Control: no-cache, must-revalidate
 
 /css/*
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: public, max-age=86400
 
 /js/*
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: public, max-age=86400
 
 /assets/*
   Cache-Control: public, max-age=86400

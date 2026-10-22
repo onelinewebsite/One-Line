@@ -65,22 +65,47 @@
   function mapData(data,includeInactive=false){
     const cats=data.categories||[],subs=data.subcategories||[],variants=data.product_variants||[];
     const catMap=new Map(cats.map(c=>[c.id,c])),subMap=new Map(subs.map(s=>[s.id,s]));
+    // Index related records once instead of repeatedly scanning every row for every product.
+    const variantsByProduct=new Map(),subsByCategory=new Map();
+    for(const v of variants){if(!variantsByProduct.has(v.product_id))variantsByProduct.set(v.product_id,[]);variantsByProduct.get(v.product_id).push(v);}
+    for(const s of subs){if(!subsByCategory.has(s.category_id))subsByCategory.set(s.category_id,[]);subsByCategory.get(s.category_id).push(s);}
     const products=(data.products||[]).filter(p=>includeInactive||p.active!==false).map(p=>{
-      const vv=variants.filter(v=>v.product_id===p.id&&(includeInactive||v.active!==false));
+      const vv=(variantsByProduct.get(p.id)||[]).filter(v=>includeInactive||v.active!==false);
       const cat=catMap.get(p.category_id),sub=subMap.get(p.subcategory_id);
       const colors=values(vv,'color'),sizes=values(vv,'size');
       const colorVariants=colors.map(color=>{const rows=vv.filter(v=>v.color===color);return{color,image:rows.find(v=>v.image_url)?.image_url||'',sizes:values(rows,'size')};});
       return {id:p.id,code:p.code||'',sku:p.code||'',barcode:p.barcode||'',audience:'retail',name:p.name||'',description:p.description||'',category:cat?.name||'',categoryId:p.category_id||'',subcategory:sub?.name||'',subcategoryId:p.subcategory_id||'',price:Number(p.price||0),mrp:Number(p.mrp||0),image:(p.images||[])[0]||'',cardImage:p.card_image_url||'',images:p.images||[],type:p.product_type||'Simple',optionTitle:p.option_title||'Size',colors,sizes,colorVariants,variants:vv.map(v=>({id:v.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??p.price??0),barcode:v.barcode||'',image:v.image_url||'',active:v.active!==false})),stock:vv.length?vv.reduce((n,v)=>n+Number(v.stock||0),0):Number(p.stock||0),active:p.active!==false,customerVisible:p.customer_visible!==false,askForPrice:!!p.ask_for_price};
     });
-    const categories=cats.filter(c=>c.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(c=>({id:c.id,name:c.name,image:c.image_url||'',sub:subs.filter(s=>s.category_id===c.id&&s.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(s=>s.name).join(' · ')||c.subtitle||'',active:true}));
+    const categories=cats.filter(c=>c.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(c=>({id:c.id,name:c.name,image:c.image_url||'',sub:(subsByCategory.get(c.id)||[]).filter(s=>s.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(s=>s.name).join(' · ')||c.subtitle||'',active:true}));
     return{products,categories,orders:data.orders||[],settings:data.settings||{},prints:data.print_types||null,delivery:data.delivery_methods||null};
   }
   let catalogueFlight=null,catalogueCache=null,catalogueCachedAt=0;
   const CATALOGUE_TTL=120000;
+  const PUBLIC_SNAPSHOT_KEY='one-line-public-catalogue-v198';
+  const isPublicStorefront=()=>!document.body.dataset.portalRole;
+  function publicSnapshot(){
+    if(!isPublicStorefront())return null;
+    try{
+      const saved=JSON.parse(sessionStorage.getItem(PUBLIC_SNAPSHOT_KEY)||'null');
+      if(saved?.version===1&&Date.now()-saved.at<CATALOGUE_TTL&&saved.data?.configured&&
+        Array.isArray(saved.data.products)&&Array.isArray(saved.data.customItems))return saved.data;
+    }catch(_){}return null;
+  }
   function hydrate(options={}){
     if(catalogueFlight)return catalogueFlight;
     if(!options.force&&catalogueCache&&Date.now()-catalogueCachedAt<CATALOGUE_TTL)return Promise.resolve(catalogueCache);
-    catalogueFlight=hydrateFresh().then(data=>{catalogueCache=data;catalogueCachedAt=Date.now();return data;}).finally(()=>{catalogueFlight=null;});
+    if(!options.force){
+      const snapshot=publicSnapshot();
+      if(snapshot){catalogueCache=snapshot;catalogueCachedAt=Date.now();portalProducts=snapshot.products;return Promise.resolve(snapshot);}
+    }
+    catalogueFlight=hydrateFresh().then(data=>{
+      catalogueCache=data;catalogueCachedAt=Date.now();
+      // Only non-privileged catalogue rows; never cache a portal's full inventory or private account data.
+      if(isPublicStorefront()&&data?.configured){
+        try{sessionStorage.setItem(PUBLIC_SNAPSHOT_KEY,JSON.stringify({version:1,at:catalogueCachedAt,data}));}catch(_){}
+      }
+      return data;
+    }).finally(()=>{catalogueFlight=null;});
     return catalogueFlight;
   }
   function patchCatalogue(kind,row){
@@ -97,7 +122,7 @@
       sb.from('categories').select('*').order('sort_order').order('created_at',{ascending:true}),
       sb.from('subcategories').select('*').order('sort_order'),
       sb.from('products').select('*'),
-      sb.from('product_variants').select('*'),
+      sb.from('product_variants').select('id,product_id,color,size,stock,price,barcode,image_url,active'),
       sb.from('store_settings').select('*').limit(1).maybeSingle(),
       sb.from('print_types').select('*').order('sort_order'),
       sb.from('delivery_methods').select('*').order('sort_order')
@@ -208,13 +233,13 @@
   
   async function catalogueImage(file,folder){
     // Catalogue media only; original customer artwork and downloads remain untouched.
-    if(!/^(custom-catalog|catalog|categories|variants|products)(\/|$)/.test(folder)||!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size<150000||!window.createImageBitmap)return file;
+    if(!/^(custom-catalog|catalog|categories|variants|products)(\/|$)/.test(folder)||!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size<110000||!window.createImageBitmap)return file;
     let bitmap;
     try{
-      bitmap=await createImageBitmap(file);const scale=Math.min(1,1400/Math.max(bitmap.width,bitmap.height));
+      bitmap=await createImageBitmap(file);const scale=Math.min(1,1200/Math.max(bitmap.width,bitmap.height));
       const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
       canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
-      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.85));
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.82));
       return blob&&blob.type==='image/webp'&&blob.size<file.size?new File([blob],file.name.replace(/\.[^.]+$/,'')+'.webp',{type:'image/webp'}):file;
     }catch(_){return file;}finally{bitmap?.close?.();}
   }
@@ -235,7 +260,13 @@
     const {error}=await sb.storage.from(C.STORAGE_BUCKET||'product-images').remove([path]);if(error)throw error;return true;
   }
   async function deleteImages(urls){
-    const unique=[...new Set((urls||[]).map(String).filter(Boolean))];for(const url of unique){try{await deleteImage(url);}catch(err){console.warn('Image cleanup failed',err);}}
+    const paths=[...new Set((urls||[]).map(storageObjectPath).filter(Boolean))];
+    if(!paths.length)return true;
+    const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');
+    for(let i=0;i<paths.length;i+=100){
+      const {error}=await sb.storage.from(C.STORAGE_BUCKET||'product-images').remove(paths.slice(i,i+100));
+      if(error)console.warn('Image cleanup failed',error.message);
+    }
     return true;
   }
   async function upsertCategory(row){const sb=supa();const payload={id:row.id||undefined,name:row.name,image_url:row.image||'',subtitle:row.sub||'',active:row.active!==false,sort_order:Number(row.sort_order||0)};const {data,error}=await sb.from('categories').upsert(payload).select().single();if(error)throw error;await hydrate({force:true});return data;}

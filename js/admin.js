@@ -949,6 +949,7 @@
     if(ids.length){for(let offset=0;;offset+=500){const page=await client.from('order_items').select('*').in('order_id',ids).order('created_at',{ascending:true}).order('id').range(offset,offset+499);if(page.error)throw page.error;rows.push(...(page.data||[]));if((page.data||[]).length<500)break;}}
     return {orders:{data:filtered,error:null},items:{data:rows,error:null}};
   }
+  let adminCatalogueLoaded=false;
   let loadPromise=null;
   function loadAll(silent=false,reuseCatalogue=false){
     if(loadPromise)return loadPromise;
@@ -960,13 +961,24 @@
       if(requested==='staff'){
         const catalog=await B.hydrate({force:!reuseCatalogue});state.settings=catalog.settings||S.getSettings?.()||{};state.products=catalog.products;state.categories=[];state.subcategories=[];state.customCatalogCategories=catalog.customCategories||[];state.customCatalogItems=catalog.customItems||[];state.customCatalogFabrics=[];state.customSportswearFabrics=[];state.customSportswearTypes=[];state.customPrintTypes=[];
       }else{
-        const catalog=await B.hydrate({force:!reuseCatalogue});
-        state.settings=S.getSettings?.()||{};state.products=catalog.products;state.categories=catalog.rawCategories;state.subcategories=catalog.rawSubcategories;
-        state.customSchemaReady=catalog.customSchemaReady;state.sportswearSchemaReady=catalog.sportswearSchemaReady;
-        const rawCustomCategories=catalog.customCategories||[];state.customCatalogCategories=rawCustomCategories.map(c=>String(c.name||'').trim().toLowerCase()==='kids uniform'?{...c,name:'Uniform',description:String(c.description||'').replace(/Kids uniform/gi,'Uniform')}:c);state.customCatalogItems=catalog.customItems;state.customCatalogFabrics=catalog.customFabrics;state.customSportswearFabrics=catalog.customSportswearFabrics;state.customSportswearTypes=catalog.customSportswearTypes;state.customPrintTypes=catalog.customPrintTypes||[];
+        // A background refresh on an order/activity dashboard needs only the live
+        // order feed. Product/catalogue records are loaded on entry, after edits,
+        // and whenever the user explicitly refreshes or opens inventory screens.
+        const feedOnly=Boolean(requested==='admin'&&reuseCatalogue&&adminCatalogueLoaded&&
+          ['dashboard','orders','carts','activity','catalogEnquiries'].includes(state.view));
+        if(!feedOnly){
+          const catalog=await B.hydrate({force:!reuseCatalogue});
+          state.settings=S.getSettings?.()||{};state.products=catalog.products;state.categories=catalog.rawCategories;state.subcategories=catalog.rawSubcategories;
+          state.customSchemaReady=catalog.customSchemaReady;state.sportswearSchemaReady=catalog.sportswearSchemaReady;
+          const rawCustomCategories=catalog.customCategories||[];state.customCatalogCategories=rawCustomCategories.map(c=>String(c.name||'').trim().toLowerCase()==='kids uniform'?{...c,name:'Uniform',description:String(c.description||'').replace(/Kids uniform/gi,'Uniform')}:c);state.customCatalogItems=catalog.customItems;state.customCatalogFabrics=catalog.customFabrics;state.customSportswearFabrics=catalog.customSportswearFabrics;state.customSportswearTypes=catalog.customSportswearTypes;state.customPrintTypes=catalog.customPrintTypes||[];
+          adminCatalogueLoaded=true;
+        }
         if(requested==='admin'){
-          try{const codes=await client.from('redeem_codes').select('*').order('created_at',{ascending:false});if(!codes.error)state.redeemCodes=codes.data||[];}catch(_){/* Migration may not yet be installed */}
-          try{state.profiles=await B.listProfiles();}catch(_){state.profiles=[];}
+          // Redeem codes and staff profiles are only needed on explicit reload / edit.
+          if(!reuseCatalogue){
+            try{const codes=await client.from('redeem_codes').select('*').order('created_at',{ascending:false});if(!codes.error)state.redeemCodes=codes.data||[];}catch(_){/* Migration may not yet be installed */}
+            try{state.profiles=await B.listProfiles();}catch(_){state.profiles=[];}
+          }
           let feed=null;
           try{feed=await B.adminFeed?.();}catch(_){feed=null;}
           // Read enquiry activity from both paths and merge it. This keeps the

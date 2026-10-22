@@ -1,17 +1,55 @@
-const CACHE='one-line-catalogue-v197';
-const CORE=[
-  './index.html','./print-guide.html','./404.html','./admin.html','./staff.html','./management.html',
-  './css/site.css','./css/admin.css',
-  './js/order-pdf.js','./js/order-documents.js','./js/config.js','./js/data.js','./js/msg91-widget.js','./js/backend.js','./js/designer.js','./js/app.js','./js/admin.js',
-  './one-line-logo.webp','./share-logo-white.png','./share-logo-white-v166.png','./favicon.png','./icon-192.png','./icon-512.png','./manifest.webmanifest',
-  './assets/product-placeholder.svg','./assets/category-placeholder.svg','./assets/contact-support.webp','./assets/bulk-enquiry-discount.png'
-];
-self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil((async()=>{const cache=await caches.open(CACHE);await Promise.all(CORE.map(async url=>{try{const request=new Request(url,{cache:'reload'}),response=await fetch(request);if(response&&response.ok)await cache.put(request,response.clone());}catch(_){}}));})());});
-self.addEventListener('activate',event=>{event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>key.startsWith('one-line-')&&key!==CACHE).map(key=>caches.delete(key)));await self.clients.claim();})());});
+// OneLine v198: a small offline shell and versioned static asset caching.
+// Never cache Supabase/Auth/API responses or other origins in this service worker.
+const CACHE='one-line-catalogue-v198';
+const CORE=['./index.html','./css/site.css?v=198','./js/config.js?v=198',
+  './js/data.js?v=198','./js/msg91-widget.js?v=198',
+  './js/order-pdf.js?v=198','./js/order-documents.js?v=198',
+  './js/backend.js?v=198','./js/designer.js?v=198','./js/app.js?v=198',
+  './one-line-logo.webp','./assets/product-placeholder.svg','./favicon.png'];
+self.addEventListener('install',event=>{
+  self.skipWaiting();
+  event.waitUntil((async()=>{
+    const cache=await caches.open(CACHE);
+    await Promise.all(CORE.map(async url=>{
+      try{const request=new Request(url,{cache:'reload'});const response=await fetch(request);
+        if(response?.ok)await cache.put(request,response.clone());}catch(_){}
+    }));
+  })());
+});
+self.addEventListener('activate',event=>{
+  event.waitUntil((async()=>{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(k=>k.startsWith('one-line-')&&k!==CACHE).map(k=>caches.delete(k)));
+    await self.clients.claim();
+  })());
+});
 self.addEventListener('fetch',event=>{
-  if(event.request.method!=='GET')return;
-  const url=new URL(event.request.url);if(url.origin!==self.location.origin)return;
-  const isCode=event.request.mode==='navigate'||/\.(?:js|css|html|webmanifest)$/.test(url.pathname);
-  if(isCode){event.respondWith((async()=>{try{const response=await fetch(event.request,{cache:'no-store'});if(response&&response.ok){const cache=await caches.open(CACHE);cache.put(event.request,response.clone());}return response;}catch(_){return(await caches.match(event.request,{ignoreSearch:true}))||(event.request.mode==='navigate'?await caches.match('./index.html'):Response.error());}})());return;}
-  event.respondWith((async()=>{const cached=await caches.match(event.request);if(cached)return cached;const response=await fetch(event.request);if(response&&response.ok){const cache=await caches.open(CACHE);cache.put(event.request,response.clone());}return response;})());
+  const request=event.request;
+  if(request.method!=='GET')return;
+  const url=new URL(request.url);
+  if(url.origin!==self.location.origin)return;
+  // Navigations are always checked with the server so deployed pages update.
+  if(request.mode==='navigate'||url.pathname.endsWith('.html')){
+    event.respondWith((async()=>{
+      try{
+        const response=await fetch(request,{cache:'no-store'});
+        if(response?.ok){const cache=await caches.open(CACHE);await cache.put(request,response.clone());}
+        return response;
+      }catch(_){return (await caches.match(request,{ignoreSearch:true}))||
+        (await caches.match('./index.html'))||Response.error();}
+    })());
+    return;
+  }
+  // Versioned scripts and CSS plus local images: reuse network bytes across visits.
+  if(/\.(?:js|css|svg|png|jpg|jpeg|webp|webmanifest|ico)$/i.test(url.pathname)){
+    event.respondWith((async()=>{
+      const cache=await caches.open(CACHE),cached=await cache.match(request);
+      if(cached)return cached;
+      try{
+        const response=await fetch(request);
+        if(response?.ok)await cache.put(request,response.clone());
+        return response;
+      }catch(_){return Response.error();}
+    })());
+  }
 });
