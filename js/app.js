@@ -3,7 +3,7 @@
   const S=window.OneLineStore,B=window.OneLineBackend,I=S.icon,root=document.getElementById('app');
   const clone=v=>typeof structuredClone==="function"?structuredClone(v):JSON.parse(JSON.stringify(v));
   const state={
-    screen:'home',products:S.getProducts(),categories:S.getCategories(),customCatalogCategories:S.getCustomCatalogCategories?.()||[],customCatalogItems:S.getCustomCatalogItems?.()||[],customCatalogFabrics:S.getCustomCatalogFabrics?.()||[],customSportswearFabrics:S.getCustomSportswearFabrics?.()||[],customSportswearTypes:S.getCustomSportswearTypes?.()||[],customPrintTypes:S.getCustomPrintTypes?.()||[],printableIncludePrint:true,printablePrintQty:{},printableSelectedPrintIds:[],printableActivePrintId:'',printableActivePrintSize:'',printInfoId:'',fabricPricingLoading:false,fabricPricingError:'',customCategoryId:'',customItemId:'',customFabricId:'',customQuality:'',customSportswearTypeId:'',sportswearSizeQty:{},uniformTopId:'',uniformBottomId:'',uniformOptionIds:[],uniformSizeQty:{},uniformGalleryVariantId:'',enquiryBusyId:'',enquirySuccessId:'',cart:[],orders:[],enquiries:[],settings:S.getSettings(),
+    screen:'home',products:S.getProducts(),categories:S.getCategories(),customCatalogCategories:S.getCustomCatalogCategories?.()||[],customCatalogItems:S.getCustomCatalogItems?.()||[],customCatalogFabrics:S.getCustomCatalogFabrics?.()||[],customSportswearFabrics:S.getCustomSportswearFabrics?.()||[],customSportswearTypes:S.getCustomSportswearTypes?.()||[],customPrintTypes:S.getCustomPrintTypes?.()||[],printableIncludePrint:false,printablePrintQty:{},printableSelectedPrintIds:[],printableActivePrintId:'',printableActivePrintSize:'',printInfoId:'',fabricPricingLoading:false,fabricPricingError:'',customCategoryId:'',customItemId:'',customFabricId:'',customQuality:'',customSportswearTypeId:'',sportswearSizeQty:{},uniformTopId:'',uniformBottomId:'',uniformOptionIds:[],uniformSizeQty:{},uniformGalleryVariantId:'',enquiryBusyId:'',enquirySuccessId:'',cart:[],orders:[],enquiries:[],settings:S.getSettings(),
     filterCategories:[],filterSubs:[],filterOptions:[],filterOpen:false,filterDraft:null,selected:null,previewImage:'',color:'',size:'',menu:false,
     bulkQty:{},
     teamStep:1,teamUnlockedStep:1,teamFront:{background:'',fileName:'',layers:[]},teamBack:{background:'',fileName:'',layers:[{id:'team-name',type:'fixedText',text:'NAME',x:50,y:24,sizePct:7},{id:'team-number',type:'fixedText',text:'99',x:50,y:55,sizePct:22}]},teamRows:[{name:'',number:'',size:'M'}],teamActiveLayer:'',teamCrop:null,teamEnquiryBusy:false,teamEnquirySuccess:false,pendingCustomItem:null,
@@ -1538,7 +1538,7 @@
     }
     state.customItemId=String(itemId);
     state.customFabricId='';state.customQuality='';state.customSportswearTypeId='';state.sportswearSizeQty={};
-    state.printableIncludePrint=!isPrintableCustomItem(idea);state.printablePrintQty={};state.printableSelectedPrintIds=[];state.printableActivePrintId='';state.printableActivePrintSize='';
+    state.printableIncludePrint=false;state.printablePrintQty={};state.printableSelectedPrintIds=[];state.printableActivePrintId='';state.printableActivePrintSize='';
     state.uniformTopId='';state.uniformBottomId='';state.uniformOptionIds=[];state.uniformSizeQty={};state.uniformGalleryVariantId='';
     if(idea.category_id)state.customCategoryId=String(idea.category_id);
     go('customItem');
