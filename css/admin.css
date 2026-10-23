@@ -1367,92 +1367,142 @@ html,body{background:#f6f2f7;color:#241c27}
 @media(max-width:650px){.jersey-admin-size-row:has([data-jersey-size-stock]){grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.jersey-admin-size-row:has([data-jersey-size-stock]) label:nth-child(4){grid-column:auto}.jersey-admin-size-row:has([data-jersey-size-stock])>button{grid-column:2;grid-row:auto}}
 
 
-/* v200 — READY STOCK PRINTABLE: clear read mode; edit ONLY the selected field. */
-.editor-page .portal-edit-section fieldset:disabled{opacity:1!important;filter:none!important;}
-.editor-page .portal-edit-section fieldset:disabled input,
-.editor-page .portal-edit-section fieldset:disabled textarea,
-.editor-page .portal-edit-section fieldset:disabled select,
-.editor-page .custom-field-control input:disabled,
-.editor-page .custom-field-control textarea:disabled,
-.editor-page .custom-field-control select:disabled{opacity:1!important;color:#2b2130!important;-webkit-text-fill-color:#2b2130!important;background:#fff!important;filter:none!important;border-color:#e5dce9!important;}
-.editor-page .portal-edit-section fieldset:disabled .item-fabric-card,
-.editor-page .portal-edit-section fieldset:disabled .fabric-admin-card{opacity:1!important;}
-.editor-page .custom-field-row.editing .custom-field-control :is(input,textarea,select){border:1.5px solid #8537be!important;background:#fcf9ff!important;box-shadow:0 0 0 3px rgba(135,63,186,.09)!important;}
-.editor-page .custom-field-row.editing .custom-field-label{color:#7731a6!important;font-weight:750!important;}
-.editor-page .portal-edit-section.editing>header{background:#f6edff!important;border-radius:13px!important;}
-.editor-page .portal-edit-section.editing>header b{color:#7629a5!important;}
-.editor-page :is(.section-edit-button,.field-edit-button).done{background:#7434ab!important;border-color:#7434ab!important;color:#fff!important;}
-.editor-page .portal-edit-section input:focus-visible,.editor-page .portal-edit-section select:focus-visible,.editor-page .portal-edit-section textarea:focus-visible{outline:2px solid #ae82dc!important;outline-offset:1px;}
-.editor-page.ready-stock-admin-editor{max-width:1160px!important;margin-inline:auto!important;padding:clamp(14px,2.2vw,30px)!important;border-radius:20px!important;}
-.editor-page.ready-stock-admin-editor .panel-head{padding-bottom:8px!important;}
-.ready-stock-admin-intro{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:20px 22px;margin:10px 0 18px;border:1px solid #e7dbf1;background:linear-gradient(120deg,#faf6ff,#fff 75%);border-radius:19px;}
-.ready-stock-admin-intro>div{display:flex;flex-direction:column;gap:6px;}
-.ready-stock-admin-kicker{font-size:10px;letter-spacing:.11em;font-weight:800;color:#88519b;}
-.ready-stock-admin-intro strong{font-size:24px;color:#302238;line-height:1.1;}
-.ready-stock-admin-intro small{font-size:12px;color:#716078;line-height:1.5;}
-.ready-stock-admin-indicator{width:45px;height:45px;flex:0 0 45px;border-radius:14px;background:#f0e0f9;color:#8437ad;display:grid;place-items:center;}
-.ready-stock-admin-editor .portal-edit-section{padding:8px 18px 12px!important;margin:14px 0 18px!important;border:1px solid #e9e1ec!important;border-radius:17px!important;background:#fff!important;box-shadow:0 2px 10px rgba(70,37,78,.025)!important;}
-.ready-stock-admin-editor .portal-edit-section>header{padding:14px 2px 13px!important;margin:0 0 6px!important;border-bottom:1px solid #f1eaf2!important;}
-.ready-stock-admin-editor .portal-edit-section>header b{font-size:17px!important;font-weight:800!important;color:#33233d!important;}
-.ready-stock-admin-editor .portal-edit-section>header small{font-size:11px!important;color:#84748a!important;}
-.ready-stock-admin-editor .portal-edit-section.editing{border-color:#b881de!important;box-shadow:0 0 0 2px rgba(146,81,199,.08)!important;}
-.ready-stock-admin-editor .portal-edit-section.editing>header{background:#f7f0ff!important;padding-inline:12px!important;border-radius:10px!important;}
-.ready-stock-admin-editor .portal-edit-section fieldset{padding:12px 1px 14px!important;}
-.ready-stock-admin-editor .custom-field-grid{gap:16px!important;}
-.ready-stock-admin-editor .custom-field-row{border:1px solid #eee8f1;border-radius:13px;padding:12px;background:#fff;transition:border-color .16s,background .16s;}
-.ready-stock-admin-editor .custom-field-row.editing{background:#fcf9ff;border-color:#b881de;box-shadow:0 0 0 2px rgba(147,77,192,.07);}
-.ready-stock-admin-editor .custom-field-row .custom-field-label{font-size:12px!important;font-weight:700!important;min-height:18px!important;}
-.ready-stock-admin-editor .custom-field-control :is(input,textarea,select){min-height:43px!important;border-radius:9px!important;}
-.ready-stock-admin-editor .custom-field-row.locked input:disabled,
-.ready-stock-admin-editor .custom-field-row.locked select:disabled,
-.ready-stock-admin-editor .custom-field-row.locked textarea:disabled{background:#fff!important;border-color:#e9e2ed!important;color:#33253a!important;-webkit-text-fill-color:#33253a!important;}
-.ready-stock-size-count{white-space:nowrap;align-self:center;padding:6px 9px;border-radius:99px;background:#f4eef7;color:#794c8b;font-size:11px;font-weight:800;}
-.ready-stock-size-list{display:grid;gap:12px;}
-.ready-stock-size-card.jersey-admin-size-row{display:block!important;padding:14px!important;margin:0!important;border:1px solid #e9e1ed!important;border-radius:14px!important;background:#fff!important;}
-.ready-stock-size-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 2px 12px;border-bottom:1px solid #f2edf3;}
-.ready-stock-size-card-top strong{color:#33243d;font-size:14px;}
-.ready-stock-size-remove{width:auto!important;min-height:30px!important;display:inline-flex;align-items:center;gap:5px;border:0!important;border-radius:8px!important;background:#fff5f7!important;color:#a83950!important;padding:5px 9px!important;font-size:11px;}
-.ready-stock-size-remove .icon{height:14px;width:14px;}
-.ready-stock-size-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:13px;padding-top:13px;}
-.ready-stock-size-field{display:grid;gap:6px;min-width:0;}
-.ready-stock-size-caption{color:#68586f;font-size:11px;line-height:1.4;font-weight:700;}
-.ready-stock-size-control{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;min-width:0;}
-.ready-stock-size-control input{height:43px!important;min-height:43px!important;width:100%!important;padding:0 10px!important;border:1px solid #e3dae7!important;border-radius:9px!important;background:#fff!important;color:#302238!important;font-size:13px!important;}
-.ready-stock-size-control input:disabled{opacity:1!important;background:#fff!important;color:#302238!important;-webkit-text-fill-color:#302238!important;}
-.ready-stock-size-field.editing .ready-stock-size-control input{border:1.5px solid #8841b8!important;background:#fcf9ff!important;box-shadow:0 0 0 3px rgba(144,64,193,.09)!important;}
-.ready-stock-size-field.editing .ready-stock-size-caption{color:#7a35a5;}
-.ready-stock-size-control .field-edit-button{min-height:43px;height:43px;min-width:42px;padding:0 10px!important;font-size:11px!important;}
-.ready-stock-size-control .field-edit-button .icon{width:16px!important;height:16px!important;}
-.ready-stock-unlimited{display:flex!important;gap:8px!important;align-items:center!important;padding:0 8px;min-height:43px;font-size:12px!important;font-weight:750;color:#4e3b55;}
-.ready-stock-unlimited input{width:17px!important;height:17px!important;accent-color:#7d3ca5;}
-.ready-stock-sizes-empty{display:grid;gap:7px;padding:26px;text-align:center;border:1px dashed #d8bfe6;border-radius:13px;background:#fcfaff;}
-.ready-stock-sizes-empty b{font-size:14px;color:#4e2e60;}
-.ready-stock-sizes-empty span{font-size:12px;color:#84708d;line-height:1.55;}
-.ready-stock-size-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:15px 2px 3px;}
-.ready-stock-size-footer small{font-size:11px;color:#88798c;max-width:550px;line-height:1.5;}
-.ready-stock-add-size{display:inline-flex!important;align-items:center;gap:6px;min-height:43px!important;border:1px solid #d5b0e6!important;border-radius:10px!important;background:#f8efff!important;color:#73369b!important;padding:0 16px!important;font-weight:750!important;}
-.ready-stock-add-size .icon{height:16px;width:16px;}
-@media(max-width:760px){
-  .ready-stock-size-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-  .ready-stock-admin-editor .custom-field-grid{gap:10px!important;}
+/* One-Line v201 — unified, lightweight admin forms (no section-wide edit states). */
+.editor-page .portal-edit-section,
+.editor-page.ready-stock-admin-editor .portal-edit-section{
+  background:transparent!important;box-shadow:none!important;border:0!important;
+  border-radius:0!important;padding:0!important;margin:12px 0 20px!important;
+  overflow:visible!important;
 }
-@media(max-width:560px){
-  .editor-page .field-edit-button span,.editor-page .section-edit-button span{display:none!important;}
-  .editor-page .field-edit-button,.editor-page .section-edit-button{width:37px!important;min-width:37px!important;min-height:37px!important;height:37px!important;padding:0!important;gap:0!important;border-radius:9px!important;}
-  .editor-page .field-edit-button .icon,.editor-page .section-edit-button .icon{width:16px!important;height:16px!important;}
-  .ready-stock-admin-editor{padding:10px!important;}
-  .ready-stock-admin-intro{padding:15px;gap:8px;}
-  .ready-stock-admin-intro strong{font-size:19px;}
-  .ready-stock-admin-intro small{font-size:11px;}
-  .ready-stock-admin-indicator{display:none;}
-  .ready-stock-admin-editor .portal-edit-section{padding:7px 10px 9px!important;margin:10px 0 14px!important;border-radius:14px!important;}
-  .ready-stock-admin-editor .custom-field-grid{grid-template-columns:1fr!important;}
-  .ready-stock-admin-editor .custom-field-row{padding:10px;}
-  .ready-stock-size-card.jersey-admin-size-row{padding:10px!important;}
-  .ready-stock-size-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-  .ready-stock-size-control .field-edit-button{min-height:35px!important;height:35px!important;width:35px!important;min-width:35px!important;}
-  .ready-stock-size-control input{height:39px!important;min-height:39px!important;padding:0 7px!important;}
-  .ready-stock-size-caption{font-size:10px;}
-  .ready-stock-size-footer{align-items:stretch;flex-direction:column;}
-  .ready-stock-size-count{font-size:10px;}
+.editor-page .portal-edit-section>header{
+  padding:12px 0 7px!important;background:transparent!important;border:0!important;
+  border-bottom:1px solid #ece7ed!important;border-radius:0!important;
+}
+.editor-page .portal-edit-section>header b{font-size:clamp(15px,1.45vw,19px)!important;letter-spacing:-.015em!important;}
+.editor-page .portal-edit-section>header small{font-size:11px!important;color:#766f7c!important;line-height:1.45!important;}
+.editor-page .portal-edit-section>fieldset,.editor-page .portal-edit-section fieldset{
+  border:0!important;background:transparent!important;filter:none!important;opacity:1!important;
+  margin:0!important;padding:12px 0!important;min-width:0!important;
+}
+.editor-page .custom-field-row,
+.editor-page .custom-field-row.locked,
+.editor-page .custom-field-row.editing{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;min-width:0!important;}
+.editor-page .custom-field-control,
+.editor-page .custom-field-row .custom-field-control{
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;min-width:0!important;gap:0!important;
+}
+.editor-page .custom-field-row.admin-check-label .custom-field-control{grid-template-columns:auto!important;justify-content:start!important;}
+.editor-page :is(input,textarea,select):not([type=checkbox]):not([type=file]){
+  opacity:1!important;-webkit-text-fill-color:currentColor;
+}
+.editor-page :is(input,textarea,select):not([type=checkbox]):not([type=file]):focus,
+.category-manager-page :is(input,textarea,select):focus,
+.custom-category-settings-page :is(input,textarea,select):not([readonly]):focus{
+  border-color:#9056b6!important;outline:0!important;box-shadow:0 0 0 3px rgba(137,65,181,.12)!important;
+  background:#fff!important;
+}
+.editor-page .custom-dual-media{gap:14px!important;align-items:start!important;}
+.editor-page .custom-media-card,.editor-page .custom-media-detail{min-width:0!important;}
+/* Styled native file chooser and the larger upload labels remain fully accessible. */
+.portal-admin input[type=file]::file-selector-button,
+.portal-management input[type=file]::file-selector-button{
+  border:1px solid #d7c6de;border-radius:8px;background:#f7f3f9;color:#543966;
+  padding:9px 12px;margin-right:12px;font:inherit;font-size:11px;font-weight:750;cursor:pointer;
+}
+.portal-admin input[type=file],.portal-management input[type=file]{max-width:100%;color:#645a69;font-size:12px;}
+.editor-page .upload-zone{
+  background:#fff!important;border:1px dashed #c6afce!important;border-radius:11px!important;
+  min-height:94px!important;padding:16px!important;transition:border-color .16s,background .16s;
+}
+.editor-page .upload-zone:hover,.editor-page .upload-zone:focus-within{
+  background:#fcf9ff!important;border-color:#9767b0!important;
+  box-shadow:0 0 0 3px rgba(145,88,182,.07)!important;
+}
+.editor-page .upload-zone b{font-size:12px!important;}
+.editor-page .upload-zone small{font-size:11px!important;color:#716978!important;}
+.editor-page .separate-variants-upload{
+  background:#fff!important;border:1px dashed #c6afce!important;border-radius:11px!important;
+  padding:14px!important;box-shadow:none!important;
+}
+.editor-page .separate-variants-upload:hover,.editor-page .separate-variants-upload:focus-within{border-color:#9767b0!important;}
+.editor-page .image-preview-grid{align-items:start!important;}
+/* Small, familiar Ready Stock size rows; no nested decorative size cards. */
+.editor-page .ready-stock-inline-list{display:grid;gap:9px;}
+.editor-page .ready-stock-inline-size{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  align-items:end!important;gap:10px!important;border:1px solid #e9e2eb!important;
+  background:#fff!important;border-radius:10px!important;padding:12px!important;
+  box-shadow:none!important;min-width:0!important;
+}
+.editor-page .ready-stock-inline-size>label{min-width:0!important;margin:0!important;display:grid;gap:5px;}
+.editor-page .ready-stock-inline-size input:not([type=checkbox]){width:100%!important;min-width:0!important;}
+.editor-page .ready-stock-unlimited{
+  display:flex!important;flex-direction:row!important;align-items:center!important;gap:7px!important;
+  min-height:40px!important;color:#463b4d!important;white-space:nowrap;font-size:12px!important;
+}
+.editor-page .ready-stock-unlimited input{height:17px!important;width:17px!important;accent-color:#7d449e;}
+.editor-page .ready-stock-size-remove{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  width:max-content;max-width:100%;min-height:38px;padding:7px 10px;
+  border:1px solid #e8d6dc;background:#fff;color:#a53b53;border-radius:9px;
+  font-size:11px;font-weight:750;
+}
+.editor-page .ready-stock-size-remove .icon{width:15px;height:15px;}
+.editor-page .ready-stock-add-size{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  width:auto;min-height:41px;margin:12px 0 0;padding:8px 14px;
+  border:1px solid #dbc7e8;border-radius:9px;background:#faf7fc;color:#67427c;
+  font-size:12px;font-weight:750;
+}
+.editor-page .ready-stock-add-size .icon{width:15px;height:15px;}
+.editor-page .ready-stock-sizes-empty{margin:0;padding:15px;border:1px dashed #ddd1e3;border-radius:9px;background:#fff;color:#7b7180;font-size:12px;}
+.manager-save-button{min-height:38px;min-width:76px;padding:7px 13px;border-radius:9px;
+  border:1px solid #d3c0e0;background:#f8f3fb;color:#644080;font-size:11px;font-weight:800;cursor:pointer;}
+.manager-save-button:hover,.manager-save-button:focus-visible{background:#eee3f4;border-color:#a984c5;}
+.manager-save-button:disabled{opacity:.65;cursor:progress;}
+.fabric-admin-card :is(input,select,textarea):not([type=checkbox]):disabled{opacity:1!important;color:#342b39!important;background:#fff!important;}
+.account-list .account-row-direct{display:grid;grid-template-columns:minmax(180px,1.3fr) minmax(125px,.7fr) auto minmax(150px,.85fr) auto;gap:12px;align-items:end;min-width:0;}
+.account-list .account-row-direct .account-identity-fields{display:grid;gap:8px;min-width:0;}
+.account-list .account-row-direct label{display:grid;gap:5px;min-width:0;font-size:11px;font-weight:700;}
+.account-list .account-row-direct label.account-active{display:flex;align-items:center;gap:7px;padding-bottom:10px;white-space:nowrap;}
+.account-list .account-row-direct input,.account-list .account-row-direct select{min-width:0;width:100%;}
+.account-list .account-row-direct .account-active input{width:16px;}
+/* Keep usual button sizes and spacing on smaller screens. */
+@media(max-width:950px){
+  .account-list .account-row-direct{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .account-list .account-row-direct .manager-save-button{width:100%;}
+}
+@media(max-width:690px){
+  .editor-page .ready-stock-inline-size{grid-template-columns:repeat(2,minmax(0,1fr))!important;padding:10px!important;gap:9px!important;}
+  .editor-page .ready-stock-inline-size .ready-stock-unlimited{min-height:34px!important;}
+  .editor-page .ready-stock-size-remove{width:100%;min-height:37px;}
+  .editor-page .portal-edit-section>header{flex-wrap:wrap;align-items:flex-start;}
+  .editor-page .custom-field-grid,.editor-page .custom-dual-media{grid-template-columns:minmax(0,1fr)!important;gap:13px!important;}
+  .editor-page .custom-media-detail,.editor-page .custom-media-card{min-width:0!important;}
+  .editor-page .custom-field-row{min-width:0!important;}
+  .editor-page .upload-zone{min-height:84px!important;padding:13px!important;}
+  .account-list .account-row-direct{grid-template-columns:minmax(0,1fr);}
+  .account-list .account-row-direct .manager-save-button{width:100%;}
+  .fabric-admin-card .manager-save-button{width:100%;}
+  .print-admin-title-row .manager-save-button{width:auto;min-width:65px;}
+}
+@media(max-width:390px){
+  .editor-page .ready-stock-inline-size{grid-template-columns:minmax(0,1fr)!important;}
+  .editor-page .ready-stock-inline-size .ready-stock-size-remove{width:max-content;}
+  .editor-page .ready-stock-add-size{width:100%;}
+}
+
+/* Final responsive polish: allow complete Remove labels instead of inherited 36px icon slots. */
+.editor-page .ready-stock-inline-size > .ready-stock-size-remove{
+  width:max-content!important;min-width:92px!important;max-width:100%!important;
+  height:auto!important;min-height:37px!important;padding:7px 12px!important;
+  justify-self:start!important;white-space:nowrap!important;overflow:visible!important;
+}
+.editor-page .ready-stock-inline-size > .ready-stock-size-remove .icon{flex:0 0 15px!important;}
+.editor-page .item-fabric-card input:disabled,
+.editor-page .fabric-admin-card input:disabled,
+.editor-page .ready-stock-inline-size input:disabled{opacity:1!important;filter:none!important;color:#3b3440!important;-webkit-text-fill-color:#3b3440!important;}
+@media(max-width:690px){
+  .editor-page .ready-stock-inline-size > .ready-stock-size-remove{width:100%!important;justify-self:stretch!important;}
+  .editor-page .ready-stock-inline-size > label{font-size:11px!important;}
 }

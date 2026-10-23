@@ -1,3 +1,9 @@
+# CURRENT RELEASE: One-Line v201
+
+**Important: the v198 SQL installation was verified as already complete. DO NOT run v198 SQL again.** For this UI-only release, follow `DEPLOY-v201.md` and upload `One-Line-main` to your existing GitHub deployment branch. No SQL changes are required.
+
+---
+
 > **Current project status (October 23, 2026):** Your Supabase v198 stock function, checkout trigger, and cancellation trigger were verified `true` in SQL Editor. **Do not run v198 SQL again.** This v200 ZIP changes frontend administration layout and defaults only; deploy website files through GitHub/Cloudflare Pages. The v198 SQL is retained only as a reference for fresh installs. The running `place-order` Edge Function you pasted contains both `validatePrintableOrder` and server-side `validatedAt` markers; its source is unchanged here. After deployment, run controlled checkout/stock/cancellation tests before considering the change verified in production.
 
 # ONE-LINE — v199 FINAL READY PACKAGE (includes v198 inventory SQL)
