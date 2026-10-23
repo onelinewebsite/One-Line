@@ -64,48 +64,62 @@
   const values=(rows,key)=>[...new Set((rows||[]).map(x=>String(x?.[key]||'').trim()).filter(Boolean))];
   function mapData(data,includeInactive=false){
     const cats=data.categories||[],subs=data.subcategories||[],variants=data.product_variants||[];
+    // Linear-time join; filtering every variant for every product becomes O(products * variants).
+    const variantsByProduct=new Map();
+    for(const variant of variants){const key=String(variant.product_id),group=variantsByProduct.get(key);if(group)group.push(variant);else variantsByProduct.set(key,[variant]);}
     const catMap=new Map(cats.map(c=>[c.id,c])),subMap=new Map(subs.map(s=>[s.id,s]));
-    // Index related records once instead of repeatedly scanning every row for every product.
-    const variantsByProduct=new Map(),subsByCategory=new Map();
-    for(const v of variants){if(!variantsByProduct.has(v.product_id))variantsByProduct.set(v.product_id,[]);variantsByProduct.get(v.product_id).push(v);}
-    for(const s of subs){if(!subsByCategory.has(s.category_id))subsByCategory.set(s.category_id,[]);subsByCategory.get(s.category_id).push(s);}
     const products=(data.products||[]).filter(p=>includeInactive||p.active!==false).map(p=>{
-      const vv=(variantsByProduct.get(p.id)||[]).filter(v=>includeInactive||v.active!==false);
+      const vv=(variantsByProduct.get(String(p.id))||[]).filter(v=>includeInactive||v.active!==false);
       const cat=catMap.get(p.category_id),sub=subMap.get(p.subcategory_id);
       const colors=values(vv,'color'),sizes=values(vv,'size');
       const colorVariants=colors.map(color=>{const rows=vv.filter(v=>v.color===color);return{color,image:rows.find(v=>v.image_url)?.image_url||'',sizes:values(rows,'size')};});
-      return {id:p.id,code:p.code||'',sku:p.code||'',barcode:p.barcode||'',audience:'retail',name:p.name||'',description:p.description||'',category:cat?.name||'',categoryId:p.category_id||'',subcategory:sub?.name||'',subcategoryId:p.subcategory_id||'',price:Number(p.price||0),mrp:Number(p.mrp||0),image:(p.images||[])[0]||'',cardImage:p.card_image_url||'',images:p.images||[],type:p.product_type||'Simple',optionTitle:p.option_title||'Size',colors,sizes,colorVariants,variants:vv.map(v=>({id:v.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??p.price??0),barcode:v.barcode||'',image:v.image_url||'',active:v.active!==false})),stock:vv.length?vv.reduce((n,v)=>n+Number(v.stock||0),0):Number(p.stock||0),active:p.active!==false,customerVisible:p.customer_visible!==false,askForPrice:!!p.ask_for_price};
+      return {id:p.id,createdAt:p.created_at||'',code:p.code||'',sku:p.code||'',barcode:p.barcode||'',audience:'retail',name:p.name||'',description:p.description||'',category:cat?.name||'',categoryId:p.category_id||'',subcategory:sub?.name||'',subcategoryId:p.subcategory_id||'',price:Number(p.price||0),mrp:Number(p.mrp||0),image:(p.images||[])[0]||'',cardImage:p.card_image_url||'',images:p.images||[],type:p.product_type||'Simple',optionTitle:p.option_title||'Size',colors,sizes,colorVariants,variants:vv.map(v=>({id:v.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??p.price??0),barcode:v.barcode||'',image:v.image_url||'',active:v.active!==false})),stock:vv.length?vv.reduce((n,v)=>n+Number(v.stock||0),0):Number(p.stock||0),active:p.active!==false,customerVisible:p.customer_visible!==false,askForPrice:!!p.ask_for_price};
     });
-    const categories=cats.filter(c=>c.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(c=>({id:c.id,name:c.name,image:c.image_url||'',sub:(subsByCategory.get(c.id)||[]).filter(s=>s.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(s=>s.name).join(' · ')||c.subtitle||'',active:true}));
+    const categories=cats.filter(c=>c.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(c=>({id:c.id,name:c.name,image:c.image_url||'',sub:subs.filter(s=>s.category_id===c.id&&s.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(s=>s.name).join(' · ')||c.subtitle||'',active:true}));
     return{products,categories,orders:data.orders||[],settings:data.settings||{},prints:data.print_types||null,delivery:data.delivery_methods||null};
   }
   let catalogueFlight=null,catalogueCache=null,catalogueCachedAt=0;
   const CATALOGUE_TTL=120000;
-  const PUBLIC_SNAPSHOT_KEY='one-line-public-catalogue-v198';
-  const isPublicStorefront=()=>!document.body.dataset.portalRole;
-  function publicSnapshot(){
-    if(!isPublicStorefront())return null;
-    try{
-      const saved=JSON.parse(sessionStorage.getItem(PUBLIC_SNAPSHOT_KEY)||'null');
-      if(saved?.version===1&&Date.now()-saved.at<CATALOGUE_TTL&&saved.data?.configured&&
-        Array.isArray(saved.data.products)&&Array.isArray(saved.data.customItems))return saved.data;
-    }catch(_){}return null;
+  const CATALOGUE_PAGE_SIZE=350;
+  const CATALOGUE_MAX_PAGES=80; // 28,000 rows per table; never silently return only the first 1,000.
+  const cataloguePortal=()=>!!document.body.dataset.portalRole;
+  async function directCataloguePage(sb,table,page,columns='*'){
+    const orderBy=table==='catalogue_internal_details'?'item_id':'id';
+    const from=page*CATALOGUE_PAGE_SIZE;
+    const res=await sb.from(table).select(columns).order(orderBy,{ascending:true}).range(from,from+CATALOGUE_PAGE_SIZE-1);
+    if(res.error)throw res.error;
+    return res.data||[];
+  }
+  async function cataloguePage(sb,table,page,columns='*'){
+    // Staff/admin bypass the public Cloudflare cache to preserve role-filtered records.
+    if(!cataloguePortal()){
+      try{
+        const query=new URLSearchParams({table,page:String(page)});
+        const response=await fetch('/api/public-catalogue?'+query,{credentials:'omit',headers:{accept:'application/json'}});
+        if(response.ok){const rows=await response.json();if(Array.isArray(rows))return rows;}
+        // On a Pages site without Functions, fall back to the original RLS-protected API.
+      }catch(_){/* Keep catalogue available while Cloudflare is unreachable. */}
+    }
+    return directCataloguePage(sb,table,page,columns);
+  }
+  async function catalogueRows(sb,table,columns='*'){
+    // Most configuration tables fit in one page; don't issue two extra requests for them.
+    const first=await cataloguePage(sb,table,0,columns),rows=[...first];
+    if(first.length<CATALOGUE_PAGE_SIZE)return rows;
+    for(let page=1;page<CATALOGUE_MAX_PAGES;page+=3){
+      const group=await Promise.all([page,page+1,page+2].filter(n=>n<CATALOGUE_MAX_PAGES).map(n=>cataloguePage(sb,table,n,columns)));
+      for(const batch of group){rows.push(...batch);if(batch.length<CATALOGUE_PAGE_SIZE)return rows;}
+    }
+    throw new Error('Catalogue exceeded the supported row limit; contact the developer to expand paging.');
+  }
+  function cachePublished(key,value){
+    if(S?.setCatalogueCache)S.setCatalogueCache(key,value);
+    else local(key,value);
   }
   function hydrate(options={}){
     if(catalogueFlight)return catalogueFlight;
     if(!options.force&&catalogueCache&&Date.now()-catalogueCachedAt<CATALOGUE_TTL)return Promise.resolve(catalogueCache);
-    if(!options.force){
-      const snapshot=publicSnapshot();
-      if(snapshot){catalogueCache=snapshot;catalogueCachedAt=Date.now();portalProducts=snapshot.products;return Promise.resolve(snapshot);}
-    }
-    catalogueFlight=hydrateFresh().then(data=>{
-      catalogueCache=data;catalogueCachedAt=Date.now();
-      // Only non-privileged catalogue rows; never cache a portal's full inventory or private account data.
-      if(isPublicStorefront()&&data?.configured){
-        try{sessionStorage.setItem(PUBLIC_SNAPSHOT_KEY,JSON.stringify({version:1,at:catalogueCachedAt,data}));}catch(_){}
-      }
-      return data;
-    }).finally(()=>{catalogueFlight=null;});
+    catalogueFlight=hydrateFresh().then(data=>{catalogueCache=data;catalogueCachedAt=Date.now();return data;}).finally(()=>{catalogueFlight=null;});
     return catalogueFlight;
   }
   function patchCatalogue(kind,row){
@@ -118,19 +132,21 @@
   async function hydrateFresh(){
     if(!configured())return{configured:false};
     const sb=supa();
-    const queries=await Promise.all([
-      sb.from('categories').select('*').order('sort_order').order('created_at',{ascending:true}),
-      sb.from('subcategories').select('*').order('sort_order'),
-      sb.from('products').select('*'),
-      sb.from('product_variants').select('id,product_id,color,size,stock,price,barcode,image_url,active'),
+    const queries=await Promise.allSettled([
+      catalogueRows(sb,'categories'),
+      catalogueRows(sb,'subcategories'),
+      catalogueRows(sb,'products'),
+      catalogueRows(sb,'product_variants'),
       sb.from('store_settings').select('*').limit(1).maybeSingle(),
-      sb.from('print_types').select('*').order('sort_order'),
-      sb.from('delivery_methods').select('*').order('sort_order')
+      catalogueRows(sb,'print_types'),
+      catalogueRows(sb,'delivery_methods')
     ]);
-    const firstError=queries.find(q=>q.error)?.error;if(firstError)throw firstError;
-    const rawData={categories:queries[0].data,subcategories:queries[1].data,products:queries[2].data,product_variants:queries[3].data,settings:queries[4].data||{},print_types:queries[5].data,delivery_methods:queries[6].data};
+    // Reuse the original mapping while making each paginated list resemble a Supabase result.
+    const settled=queries.map(q=>q.status==='fulfilled'?(Array.isArray(q.value)?{data:q.value,error:null}:q.value):{data:null,error:q.reason});
+    const firstError=settled.find(q=>q.error)?.error;if(firstError)throw firstError;
+    const rawData={categories:settled[0].data,subcategories:settled[1].data,products:settled[2].data,product_variants:settled[3].data,settings:settled[4].data||{},print_types:settled[5].data,delivery_methods:settled[6].data};
     const publicMapped=mapData(rawData),mapped=document.body.dataset.portalRole?mapData(rawData,true):publicMapped;portalProducts=mapped.products;
-    local('custom-store-products-v3',publicMapped.products);local('custom-store-categories-v3',mapped.categories);
+    cachePublished('custom-store-products-v3',publicMapped.products);local('custom-store-categories-v3',mapped.categories);
     if(mapped.settings&&Object.keys(mapped.settings).length){const prev=S?.getSettings?.()||{};local('custom-store-settings-v3',{...prev,...mapped.settings,whatsapp:mapped.settings.whatsapp||prev.whatsapp||''});}
     if(mapped.prints?.length)local('custom-store-print-types-v3',mapped.prints.map(x=>({name:x.name,price:Number(x.price||0),largePrice:Number(x.large_price??x.price??0),note:x.note||'',lightOnly:!!x.light_only,active:x.active!==false})));
     if(mapped.delivery?.length)local('custom-store-delivery-v3',mapped.delivery.map(x=>({name:x.name,note:x.note||'',active:x.active!==false})));
@@ -138,33 +154,34 @@
     // Never let an optional catalogue table break the existing storefront.
     let customCategories=[],customItems=[],customFabrics=[],customSportswearFabrics=[],customSportswearTypes=[],customPrintTypes=[],customSchemaReady=false,sportswearSchemaReady=false;
     try{
-      const cq=await Promise.all([
-        sb.from('custom_catalog_categories').select('*').order('sort_order').order('created_at',{ascending:true}),
-        sb.from('custom_catalog_items').select('*').order('sort_order'),
-        sb.from('custom_catalog_fabrics').select('*').order('sort_order'),
-        sb.from('custom_sportswear_fabrics').select('*').order('sort_order'),
-        sb.from('custom_sportswear_types').select('*').order('sort_order'),
-        sb.from('custom_print_types').select('*').order('sort_order')
+      const cqSettled=await Promise.allSettled([
+        catalogueRows(sb,'custom_catalog_categories'),
+        catalogueRows(sb,'custom_catalog_items'),
+        catalogueRows(sb,'custom_catalog_fabrics'),
+        catalogueRows(sb,'custom_sportswear_fabrics'),
+        catalogueRows(sb,'custom_sportswear_types'),
+        catalogueRows(sb,'custom_print_types')
       ]);
+      const cq=cqSettled.map(q=>q.status==='fulfilled'?{data:q.value,error:null}:{data:null,error:q.reason});
       customSchemaReady=!cq[0].error&&!cq[1].error&&!cq[2].error;sportswearSchemaReady=!cq[3].error&&!cq[4].error;
       if(!cq[0].error&&!cq[1].error){
         customCategories=cq[0].data||[];customItems=cq[1].data||[];
         // Optional public read of explicitly published details (Admin updates use separate, protected table).
         try{
-          const publicDetails=await sb.from('catalogue_internal_details').select('item_id,detail_1,detail_2');
+          const publicDetails={data:await catalogueRows(sb,'catalogue_internal_details','item_id,detail_1,detail_2'),error:null};
           if(!publicDetails.error){
             const detailsById=new Map((publicDetails.data||[]).map(d=>[String(d.item_id),d]));
             customItems=customItems.map(item=>{const detail=detailsById.get(String(item.id));return {...item,customer_detail_1:detail?.detail_1||'',customer_detail_2:detail?.detail_2||''};});
           }
         }catch(_){}
-        local('one-line-custom-catalog-categories-v1',customCategories);local('one-line-custom-catalog-items-v1',customItems);
+        local('one-line-custom-catalog-categories-v1',customCategories);cachePublished('one-line-custom-catalog-items-v1',customItems);
       }
       if(!cq[2].error){customFabrics=cq[2].data||[];local('one-line-custom-catalog-fabrics-v1',customFabrics);}
       if(!cq[3].error){customSportswearFabrics=cq[3].data||[];local('one-line-custom-sportswear-fabrics-v1',customSportswearFabrics);}
       if(!cq[4].error){customSportswearTypes=cq[4].data||[];local('one-line-custom-sportswear-types-v1',customSportswearTypes);}
       if(!cq[5].error){customPrintTypes=cq[5].data||[];local('one-line-custom-print-types-v155',customPrintTypes);}
     }catch(_){}
-    return{configured:true,...mapped,customCategories,customItems,customFabrics,customSportswearFabrics,customSportswearTypes,customPrintTypes,customSchemaReady,sportswearSchemaReady,rawCategories:queries[0].data||[],rawSubcategories:queries[1].data||[]};
+    return{configured:true,...mapped,customCategories,customItems,customFabrics,customSportswearFabrics,customSportswearTypes,customPrintTypes,customSchemaReady,sportswearSchemaReady,rawCategories:settled[0].data||[],rawSubcategories:settled[1].data||[]};
   }
   function ready(){if(!readyPromise)readyPromise=hydrate().catch(error=>({configured:true,error}));return readyPromise;}
   async function createCustomerSession(phone,accessToken,name){
@@ -233,13 +250,13 @@
   
   async function catalogueImage(file,folder){
     // Catalogue media only; original customer artwork and downloads remain untouched.
-    if(!/^(custom-catalog|catalog|categories|variants|products)(\/|$)/.test(folder)||!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size<110000||!window.createImageBitmap)return file;
+    if(!/^(custom-catalog|catalog|categories|variants|products)(\/|$)/.test(folder)||!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size<150000||!window.createImageBitmap)return file;
     let bitmap;
     try{
-      bitmap=await createImageBitmap(file);const scale=Math.min(1,1200/Math.max(bitmap.width,bitmap.height));
+      bitmap=await createImageBitmap(file);const scale=Math.min(1,1400/Math.max(bitmap.width,bitmap.height));
       const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
       canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
-      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.82));
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.85));
       return blob&&blob.type==='image/webp'&&blob.size<file.size?new File([blob],file.name.replace(/\.[^.]+$/,'')+'.webp',{type:'image/webp'}):file;
     }catch(_){return file;}finally{bitmap?.close?.();}
   }
@@ -260,13 +277,7 @@
     const {error}=await sb.storage.from(C.STORAGE_BUCKET||'product-images').remove([path]);if(error)throw error;return true;
   }
   async function deleteImages(urls){
-    const paths=[...new Set((urls||[]).map(storageObjectPath).filter(Boolean))];
-    if(!paths.length)return true;
-    const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');
-    for(let i=0;i<paths.length;i+=100){
-      const {error}=await sb.storage.from(C.STORAGE_BUCKET||'product-images').remove(paths.slice(i,i+100));
-      if(error)console.warn('Image cleanup failed',error.message);
-    }
+    const unique=[...new Set((urls||[]).map(String).filter(Boolean))];for(const url of unique){try{await deleteImage(url);}catch(err){console.warn('Image cleanup failed',err);}}
     return true;
   }
   async function upsertCategory(row){const sb=supa();const payload={id:row.id||undefined,name:row.name,image_url:row.image||'',subtitle:row.sub||'',active:row.active!==false,sort_order:Number(row.sort_order||0)};const {data,error}=await sb.from('categories').upsert(payload).select().single();if(error)throw error;await hydrate({force:true});return data;}

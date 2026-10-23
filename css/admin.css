@@ -1358,3 +1358,10 @@ html,body{background:#f6f2f7;color:#241c27}
 .order-expected-delivery input{min-height:38px;max-width:230px;padding:7px 10px;border:1px solid #e4d9e9;border-radius:10px;background:#fff;color:#29202b;font:inherit}
 .order-expected-delivery button{min-height:38px;padding:7px 12px;border:1px solid #64116f;border-radius:10px;background:#64116f;color:#fff;font:inherit;font-weight:700;cursor:pointer}
 .order-expected-delivery button:disabled{opacity:.5;cursor:wait}
+
+/* v198: stock-enabled printable size editor fits phone, tablet and desktop. */
+.jersey-admin-size-row:has([data-jersey-size-stock]){grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.jersey-admin-size-row:has([data-jersey-size-stock]) .printable-unlimited-toggle{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-height:40px;white-space:nowrap}
+.jersey-admin-size-row:has([data-jersey-size-stock]) .printable-unlimited-toggle input{width:18px;height:18px;accent-color:#64116f}
+.jersey-admin-size-row:has([data-jersey-size-stock])>button{justify-self:end;width:38px}
+@media(max-width:650px){.jersey-admin-size-row:has([data-jersey-size-stock]){grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.jersey-admin-size-row:has([data-jersey-size-stock]) label:nth-child(4){grid-column:auto}.jersey-admin-size-row:has([data-jersey-size-stock])>button{grid-column:2;grid-row:auto}}

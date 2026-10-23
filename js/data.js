@@ -72,7 +72,23 @@
   function icon(name, cls){ const auto=name==="whatsapp"?" whatsapp-brand":""; return '<svg class="icon '+(cls||'')+auto+'" viewBox="0 0 24 24" aria-hidden="true">'+(iconPaths[name]||iconPaths.sparkle)+'</svg>'; }
   function money(value){ return "₹"+Number(value||0).toLocaleString("en-IN"); }
   function esc(value){ return String(value ?? "").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[c]); }
-  function load(key,fallback){ try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):clone(fallback);}catch(_){return clone(fallback);} }
+  // Large catalogues live in memory instead of exhausting the browser's 5MB localStorage budget.
+  const volatileCatalogue=new Map();
+  let catalogueRevision=0;
+  const largeCatalogueKeys=new Set(['custom-store-products-v3','one-line-custom-catalog-items-v1']);
+  function load(key,fallback){
+    if(volatileCatalogue.has(key))return volatileCatalogue.get(key);
+    try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):clone(fallback);}catch(_){return clone(fallback);}
+  }
+  function setCatalogueCache(key,value){
+    volatileCatalogue.set(key,value);
+    catalogueRevision++;
+    try{
+      if(largeCatalogueKeys.has(key) && Array.isArray(value) && value.length>100){localStorage.removeItem(key);}
+      else localStorage.setItem(key,JSON.stringify(value));
+    }catch(_){/* A full browser storage quota must never hide catalogue items. */}
+    window.dispatchEvent(new CustomEvent('one-line-change',{detail:{key}}));
+  }
   const legacyTshirtImage = 'https://images.pexels.com/photos/35625406/pexels-photo-35625406.jpeg?auto=compress&cs=tinysrgb&w=900&h=1200&fit=crop';
   function migrateKnownAssets(value){
     const walk=v=>{
@@ -83,13 +99,25 @@
     return walk(value);
   }
   function save(key,value){ localStorage.setItem(key,JSON.stringify(value)); window.dispatchEvent(new CustomEvent("one-line-change",{detail:{key}})); }
-  function getProducts(){ return migrateKnownAssets(load("custom-store-products-v3",[])); }
+  function cdnImageUrl(value){
+    const original=String(value||'');
+    const cfg=window.ONE_LINE_CONFIG||{};
+    const origin=String(cfg.SUPABASE_URL||'').replace(/\/$/,'');
+    const bucket=String(cfg.STORAGE_BUCKET||'product-images');
+    const prefix=origin+'/storage/v1/object/public/'+bucket+'/';
+    if(!original.startsWith(prefix))return original;
+    const rest=original.slice(prefix.length).split('?')[0];
+    if(!/\.(?:png|jpe?g|webp|avif|gif)$/i.test(rest)||rest.split('/').some(x=>!x||x==='.'||x==='..'))return original;
+    // Only rewrite explicitly public Storage images, never user-private data.
+    return '/media/'+rest;
+  }
+  function getProducts(){ return volatileCatalogue.get("custom-store-products-v3")||migrateKnownAssets(load("custom-store-products-v3",[])); }
   // v41: authenticated cart and order history are never read from device cache.
   function getOrders(){ return []; }
   function getCart(){ return []; }
   function getCategories(){ return migrateKnownAssets(load("custom-store-categories-v3",[])); }
   function getCustomCatalogCategories(){ return migrateKnownAssets(load("one-line-custom-catalog-categories-v1",[])); }
-  function getCustomCatalogItems(){ return migrateKnownAssets(load("one-line-custom-catalog-items-v1",[])); }
+  function getCustomCatalogItems(){ return volatileCatalogue.get("one-line-custom-catalog-items-v1")||migrateKnownAssets(load("one-line-custom-catalog-items-v1",[])); }
   function getCustomCatalogFabrics(){ return load("one-line-custom-catalog-fabrics-v1",[]); }
   function getCustomSportswearFabrics(){ return load("one-line-custom-sportswear-fabrics-v1",[]); }
   function getCustomSportswearTypes(){ return load("one-line-custom-sportswear-types-v1",[]); }
@@ -160,5 +188,5 @@
     return '<div class="real-garment-preview preview-'+surface+' '+esc(className||'')+'"><div class="garment-depth"></div><img class="garment-photo '+(sleeve?'sleeve-preview ':'')+(surface==='rightSleeve'?'show-rightSleeve':'')+'" src="'+esc(garment)+'" alt="" style="transform:'+mirror+'"><span class="garment-tint '+(sleeve?'sleeve-preview ':'')+(surface==='rightSleeve'?'show-rightSleeve':'')+'" style="background:'+esc(palette[design.garmentColor]||design.garmentColor||palette.Navy)+';mask-image:url('+esc(garment)+');-webkit-mask-image:url('+esc(garment)+');transform:'+mirror+'"></span><div class="garment-print-zone '+zone+'">'+content+'</div></div>';
   }
 
-  window.OneLineStore={palette,onlineImages,seedCategories,seedProducts,seedOrders,deliveryDefaults,printDefaults,designerPricingDefaults,icon,money,esc,load,save,getProducts,getOrders,getCart,getCategories,getCustomCatalogCategories,getCustomCatalogItems,getCustomCatalogFabrics,getCustomSportswearFabrics,getCustomSportswearTypes,getCustomPrintTypes,getDelivery,getPrints,getSettings,customDesignPrice,isDarkColor,productOptions,productImageForColor,surfaceDesign,designedSurfaces,designPreview};
+  window.OneLineStore={cdnImageUrl,setCatalogueCache,getCatalogueRevision:()=>catalogueRevision,palette,onlineImages,seedCategories,seedProducts,seedOrders,deliveryDefaults,printDefaults,designerPricingDefaults,icon,money,esc,load,save,getProducts,getOrders,getCart,getCategories,getCustomCatalogCategories,getCustomCatalogItems,getCustomCatalogFabrics,getCustomSportswearFabrics,getCustomSportswearTypes,getCustomPrintTypes,getDelivery,getPrints,getSettings,customDesignPrice,isDarkColor,productOptions,productImageForColor,surfaceDesign,designedSurfaces,designPreview};
 })();
