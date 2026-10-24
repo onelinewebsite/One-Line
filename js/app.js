@@ -269,11 +269,11 @@
   function shareUrl(kind,value,extra){
     // Dedicated Cloudflare Pages share pages deliver per-item OG metadata to social crawlers.
     const base=location.origin+'/share/';
-    if(kind==='product')return base+'product/'+encodeURIComponent(String(value))+'?v=176';
-    if(kind==='category')return base+'retail-category/'+encodeURIComponent(String(value))+'?v=176';
-    if(kind==='subcategory')return base+'retail-category/'+encodeURIComponent(String(extra||value))+'?v=176';
-    if(kind==='custom-category')return base+'category/'+encodeURIComponent(String(value))+'?v=176';
-    if(kind==='custom-item')return base+'item/'+encodeURIComponent(String(value))+'?v=176';
+    if(kind==='product')return base+'product/'+encodeURIComponent(String(value))+'?v=202';
+    if(kind==='category')return base+'retail-category/'+encodeURIComponent(String(value))+'?v=202';
+    if(kind==='subcategory')return base+'retail-category/'+encodeURIComponent(String(extra||value))+'?v=202';
+    if(kind==='custom-category')return base+'category/'+encodeURIComponent(String(value))+'?v=202';
+    if(kind==='custom-item')return base+'item/'+encodeURIComponent(String(value))+'?v=202';
     const url=new URL('/',location.origin);
     if(kind==='section'){url.searchParams.set('section',String(value));url.hash='home';}
     else if(kind==='designer')url.hash='customize';

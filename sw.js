@@ -1,4 +1,4 @@
-const CACHE='one-line-catalogue-v201';
+const CACHE='one-line-catalogue-v202';
 const CORE=[
   './index.html','./print-guide.html','./404.html','./admin.html','./staff.html','./management.html',
   './css/site.css','./css/admin.css',
@@ -12,7 +12,7 @@ self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
   const url=new URL(event.request.url);if(url.origin!==self.location.origin)return;
   // Dynamic catalogue pages have a short Cloudflare TTL; never trap them in an offline cache.
-  if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/media/')||url.pathname.startsWith('/functions/'))return;
+  if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/media/')||url.pathname.startsWith('/share/')||url.pathname.startsWith('/functions/'))return;
   const isCode=event.request.mode==='navigate'||/\.(?:js|css|html|webmanifest)$/.test(url.pathname);
   if(isCode){event.respondWith((async()=>{try{const response=await fetch(event.request,{cache:'no-store'});if(response&&response.ok){const cache=await caches.open(CACHE);cache.put(event.request,response.clone());}return response;}catch(_){return(await caches.match(event.request,{ignoreSearch:true}))||(event.request.mode==='navigate'?await caches.match('./index.html'):Response.error());}})());return;}
   event.respondWith((async()=>{const cached=await caches.match(event.request);if(cached)return cached;const response=await fetch(event.request);if(response&&response.ok){const cache=await caches.open(CACHE);cache.put(event.request,response.clone());}return response;})());

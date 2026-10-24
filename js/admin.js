@@ -216,7 +216,7 @@
       ?state.customCatalogItems.length+' Custom'
       :requested==='management'
         ?state.customCatalogItems.length+' Custom'
-        :requested==='staff'?'Search exact item/variant and mark quantity sold':'';
+        :requested==='staff'?'Search inventory and add quantities safely':'';
     return '<div class="admin-shell portal-'+requested+'"><header class="admin-head"><a class="admin-logo" href="index.html">'+img('one-line-logo.webp','One-Line')+'<span><b>ONE-LINE</b><small>'+esc(labels[requested])+'</small></span></a><button class="menu-toggle" data-action="menu" aria-label="Open menu">☰</button><nav class="admin-menu '+(state.menu?'open':'')+'">'+roleNav+'</nav><button class="portal-profile-button" data-view="settings" aria-label="Open portal settings">'+profileIcon+'</button></header><main class="admin-main">'+(state.error?'<div class="portal-error portal-data-error" role="alert">'+esc(state.error)+' <button data-action="refresh-data">Retry</button></div>':'')+view()+'</main><div class="portal-credit">Developed by <a href="https://quartzwebsolutions.com" target="_blank" rel="noopener noreferrer">Quartz Web Solutions</a></div><div class="toast" id="adminToast"></div></div>';
   }
   function view(){if(state.view==='products')return customCatalogView();if(state.view==='stock')return stockView();return({dashboard:dashboardView,products:productsView,categories:categoriesView,customCatalog:customCatalogView,readyMade:readyMadeView,customOptions:customOptionsView,customisable:customisableView,catalogEnquiries:catalogEnquiriesView,stock:stockView,orders:ordersView,customers:customersView,carts:cartsView,activity:activityView,accounts:accountsView,settings:settingsView})[state.view]?.()||((requested==='admin'||requested==='management')?customCatalogView():customCatalogView());}
@@ -561,7 +561,7 @@
       '<label>Final rate ₹<input data-jersey-size-rate type="number" min="0" step="0.01" value="'+esc(v.rate??'')+'" placeholder="Use garment rate"></label>'+
       '<label>Stock<input data-jersey-size-stock type="number" min="0" step="1" value="'+esc(v.stock??0)+'" '+(v.unlimited?'disabled':'')+'></label>'+
       '<label class="ready-stock-unlimited"><input data-jersey-size-unlimited type="checkbox" '+(v.unlimited?'checked':'')+'><span>Unlimited</span></label>'+
-      '<button type="button" class="ready-stock-size-remove" data-remove-jersey-size="'+i+'" aria-label="Remove size '+esc(v.size||'new')+'">'+I('trash')+'<span>Remove</span></button></div>').join('');
+      '<button type="button" class="ready-stock-size-remove" data-remove-jersey-size="'+i+'" aria-label="Remove size '+esc(v.size||'new')+'"><span aria-hidden="true">&times;</span></button></div>').join('');
     return '<section class="portal-edit-section jersey-size-admin-section ready-stock-size-section"><header><div><b>Garment sizes &amp; measurements</b><small>Only add the sizes you sell. Optional measurements are in inches; a size rate overrides the garment rate.</small></div></header><fieldset><div class="jersey-admin-size-list ready-stock-inline-list">'+(cards||'<p class="ready-stock-sizes-empty">No sizes yet. Select Add size below to create one.</p>')+'</div><button type="button" class="kids-uniform-add-size ready-stock-add-size" data-add-jersey-size>'+I('plus')+' Add size</button></fieldset></section>';
   }
   function jerseySizesEditorHtml(item){
@@ -860,6 +860,26 @@
         });
       });
     });
+    // Ready Stock Printable sizes live in sportswear_sizes, not uniform_config.
+    // Only the staff add-stock desk uses these rows; admin +/- remains unchanged.
+    if(requested==='staff')state.customCatalogItems.filter(item=>{
+      const category=state.customCatalogCategories.find(c=>String(c.id)===String(item.category_id));
+      return item.active!==false&&String(category?.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()==='ready stock printable items';
+    }).forEach(item=>{
+      const category=state.customCatalogCategories.find(c=>String(c.id)===String(item.category_id));
+      const sizes=Array.isArray(item.fabric_options?.sportswear_sizes)?item.fabric_options.sportswear_sizes:[];
+      sizes.forEach(size=>{
+        const label=String(typeof size==='string'?size:size?.size||'').trim();
+        if(!label||typeof size==='string')return;
+        const unlimited=size.unlimited===true||size.stock===null||size.stock===undefined;
+        const stock=unlimited?0:Number(size.stock);
+        if(!unlimited&&(!Number.isSafeInteger(stock)||stock<0))return;
+        rows.push({kind:'printable-size',id:[item.id,label].join('|'),itemId:item.id,size:label,
+          name:item.title||'Ready Stock Printable',code:item.display_id||'',category:category?.name||'Ready Stock Printable Items',
+          subcategory:'Ready Stock',itemBarcode:'',variantBarcode:'',option:label,
+          image:item.card_image_url||item.images?.[0]||'',stock,unlimited});
+      });
+    });
     return rows;
   }
   function stockView(){
@@ -867,7 +887,7 @@
     // Staff use a search-only desk: an empty search never renders inventory rows.
     if(requested==='staff'){
       const rows=q?stockRows().filter(r=>[r.name,r.code,r.itemBarcode,r.variantBarcode,r.option,r.category,r.subcategory].join(' ').toLowerCase().includes(q)):[];
-      return '<section class="clean-card staff-stock-card"><div class="panel-head"><div><p class="tag">SALES STOCK</p><h1>Mark items as sold</h1><p>Search by product name, item code, barcode, category, colour or size. Choose the exact variant and enter the sold quantity.</p></div></div><div class="list-controls"><input id="stockSearch" type="search" value="'+esc(state.query)+'" placeholder="Search name, code, barcode, colour, size…" aria-label="Search stock items">'+(q?'<span>'+rows.length+' result'+(rows.length===1?'':'s')+'</span>':'')+'</div>'+(q?'<div class="staff-stock-list">'+(rows.length?rows.map(r=>'<article class="staff-stock-item">'+img(r.image,r.name)+'<div class="staff-stock-main"><b>'+esc(r.name)+'</b><strong class="staff-stock-option">'+esc(r.option)+'</strong><small>'+esc([r.code,r.variantBarcode||r.itemBarcode,r.category,r.subcategory].filter(Boolean).join(' · '))+'</small></div><div class="staff-stock-count"><small>Available</small><strong class="'+(!r.unlimited&&r.stock<=5?'low':'')+'">'+(r.unlimited?'Unlimited':r.stock)+'</strong></div><div class="staff-sold-action"><input type="number" min="1" max="'+Math.max(1,r.stock)+'" value="1" data-stock-amount="'+esc(r.id)+'" '+(r.unlimited||r.stock<=0?'disabled':'')+'><button data-stock-sold="'+esc(r.id)+'" data-kind="'+r.kind+'" '+(r.unlimited||r.stock<=0?'disabled':'')+'>'+(r.unlimited?'Unlimited stock':r.stock<=0?'Out of stock':'Mark sold')+'</button></div></article>').join(''):'<div class="empty-admin">No matching stock item.</div>')+'</div>':'')+'</section>';
+      return '<section class="clean-card staff-stock-card"><div class="panel-head staff-stock-head"><div><p class="tag">STOCK MANAGEMENT</p><h1>Add Stock</h1><p>Search by item name, code, barcode, colour or size. Select the exact option, enter the quantity to receive, and add it to the available stock.</p></div><button type="button" class="staff-stock-top-add" data-action="focus-stock-search">'+I('plus')+' Add Stock</button></div><div class="list-controls staff-stock-search"><input id="stockSearch" type="search" value="'+esc(state.query)+'" placeholder="Search name, code, barcode, colour, size…" aria-label="Search stock items">'+(q?'<span>'+rows.length+' result'+(rows.length===1?'':'s')+'</span>':'')+'</div>'+(q?'<div class="staff-stock-list">'+(rows.length?rows.map(r=>'<article class="staff-stock-item">'+img(r.image,r.name)+'<div class="staff-stock-main"><b>'+esc(r.name)+'</b><strong class="staff-stock-option">'+esc(r.option)+'</strong><small>'+esc([r.code,r.variantBarcode||r.itemBarcode,r.category,r.subcategory].filter(Boolean).join(' · '))+'</small></div><div class="staff-stock-count"><small>Current stock</small><strong class="'+(!r.unlimited&&r.stock<=5?'low':'')+'">'+(r.unlimited?'Unlimited':r.stock)+'</strong></div><div class="staff-sold-action"><div class="staff-stock-quantity"><input aria-label="Quantity to add" type="number" inputmode="numeric" min="1" max="10000" step="1" value="1" data-stock-amount="'+esc(r.id)+'" '+(r.unlimited?'disabled':'')+'><button type="button" class="staff-stock-plus" data-stock-plus="'+esc(r.id)+'" aria-label="Increase quantity by one" '+(r.unlimited?'disabled':'')+'>+</button></div><button type="button" class="staff-stock-confirm" data-stock-add="'+esc(r.id)+'" '+(r.unlimited?'disabled':'')+'>'+(r.unlimited?'Unlimited stock':'Add to stock')+'</button></div></article>').join(''):'<div class="empty-admin">No matching stock item.</div>')+'</div>':'<p class="staff-search-hint">Search for an item to update its stock.</p>')+'</section>';
     }
     const rows=stockRows().filter(r=>!q||[r.name,r.code,r.itemBarcode,r.variantBarcode,r.option,r.category,r.subcategory].join(' ').toLowerCase().includes(q));
     return '<section class="clean-card"><div class="panel-head"><div><p class="tag">LIVE INVENTORY</p><h1>Stock desk</h1><p>Admin adjustments are written to stock movement history.</p></div></div><div class="list-controls"><input id="stockSearch" type="search" value="'+esc(state.query)+'" placeholder="Search name, code, barcode, colour or size"></div><div class="stock-table"><div class="stock-row head"><span>Item</span><span>Option</span><span>Stock</span><span>Adjust</span></div>'+rows.map(r=>'<div class="stock-row"><span><b>'+esc(r.name)+'</b><small>'+esc([r.code,r.variantBarcode||r.itemBarcode].filter(Boolean).join(' · '))+'</small></span><span>'+esc(r.option)+'</span><strong class="'+(!r.unlimited&&r.stock<=5?'low':'')+'">'+(r.unlimited?'Unlimited':r.stock)+'</strong><span class="stock-adjust">'+(r.unlimited?'<small>Stock not tracked</small>':'<input type="number" min="1" value="1" data-stock-amount="'+esc(r.id)+'"><button data-stock-change="'+esc(r.id)+'" data-kind="'+r.kind+'" data-sign="1">+</button><button data-stock-change="'+esc(r.id)+'" data-kind="'+r.kind+'" data-sign="-1">−</button>')+'</span></div>').join('')+'</div></section>';
@@ -1044,7 +1064,7 @@
   async function uploadMany(files,folder){const out=[];for(const f of files)out.push(await B.uploadImage(f,folder));return out;}
   async function removeOwnedImage(url){if(!url)return;try{await B.deleteImage?.(url);}catch(err){throw new Error(err.message||'Could not remove image from storage');}}
   const stockPending=new Set();
-  async function adjustStock(id,kind,delta){if(stockPending.has(id))return;stockPending.add(id);const button=[...root.querySelectorAll('[data-stock-sold],[data-stock-change]')].find(el=>(el.dataset.stockSold||el.dataset.stockChange)===id);if(button)button.disabled=true;try{const client=sb();const reason=requested==='staff'?'Staff marked as sold':'Admin stock adjustment';let r;if(kind==='custom-size'){const row=stockRows().find(x=>x.kind==='custom-size'&&x.id===id);if(!row)throw new Error('This option is no longer available.');if(delta>=0)throw new Error('Only sold quantities can be deducted.');r=await client.rpc('mark_custom_variant_sold',{p_item:row.itemId,p_variant:row.variantId,p_size:row.size,p_quantity:-delta});}else if(kind==='product-variant')r=await client.rpc('adjust_stock',{p_variant:id,p_delta:delta,p_reason:reason});else r=await client.rpc('adjust_product_stock',{p_product:id,p_delta:delta,p_reason:reason});if(r.error)throw r.error;await loadAll();notify(requested==='staff'?'Marked as sold. Stock updated on server.':'Stock updated.');}catch(e){notify(e.message||'Stock update failed');}finally{stockPending.delete(id);if(button?.isConnected)button.disabled=false;}}
+  async function adjustStock(id,kind,delta){if(stockPending.has(id))return;stockPending.add(id);const button=[...root.querySelectorAll('[data-stock-change]')].find(el=>el.dataset.stockChange===id);if(button)button.disabled=true;try{const client=sb();const reason=requested==='staff'?'Staff marked as sold':'Admin stock adjustment';let r;if(kind==='custom-size'){const row=stockRows().find(x=>x.kind==='custom-size'&&x.id===id);if(!row)throw new Error('This option is no longer available.');if(delta>=0)throw new Error('Only sold quantities can be deducted.');r=await client.rpc('mark_custom_variant_sold',{p_item:row.itemId,p_variant:row.variantId,p_size:row.size,p_quantity:-delta});}else if(kind==='product-variant')r=await client.rpc('adjust_stock',{p_variant:id,p_delta:delta,p_reason:reason});else r=await client.rpc('adjust_product_stock',{p_product:id,p_delta:delta,p_reason:reason});if(r.error)throw r.error;await loadAll();notify(requested==='staff'?'Marked as sold. Stock updated on server.':'Stock updated.');}catch(e){notify(e.message||'Stock update failed');}finally{stockPending.delete(id);if(button?.isConnected)button.disabled=false;}}
 
   let orderCacheSource=null,orderCache=new Map();
   function itemMoveButtons(item){
@@ -1059,6 +1079,28 @@
   }
   let itemMoving=false;
   async function moveItem(id,direction){if(itemMoving)return;const item=state.customCatalogItems.find(x=>x.id===id);if(!item)return;const rows=state.customCatalogItems.filter(x=>x.category_id===item.category_id).slice().sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.id).localeCompare(String(b.id))),n=rows.findIndex(x=>x.id===id),to=n+(direction==='up'?-1:1);if(to<0||to>=rows.length)return;[rows[n],rows[to]]=[rows[to],rows[n]];itemMoving=true;try{const r=await sb().rpc('reorder_custom_items',{p_category:item.category_id,p_ids:rows.map(x=>x.id)});if(r.error)throw r.error;await loadAll(true);notify('Card position saved.');}catch(e){notify(e.message||'Could not move card.');}finally{itemMoving=false;}}
+  async function addStaffStock(id){
+    if(requested!=='staff'||stockPending.has(id))return;
+    const row=stockRows().find(r=>r.id===id);
+    if(!row){notify('Item not found. Search again.');return;}
+    if(row.unlimited){notify('Unlimited stock does not need adjustment.');return;}
+    const input=[...root.querySelectorAll('[data-stock-amount]')].find(el=>el.dataset.stockAmount===id);
+    const quantity=Number(input?.value);
+    if(!Number.isSafeInteger(quantity)||quantity<1||quantity>10000){notify('Enter a whole number from 1 to 10,000.');return;}
+    stockPending.add(id);
+    const button=[...root.querySelectorAll('[data-stock-add]')].find(el=>el.dataset.stockAdd===id);
+    if(button)button.disabled=true;
+    try{
+      const result=await sb().rpc('staff_add_stock',{
+        p_kind:row.kind,p_id:row.itemId||row.id,p_option:row.variantId||null,p_size:row.size||null,p_quantity:quantity
+      });
+      if(result.error)throw result.error;
+      await loadAll(false,false);
+      notify('Added '+quantity+' to stock successfully.');
+    }catch(error){
+      notify(error.message||'Could not add stock. Confirm the v202 SQL migration was installed.');
+    }finally{stockPending.delete(id);if(button?.isConnected)button.disabled=false;}
+  }
   function bind(){
     root.querySelectorAll('[data-item-move]').forEach(b=>b.addEventListener('click',()=>moveItem(b.dataset.id,b.dataset.itemMove)));
     root.querySelector('[data-separate-variants]')?.addEventListener('change',async e=>{const files=[...e.target.files||[]];if(!files.length)return;syncCustomItemEditor();const editor=state.customItemEditor,cfg=uniformConfig(editor);e.target.disabled=true;let count=0;try{for(const file of files){const url=await B.uploadImage(file,'custom-catalog/variants'),id='custom-'+crypto.randomUUID(),base=file.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim()||'Variant';let name=base,n=2;while(uniformAllVariants(cfg).some(v=>v.name.toLowerCase()===name.toLowerCase()))name=base+' '+n++;cfg.top.push({...defaultUniformVariant(id,name),enabled:true,images:[url]});cfg.variant_order.push(id);count++;applyUniformConfig(editor,cfg);}notify(count+' variants added. Set sizes and stock, then save.');}catch(err){notify(count+' variants added. '+(err.message||'Upload failed; retry remaining images.'));}finally{render();}});
@@ -1096,7 +1138,13 @@
     root.querySelector('#stockSearch')?.addEventListener('input',e=>{state.query=e.target.value;const pos=e.target.selectionStart;render();requestAnimationFrame(()=>{const input=root.querySelector('#stockSearch');input?.focus();try{input?.setSelectionRange(pos,pos);}catch(_){}});});
     root.querySelector('#customerSearch')?.addEventListener('input',e=>{state.customerQuery=e.target.value;render();requestAnimationFrame(()=>{const n=root.querySelector('#customerSearch');n?.focus();if(n)try{n.setSelectionRange(n.value.length,n.value.length);}catch(_){}});});
     root.querySelectorAll('[data-stock-change]').forEach(x=>x.addEventListener('click',()=>{const amount=Math.max(1,Number(root.querySelector('[data-stock-amount="'+x.dataset.stockChange+'"]')?.value||1));adjustStock(x.dataset.stockChange,x.dataset.kind,amount*Number(x.dataset.sign));}));
-    root.querySelectorAll('[data-stock-sold]').forEach(x=>x.addEventListener('click',()=>{const input=[...root.querySelectorAll('[data-stock-amount]')].find(el=>el.dataset.stockAmount===x.dataset.stockSold),row=stockRows().find(r=>r.id===x.dataset.stockSold);const amount=Number(input?.value);if(!Number.isSafeInteger(amount)||amount<=0){notify('Enter a valid whole-number quantity.');return;}if(!row||row.stock<=0){notify('This item is out of stock.');return;}if(amount>row.stock){notify('Sold quantity cannot be more than available stock.');return;}adjustStock(x.dataset.stockSold,x.dataset.kind,-amount);}));
+    root.querySelector('[data-action="focus-stock-search"]')?.addEventListener('click',()=>root.querySelector('#stockSearch')?.focus());
+    root.querySelectorAll('[data-stock-plus]').forEach(button=>button.addEventListener('click',()=>{
+      const input=[...root.querySelectorAll('[data-stock-amount]')].find(el=>el.dataset.stockAmount===button.dataset.stockPlus);
+      if(!input||input.disabled)return;
+      const current=Number(input.value);input.value=String(Math.min(10000,(Number.isSafeInteger(current)&&current>=0?current:0)+1));
+    }));
+    root.querySelectorAll('[data-stock-add]').forEach(button=>button.addEventListener('click',()=>addStaffStock(button.dataset.stockAdd)));
 
     root.querySelectorAll('[data-category-move]').forEach(button=>button.addEventListener('click',async e=>{
       e.preventDefault();e.stopPropagation();

@@ -1506,3 +1506,31 @@ html,body{background:#f6f2f7;color:#241c27}
   .editor-page .ready-stock-inline-size > .ready-stock-size-remove{width:100%!important;justify-self:stretch!important;}
   .editor-page .ready-stock-inline-size > label{font-size:11px!important;}
 }
+
+/* v202: red X anchored at top-right, no full-width delete row */
+.editor-page .ready-stock-inline-size{position:relative;padding:12px 52px 12px 12px!important;align-items:end!important}
+.editor-page .ready-stock-inline-size>.ready-stock-size-remove,
+.editor-page .ready-stock-inline-size>.ready-stock-size-remove:where(:hover,:focus-visible){
+  position:absolute!important;top:11px;right:11px;grid-column:auto!important;
+  width:31px!important;min-width:31px!important;height:31px!important;min-height:31px!important;
+  padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  border:1px solid #f2bfc7!important;border-radius:7px!important;
+  background:#fff2f3!important;color:#c51d3a!important;box-shadow:none!important;
+  font-size:24px!important;font-weight:700!important;line-height:1!important;
+}
+.editor-page .ready-stock-inline-size>.ready-stock-size-remove:hover{background:#ffe1e6!important;border-color:#e88a9b!important}
+/* Staff: compact, accessible receiving controls on every viewport */
+.portal-staff .staff-stock-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.portal-staff .staff-stock-top-add{display:inline-flex;gap:7px;align-items:center;justify-content:center;min-height:40px;padding:8px 15px;border:1px solid #64116f;border-radius:10px;background:#64116f;color:#fff;font-weight:750;cursor:pointer;white-space:nowrap}
+.portal-staff .staff-stock-top-add .icon{width:16px;height:16px}
+.portal-staff .staff-search-hint{margin:18px 0 0;color:#817487;font-size:12px}
+.portal-staff .staff-stock-item{grid-template-columns:58px minmax(0,1fr) minmax(84px,auto) minmax(225px,auto);min-width:0}
+.portal-staff .staff-sold-action{grid-template-columns:minmax(98px,110px) minmax(125px,1fr);align-items:center}
+.portal-staff .staff-stock-quantity{display:flex;align-items:stretch;min-width:0;gap:4px}
+.portal-staff .staff-stock-quantity input{width:100%;min-width:0;text-align:center;font-size:14px}
+.portal-staff .staff-stock-plus{flex:0 0 37px!important;width:37px!important;padding:0!important;border:1px solid #dbcce0!important;background:#faf6fc!important;color:#63136d!important;font-size:23px!important;font-weight:600!important}
+.portal-staff .staff-stock-confirm{width:100%;white-space:nowrap;padding:0 9px}
+.portal-staff .staff-stock-quantity input:disabled,.portal-staff .staff-sold-action button:disabled{opacity:.58;cursor:not-allowed}
+@media(max-width:1000px){.portal-staff .staff-stock-item{grid-template-columns:55px minmax(0,1fr) 80px}.portal-staff .staff-sold-action{grid-column:2/-1;width:100%}}
+@media(max-width:600px){.portal-staff .staff-stock-item{grid-template-columns:48px minmax(0,1fr) 70px;gap:8px}.portal-staff .staff-sold-action{grid-column:1/-1;grid-template-columns:minmax(0,120px) minmax(0,1fr)}.portal-staff .staff-stock-top-add{width:100%}.editor-page .ready-stock-inline-size{padding:10px 48px 10px 10px!important}.editor-page .ready-stock-inline-size>.ready-stock-size-remove{top:9px;right:9px}}
+@media(max-width:390px){.portal-staff .staff-sold-action{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.portal-staff .staff-stock-plus{flex-basis:34px!important;width:34px!important}}

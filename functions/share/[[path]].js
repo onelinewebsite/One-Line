@@ -177,10 +177,9 @@ async function tryPhoto(url,request){
     if(!mime)return null;
     // A deterministic, crawler-safe preview: WebP is excellent for the
     // storefront but not reliably supported in WhatsApp/Instagram cards.
-    // social=1 tries existing JPG/PNG candidates and then the brand PNG.
+    // social=1 prefers existing JPG/PNG; WebP is still better than the logo when it is the only product photo.
     // The plain image URL is unchanged for on-device JPEG sharing. This
     // separate URL also avoids CDN cache mixing between crawlers and users.
-    if(mime==='image/webp'&&new URL(request.url).searchParams.get('social')==='1')return null;
     return new Response(request.method==='HEAD'?null:bytes,{status:200,headers:{
       'Content-Type':mime,'Cache-Control':'public,max-age=600,s-maxage=3600',
       'Content-Length':String(bytes.byteLength),'X-Content-Type-Options':'nosniff',
@@ -191,7 +190,9 @@ async function tryPhoto(url,request){
 async function proxyImage(request,type,id,row,env){
   const own=imageCandidates(type,row);
   // Primary card/category picture first; try existing fallback photos on broken URLs.
-  for(const url of own.slice(0,6)){
+  const social=new URL(request.url).searchParams.get('social')==='1';
+  const ordered=social?[...own.filter(u=>/\.(?:jpe?g|png)(?:[?#]|$)/i.test(new URL(u).pathname)),...own.filter(u=>!/\.(?:jpe?g|png)(?:[?#]|$)/i.test(new URL(u).pathname))]:own;
+  for(const url of ordered.slice(0,6)){
     const result=await tryPhoto(url,request);if(result)return result;
   }
   // Only fetch other existing item photos if no main/gallery/variant photo worked.
