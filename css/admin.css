@@ -1813,3 +1813,124 @@ html,body{background:#f6f2f7;color:#241c27}
 .editor-page.classic-v203-ready-editor .portal-edit-section fieldset{padding:12px 0 20px!important;background:transparent!important}
 .editor-corner-photo{gap:0!important;padding:6px!important}
 @media(max-width:620px){.editor-page.classic-v203-item-editor .kids-uniform-admin-card{padding:11px!important}.editor-page.classic-v203-ready-editor .portal-edit-section fieldset{padding:11px 0 17px!important}}
+
+
+/* v207 — Classic side-by-side variant editor, matching the v203 compact size rows.
+   Applied ONLY to general Custom Catalogue item editors and Ready Made.
+   Corporate Tee Shirt, Ready Stock Printable Items and Full Sublimation Jerseys
+   keep their purpose-built layouts. These changes are presentation-only. */
+@media (min-width: 1000px){
+  .editor-page.classic-v203-item-editor .kids-uniform-admin-grid,
+  .editor-page.classic-v203-ready-editor .variant-admin-list.enhanced{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    align-items:start!important;
+    gap:14px!important;
+  }
+}
+@media (max-width: 999px){
+  .editor-page.classic-v203-item-editor .kids-uniform-admin-grid,
+  .editor-page.classic-v203-ready-editor .variant-admin-list.enhanced{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:12px!important;
+  }
+}
+.editor-page.classic-v203-item-editor .kids-uniform-admin-grid,
+.editor-page.classic-v203-ready-editor .variant-admin-list.enhanced{
+  min-width:0!important;
+}
+.editor-page.classic-v203-item-editor .kids-uniform-admin-card,
+.editor-page.classic-v203-ready-editor .enhanced-variant-row{
+  min-width:0!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  padding:12px!important;
+  background:#fff!important;
+  border:1px solid #e6ddea!important;
+  border-radius:12px!important;
+  box-shadow:none!important;
+}
+.editor-page.classic-v203-item-editor .kids-uniform-variant-sizes{
+  display:grid!important;
+  gap:7px!important;
+  min-width:0!important;
+  overflow-x:auto!important;
+  scrollbar-width:thin;
+}
+.editor-page.classic-v203-item-editor .kids-uniform-variant-sizes .kids-uniform-size-list{
+  display:grid!important;
+  gap:7px!important;
+  min-width:0!important;
+}
+/* 7 compact columns, in the order of the reference screenshot. */
+.editor-page.classic-v203-item-editor .uniform-size-columns,
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle){
+  display:grid!important;
+  grid-template-columns:minmax(48px,1.13fr) minmax(43px,.85fr) minmax(76px,.88fr) minmax(49px,.97fr) minmax(49px,.97fr) minmax(69px,1.12fr) 24px!important;
+  gap:5px!important;
+  align-items:center!important;
+  min-width:0!important;
+  max-width:none!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+.editor-page.classic-v203-item-editor .uniform-size-columns{
+  margin:0 0 3px!important;
+  font-size:9px!important;
+  color:#786b80!important;
+}
+.editor-page.classic-v203-item-editor .uniform-size-columns span{
+  min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-variant-size]{grid-column:1!important;grid-row:1!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-variant-stock]{grid-column:2!important;grid-row:1!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>.uniform-unlimited-toggle{grid-column:3!important;grid-row:1!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-width]{grid-column:4!important;grid-row:1!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-length]{grid-column:5!important;grid-row:1!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-rate]{grid-column:6!important;grid-row:1!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>button{grid-column:7!important;grid-row:1!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>input{
+  box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;
+  height:35px!important;min-height:35px!important;
+  padding:0 5px!important;font-size:11px!important;border-radius:7px!important;
+}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>.uniform-unlimited-toggle{
+  display:flex!important;align-items:center!important;justify-content:center!important;min-height:35px!important;
+  margin:0!important;padding:0 3px!important;gap:3px!important;
+  min-width:0!important;font-size:9px!important;border-radius:7px!important;white-space:nowrap!important;
+}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>.uniform-unlimited-toggle input{
+  width:13px!important;min-width:13px!important;height:13px!important;margin:0!important;
+}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>button{
+  display:grid!important;place-items:center!important;
+  min-width:24px!important;width:24px!important;height:35px!important;
+  padding:0!important;margin:0!important;
+  background:#f6edf7!important;color:#741578!important;
+  border:0!important;border-radius:7px!important;
+  font-size:14px!important;font-weight:600!important;line-height:1!important;
+}
+.editor-page.classic-v203-item-editor .kids-uniform-section-title{gap:6px 10px!important}
+.editor-page.classic-v203-item-editor .kids-uniform-section-title b{font-size:13px!important}
+.editor-page.classic-v203-item-editor .kids-uniform-section-title small{font-size:9px!important}
+.editor-page.classic-v203-item-editor .kids-uniform-add-size{font-size:10px!important;min-height:33px!important;padding:7px 10px!important}
+/* Keep the same two-up variant-card rhythm in the Ready Made editor. */
+.editor-page.classic-v203-ready-editor .enhanced-variant-fields{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.editor-page.classic-v203-ready-editor .enhanced-variant-fields input{min-width:0!important;width:100%!important;height:37px!important}
+.editor-page.classic-v203-ready-editor .variant-image-visibility{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+.editor-page.classic-v203-ready-editor .variant-image-picker{grid-template-columns:60px minmax(0,1fr) auto!important;min-width:0!important}
+@media (max-width: 620px){
+  .editor-page.classic-v203-item-editor .kids-uniform-admin-card{padding:10px!important}
+  .editor-page.classic-v203-item-editor .uniform-size-columns,
+  .editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle){
+    min-width:445px!important;
+  }
+  .editor-page.classic-v203-ready-editor .enhanced-variant-fields{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .editor-page.classic-v203-ready-editor .variant-image-picker{grid-template-columns:56px minmax(0,1fr)!important}
+  .editor-page.classic-v203-ready-editor .variant-image-picker>button{grid-column:1/-1!important}
+}
