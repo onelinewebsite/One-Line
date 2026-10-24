@@ -1553,3 +1553,63 @@ html,body{background:#f6f2f7;color:#241c27}
 .ready-stock-inline-size>button{align-self:start;justify-self:end;margin-top:24px}
 @media(max-width:900px){.item-fabric-qualities{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.item-fabric-qualities{grid-template-columns:1fr}.item-fabric-qualities span{min-height:unset}.ready-stock-inline-size>button{margin-top:0}}
+
+/* v204: section headings must not overlap the first option card. */
+.editor-page .sportswear-item-option-heading{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:5px!important;align-items:start!important;margin:22px 0 14px!important;padding:0 0 7px!important;position:relative;z-index:1;clear:both}
+.editor-page .sportswear-item-option-heading>b{display:block!important;font-size:14px!important;line-height:1.35!important;color:#241627!important}
+.editor-page .sportswear-item-option-heading>small{display:block!important;line-height:1.5!important;font-size:11px!important;color:#81748a!important}
+.editor-page .sportswear-item-type-controls{margin-bottom:22px!important}
+.editor-page .sportswear-item-option-heading + .item-fabric-selection-grid{margin-top:11px!important}
+.editor-page .sportswear-item-option-heading + .sportswear-item-type-grid{margin-top:11px!important}
+/* v204: full single-line garment-size rows, with horizontal scrolling only at small widths. */
+.editor-page .ready-stock-inline-list{display:grid!important;gap:8px!important;overflow-x:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;padding-bottom:5px}
+.editor-page .ready-stock-inline-size,
+.editor-page .ready-stock-inline-size:has([data-jersey-size-stock]){
+  display:grid!important;
+  grid-template-columns:minmax(83px,1fr) minmax(102px,1fr) minmax(102px,1fr) minmax(119px,1.12fr) minmax(94px,.85fr) minmax(92px,.8fr) 34px!important;
+  min-width:740px!important;gap:9px!important;align-items:end!important;
+  padding:11px!important;position:relative!important;
+}
+.editor-page .ready-stock-inline-size>label{grid-column:auto!important;grid-row:1!important;min-width:0!important;white-space:normal}
+.editor-page .ready-stock-inline-size>label.ready-stock-unlimited{grid-column:6!important;grid-row:1!important;align-self:end!important;min-height:41px!important;justify-content:center!important;white-space:nowrap!important}
+.editor-page .ready-stock-inline-size>.ready-stock-size-remove{
+  position:static!important;grid-column:7!important;grid-row:1!important;
+  align-self:end!important;justify-self:center!important;display:grid!important;place-items:center!important;
+  width:34px!important;min-width:34px!important;max-width:34px!important;height:41px!important;min-height:41px!important;
+  margin:0!important;padding:0!important;line-height:1!important;overflow:hidden!important;
+}
+.editor-page .ready-stock-inline-size>.ready-stock-size-remove>span{display:grid;place-items:center;width:100%;height:100%;line-height:1;font-size:22px;transform:translateY(-1px)}
+.editor-page .ready-stock-inline-size input:not([type=checkbox]){height:41px!important}
+/* Existing uniform variants: visually ordered Size, Width, Length, Rate, Stock, Unlimited, Remove. */
+.editor-page .kids-uniform-admin-grid{grid-template-columns:minmax(0,1fr)!important}
+.editor-page .kids-uniform-variant-sizes{min-width:0!important;overflow-x:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.editor-page .uniform-size-columns,
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle){
+  display:grid!important;grid-template-columns:minmax(95px,1fr) minmax(100px,1fr) minmax(100px,1fr) minmax(115px,1.1fr) minmax(84px,.8fr) minmax(100px,.85fr) 32px!important;
+  gap:8px!important;align-items:center!important;min-width:775px!important;max-width:none!important;width:100%!important;
+}
+.editor-page .uniform-size-columns{font-size:10px!important;font-weight:750!important;color:#6e6073!important;margin-bottom:4px!important;padding-right:2px!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-variant-size]{grid-column:1!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-width]{grid-column:2!important;grid-row:1!important;flex:none!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-length]{grid-column:3!important;grid-row:1!important;flex:none!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-rate]{grid-column:4!important;grid-row:1!important;flex:none!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-variant-stock]{grid-column:5!important;grid-row:1!important;flex:none!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>.uniform-unlimited-toggle{grid-column:6!important;grid-row:1!important;display:flex!important;align-items:center!important;justify-content:center!important;white-space:nowrap!important;margin:0!important;min-height:40px!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>button{grid-column:7!important;grid-row:1!important;height:40px!important;width:32px!important;min-width:32px!important;display:grid!important;place-items:center!important;padding:0!important;margin:0!important;line-height:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>input{width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important}
+/* Staff: left minus, centered quantity, right plus; distinct sold/receiving actions. */
+.portal-staff .staff-stock-head{align-items:center!important}
+.portal-staff .staff-stock-quantity{display:grid!important;grid-template-columns:35px minmax(48px,1fr) 35px!important;gap:0!important;align-items:stretch;min-width:0;width:100%;height:43px}
+.portal-staff .staff-stock-quantity input{grid-column:2;grid-row:1;min-width:0!important;width:100%!important;height:43px!important;border-radius:0!important;padding:0 3px!important;text-align:center!important;-moz-appearance:textfield;appearance:textfield}
+.portal-staff .staff-stock-quantity input::-webkit-outer-spin-button,.portal-staff .staff-stock-quantity input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.portal-staff .staff-stock-minus,.portal-staff .staff-stock-plus{min-width:35px!important;width:35px!important;max-width:35px!important;height:43px!important;min-height:43px!important;margin:0!important;padding:0!important;border:1px solid #dbcce0!important;border-radius:0!important;background:#faf6fc!important;color:#63136d!important;font-size:21px!important;line-height:1!important;display:grid!important;place-items:center!important}
+.portal-staff .staff-stock-minus{grid-column:1;grid-row:1;border-radius:9px 0 0 9px!important;border-right:0!important}
+.portal-staff .staff-stock-plus{grid-column:3;grid-row:1;border-radius:0 9px 9px 0!important;border-left:0!important}
+.portal-staff .staff-sold-action{display:grid!important;grid-template-columns:minmax(122px,155px) minmax(132px,1fr)!important;gap:8px!important}
+.portal-staff .staff-stock-confirm{min-height:43px!important}
+@media(max-width:620px){
+  .portal-staff .staff-sold-action{grid-template-columns:minmax(130px,1fr) minmax(130px,1fr)!important;grid-column:1/-1!important}
+  .portal-staff .staff-stock-quantity{grid-template-columns:32px minmax(35px,1fr) 32px!important}
+  .portal-staff .staff-stock-minus,.portal-staff .staff-stock-plus{width:32px!important;min-width:32px!important;max-width:32px!important}
+  .editor-page .ready-stock-inline-size{min-width:740px!important;padding:11px!important}
+}
