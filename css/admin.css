@@ -1534,3 +1534,22 @@ html,body{background:#f6f2f7;color:#241c27}
 @media(max-width:1000px){.portal-staff .staff-stock-item{grid-template-columns:55px minmax(0,1fr) 80px}.portal-staff .staff-sold-action{grid-column:2/-1;width:100%}}
 @media(max-width:600px){.portal-staff .staff-stock-item{grid-template-columns:48px minmax(0,1fr) 70px;gap:8px}.portal-staff .staff-sold-action{grid-column:1/-1;grid-template-columns:minmax(0,120px) minmax(0,1fr)}.portal-staff .staff-stock-top-add{width:100%}.editor-page .ready-stock-inline-size{padding:10px 48px 10px 10px!important}.editor-page .ready-stock-inline-size>.ready-stock-size-remove{top:9px;right:9px}}
 @media(max-width:390px){.portal-staff .staff-sold-action{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.portal-staff .staff-stock-plus{flex-basis:34px!important;width:34px!important}}
+
+
+/* v203 admin catalogue polish */
+.item-fabric-card{border:1px solid #e6dfe9;border-radius:16px;background:#fff;padding:14px;box-shadow:0 1px 0 rgba(31,17,34,.03)}
+.item-fabric-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.item-fabric-qualities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.item-fabric-qualities label{position:relative;display:block;min-width:0}
+.item-fabric-qualities input{display:none!important}
+.item-fabric-qualities span{display:grid;gap:4px;min-height:68px;align-content:center;padding:12px 13px;border:1px solid #e3dbe5;border-radius:12px;background:#fbf9fc;cursor:pointer;transition:border-color .15s ease,background .15s ease,box-shadow .15s ease,color .15s ease}
+.item-fabric-qualities span b{font-size:12px;line-height:1.15}.item-fabric-qualities span small{font-size:11px;color:#776a79;line-height:1.2}
+.item-fabric-qualities input:checked+span{border-color:#681474;background:#f7eef9;color:#681474;box-shadow:0 0 0 2px rgba(104,20,116,.08) inset}
+.item-fabric-qualities input:checked+span::after{content:'✓';position:absolute;top:10px;right:11px;font-size:11px;font-weight:800;color:#681474}
+.item-fabric-qualities input:disabled+span{cursor:default;opacity:1;background:#fcfbfd}
+.fabric-check{min-height:36px}
+.catalog-options-mode{margin:8px 0 16px}
+.ready-stock-inline-size{align-items:start}
+.ready-stock-inline-size>button{align-self:start;justify-self:end;margin-top:24px}
+@media(max-width:900px){.item-fabric-qualities{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.item-fabric-qualities{grid-template-columns:1fr}.item-fabric-qualities span{min-height:unset}.ready-stock-inline-size>button{margin-top:0}}
