@@ -1649,3 +1649,167 @@ html,body{background:#f6f2f7;color:#241c27}
  .editor-corner-photo{display:none!important}
  .editor-page.mec7-classic-editor .kids-uniform-admin-card{padding:11px!important}
 }
+
+
+/* v206 – Staff stock desk: compact mobile layout, touch-friendly quantity stepper. */
+.portal-staff .admin-main{width:100%;max-width:1100px;margin-inline:auto;min-width:0}
+.portal-staff .staff-stock-card{padding:clamp(14px,3vw,25px)!important;border-radius:18px!important;min-width:0}
+.portal-staff .staff-stock-head{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center!important;gap:16px!important;margin-bottom:12px}
+.portal-staff .staff-stock-head>div{min-width:0}
+.portal-staff .staff-stock-head h1{font-size:clamp(22px,3.3vw,30px);line-height:1.14;margin:3px 0 7px}
+.portal-staff .staff-stock-head p:not(.tag){line-height:1.45;margin:0;max-width:570px}
+.portal-staff .staff-stock-top-add{min-height:43px!important;border-radius:11px!important;box-shadow:0 3px 10px rgba(100,17,111,.07)}
+.portal-staff .staff-stock-mode-note{padding:10px 13px;border-radius:10px;background:#f8f4fa;border:1px solid #eddfef;color:#5c4063;font-size:12px;line-height:1.45;margin:8px 0 16px}
+.portal-staff .staff-stock-mode-note.is-receiving{background:#f2f8f5;border-color:#dcebe1;color:#306248}
+.portal-staff .staff-stock-search{display:flex!important;align-items:flex-end;gap:12px;min-width:0;padding:0!important;margin-bottom:7px}
+.portal-staff .staff-stock-search-field{display:grid;gap:6px;flex:1 1 auto;min-width:0;font-size:12px;font-weight:700;color:#59455e}
+.portal-staff .staff-stock-search-field input{display:block;width:100%;max-width:none!important;height:46px;border:1px solid #ded4e1;border-radius:12px;padding:0 13px!important;background:#fff;font:inherit;font-weight:500;min-width:0}
+.portal-staff .staff-stock-search-field input:focus{outline:2px solid rgba(111,25,123,.21);outline-offset:1px;border-color:#a575b0}
+.portal-staff .staff-stock-results{flex:0 0 auto;margin:0 0 12px;color:#766a7c;font-size:12px}
+.portal-staff .staff-stock-list{display:grid;gap:11px;margin-top:15px}
+.portal-staff .staff-stock-item{display:grid!important;grid-template-columns:64px minmax(0,1fr) minmax(82px,auto) minmax(295px,auto)!important;align-items:center!important;gap:13px!important;padding:13px!important;background:#fff;border:1px solid #e6dfe9;border-radius:15px;min-width:0;box-shadow:0 2px 10px rgba(32,18,36,.025)}
+.portal-staff .staff-stock-item-photo{width:64px;height:72px;overflow:hidden;border-radius:11px;background:#f8f5f9;border:1px solid #eee7ef}
+.portal-staff .staff-stock-item-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.portal-staff .staff-stock-main{min-width:0;gap:4px!important}
+.portal-staff .staff-stock-main b{font-size:14px!important;line-height:1.3}
+.portal-staff .staff-stock-main .staff-stock-option{font-size:12px!important;line-height:1.3}
+.portal-staff .staff-stock-main small{font-size:10px!important;line-height:1.35}
+.portal-staff .staff-stock-count{justify-items:center;min-width:78px;gap:4px}
+.portal-staff .staff-stock-count small{font-size:9px;line-height:1.3}
+.portal-staff .staff-stock-count strong{font-size:23px;line-height:1.15}
+.portal-staff .staff-sold-action{display:grid!important;grid-template-columns:minmax(132px,154px) minmax(133px,1fr)!important;align-items:end!important;gap:9px!important;min-width:0}
+.portal-staff .staff-stock-qty-block{display:grid;gap:6px;min-width:0}
+.portal-staff .staff-stock-qty-label{font-size:10px;font-weight:750;color:#756879;line-height:1}
+.portal-staff .staff-stock-quantity{display:grid!important;grid-template-columns:42px minmax(32px,1fr) 42px!important;height:46px!important;gap:0!important;align-items:stretch;min-width:0}
+.portal-staff .staff-stock-quantity input{height:46px!important;font-size:16px!important;font-weight:750!important;padding:0 2px!important;border-color:#ded3e1!important;color:#32233a!important;background:#fff!important}
+.portal-staff .staff-stock-minus,.portal-staff .staff-stock-plus{width:42px!important;min-width:42px!important;max-width:42px!important;height:46px!important;min-height:46px!important;padding:0!important;border:1px solid #ded3e1!important;background:#f8f4fa!important;color:#651374!important;font-size:25px!important;line-height:1!important;font-weight:500!important;touch-action:manipulation}
+.portal-staff .staff-stock-minus{border-radius:10px 0 0 10px!important;border-right:0!important}
+.portal-staff .staff-stock-plus{border-radius:0 10px 10px 0!important;border-left:0!important}
+.portal-staff .staff-stock-minus:active,.portal-staff .staff-stock-plus:active{background:#ebdeef!important}
+.portal-staff .staff-stock-minus:focus-visible,.portal-staff .staff-stock-plus:focus-visible,.portal-staff .staff-stock-confirm:focus-visible{outline:3px solid #c18ac7!important;outline-offset:2px}
+.portal-staff .staff-stock-confirm{min-height:46px!important;height:46px!important;border:0!important;border-radius:11px!important;padding:0 10px!important;font-size:12px!important;line-height:1.2!important;background:#64116f!important;color:#fff!important;font-weight:800;white-space:normal!important;touch-action:manipulation}
+.portal-staff .staff-stock-confirm.is-receiving{background:#276648!important}
+.portal-staff .staff-stock-confirm:disabled,.portal-staff .staff-stock-quantity button:disabled,.portal-staff .staff-stock-quantity input:disabled{opacity:.5!important;cursor:not-allowed}
+@media(max-width:960px){
+ .portal-staff .staff-stock-item{grid-template-columns:60px minmax(0,1fr) 86px!important}
+ .portal-staff .staff-stock-item-photo{width:60px;height:70px}
+ .portal-staff .staff-sold-action{grid-column:2/-1!important;grid-template-columns:minmax(145px,180px) minmax(145px,1fr)!important;width:100%}
+}
+@media(max-width:620px){
+ .portal-staff .admin-main{padding-inline:10px!important}
+ .portal-staff .staff-stock-card{padding:14px 11px!important;border-radius:14px!important}
+ .portal-staff .staff-stock-head{grid-template-columns:1fr!important;gap:12px!important}
+ .portal-staff .staff-stock-top-add{width:100%!important;min-height:46px!important}
+ .portal-staff .staff-stock-mode-note{font-size:11px;margin:9px 0 13px;padding:9px 11px}
+ .portal-staff .staff-stock-search-field input{height:46px}
+ .portal-staff .staff-stock-item{grid-template-columns:54px minmax(0,1fr) 72px!important;gap:10px!important;padding:11px!important;border-radius:13px!important}
+ .portal-staff .staff-stock-item-photo{width:54px;height:62px}
+ .portal-staff .staff-stock-count{min-width:0!important;justify-items:end!important;text-align:right}
+ .portal-staff .staff-stock-count small{font-size:8px}
+ .portal-staff .staff-stock-count strong{font-size:20px}
+ .portal-staff .staff-sold-action{grid-column:1/-1!important;grid-template-columns:minmax(135px,1fr) minmax(135px,1fr)!important;gap:10px!important}
+ .portal-staff .staff-stock-quantity{grid-template-columns:42px minmax(28px,1fr) 42px!important;height:46px!important}
+ .portal-staff .staff-stock-minus,.portal-staff .staff-stock-plus{width:42px!important;min-width:42px!important;max-width:42px!important}
+ .portal-staff .staff-stock-confirm{width:100%;font-size:12px!important}
+ .portal-staff .staff-stock-main b{font-size:13px!important}
+ .portal-staff .staff-stock-main .staff-stock-option{font-size:11px!important}
+ .portal-staff .staff-stock-main small{font-size:9px!important}
+ .portal-staff .staff-stock-results{font-size:11px}
+}
+@media(max-width:375px){
+ .portal-staff .staff-stock-item{grid-template-columns:49px minmax(0,1fr) 62px!important;gap:7px!important;padding:10px!important}
+ .portal-staff .staff-stock-item-photo{width:49px;height:56px}
+ .portal-staff .staff-sold-action{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important}
+ .portal-staff .staff-stock-quantity{grid-template-columns:35px minmax(24px,1fr) 35px!important}
+ .portal-staff .staff-stock-minus,.portal-staff .staff-stock-plus{width:35px!important;min-width:35px!important;max-width:35px!important}
+ .portal-staff .staff-stock-confirm{font-size:11px!important;padding:0 6px!important}
+}
+
+
+/* v206 – Staff stock desk: compact mobile layout, touch-friendly quantity stepper. */
+.portal-staff .admin-main{width:100%;max-width:1100px;margin-inline:auto;min-width:0}
+.portal-staff .staff-stock-card{padding:clamp(14px,3vw,25px)!important;border-radius:18px!important;min-width:0}
+.portal-staff .staff-stock-head{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center!important;gap:16px!important;margin-bottom:12px}
+.portal-staff .staff-stock-head>div{min-width:0}
+.portal-staff .staff-stock-head h1{font-size:clamp(22px,3.3vw,30px);line-height:1.14;margin:3px 0 7px}
+.portal-staff .staff-stock-head p:not(.tag){line-height:1.45;margin:0;max-width:570px}
+.portal-staff .staff-stock-top-add{min-height:43px!important;border-radius:11px!important;box-shadow:0 3px 10px rgba(100,17,111,.07)}
+.portal-staff .staff-stock-mode-note{padding:10px 13px;border-radius:10px;background:#f8f4fa;border:1px solid #eddfef;color:#5c4063;font-size:12px;line-height:1.45;margin:8px 0 16px}
+.portal-staff .staff-stock-mode-note.is-receiving{background:#f2f8f5;border-color:#dcebe1;color:#306248}
+.portal-staff .staff-stock-search{display:flex!important;align-items:flex-end;gap:12px;min-width:0;padding:0!important;margin-bottom:7px}
+.portal-staff .staff-stock-search-field{display:grid;gap:6px;flex:1 1 auto;min-width:0;font-size:12px;font-weight:700;color:#59455e}
+.portal-staff .staff-stock-search-field input{display:block;width:100%;max-width:none!important;height:46px;border:1px solid #ded4e1;border-radius:12px;padding:0 13px!important;background:#fff;font:inherit;font-weight:500;min-width:0}
+.portal-staff .staff-stock-search-field input:focus{outline:2px solid rgba(111,25,123,.21);outline-offset:1px;border-color:#a575b0}
+.portal-staff .staff-stock-results{flex:0 0 auto;margin:0 0 12px;color:#766a7c;font-size:12px}
+.portal-staff .staff-stock-list{display:grid;gap:11px;margin-top:15px}
+.portal-staff .staff-stock-item{display:grid!important;grid-template-columns:64px minmax(0,1fr) minmax(82px,auto) minmax(295px,auto)!important;align-items:center!important;gap:13px!important;padding:13px!important;background:#fff;border:1px solid #e6dfe9;border-radius:15px;min-width:0;box-shadow:0 2px 10px rgba(32,18,36,.025)}
+.portal-staff .staff-stock-item-photo{width:64px;height:72px;overflow:hidden;border-radius:11px;background:#f8f5f9;border:1px solid #eee7ef}
+.portal-staff .staff-stock-item-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.portal-staff .staff-stock-main{min-width:0;gap:4px!important}
+.portal-staff .staff-stock-main b{font-size:14px!important;line-height:1.3}
+.portal-staff .staff-stock-main .staff-stock-option{font-size:12px!important;line-height:1.3}
+.portal-staff .staff-stock-main small{font-size:10px!important;line-height:1.35}
+.portal-staff .staff-stock-count{justify-items:center;min-width:78px;gap:4px}
+.portal-staff .staff-stock-count small{font-size:9px;line-height:1.3}
+.portal-staff .staff-stock-count strong{font-size:23px;line-height:1.15}
+.portal-staff .staff-sold-action{display:grid!important;grid-template-columns:minmax(132px,154px) minmax(133px,1fr)!important;align-items:end!important;gap:9px!important;min-width:0}
+.portal-staff .staff-stock-qty-block{display:grid;gap:6px;min-width:0}
+.portal-staff .staff-stock-qty-label{font-size:10px;font-weight:750;color:#756879;line-height:1}
+.portal-staff .staff-stock-quantity{display:grid!important;grid-template-columns:42px minmax(32px,1fr) 42px!important;height:46px!important;gap:0!important;align-items:stretch;min-width:0}
+.portal-staff .staff-stock-quantity input{height:46px!important;font-size:16px!important;font-weight:750!important;padding:0 2px!important;border-color:#ded3e1!important;color:#32233a!important;background:#fff!important}
+.portal-staff .staff-stock-minus,.portal-staff .staff-stock-plus{width:42px!important;min-width:42px!important;max-width:42px!important;height:46px!important;min-height:46px!important;padding:0!important;border:1px solid #ded3e1!important;background:#f8f4fa!important;color:#651374!important;font-size:25px!important;line-height:1!important;font-weight:500!important;touch-action:manipulation}
+.portal-staff .staff-stock-minus{border-radius:10px 0 0 10px!important;border-right:0!important}
+.portal-staff .staff-stock-plus{border-radius:0 10px 10px 0!important;border-left:0!important}
+.portal-staff .staff-stock-minus:active,.portal-staff .staff-stock-plus:active{background:#ebdeef!important}
+.portal-staff .staff-stock-minus:focus-visible,.portal-staff .staff-stock-plus:focus-visible,.portal-staff .staff-stock-confirm:focus-visible{outline:3px solid #c18ac7!important;outline-offset:2px}
+.portal-staff .staff-stock-confirm{min-height:46px!important;height:46px!important;border:0!important;border-radius:11px!important;padding:0 10px!important;font-size:12px!important;line-height:1.2!important;background:#64116f!important;color:#fff!important;font-weight:800;white-space:normal!important;touch-action:manipulation}
+.portal-staff .staff-stock-confirm.is-receiving{background:#276648!important}
+.portal-staff .staff-stock-confirm:disabled,.portal-staff .staff-stock-quantity button:disabled,.portal-staff .staff-stock-quantity input:disabled{opacity:.5!important;cursor:not-allowed}
+@media(max-width:960px){
+ .portal-staff .staff-stock-item{grid-template-columns:60px minmax(0,1fr) 86px!important}
+ .portal-staff .staff-stock-item-photo{width:60px;height:70px}
+ .portal-staff .staff-sold-action{grid-column:2/-1!important;grid-template-columns:minmax(145px,180px) minmax(145px,1fr)!important;width:100%}
+}
+@media(max-width:620px){
+ .portal-staff .admin-main{padding-inline:10px!important}
+ .portal-staff .staff-stock-card{padding:14px 11px!important;border-radius:14px!important}
+ .portal-staff .staff-stock-head{grid-template-columns:1fr!important;gap:12px!important}
+ .portal-staff .staff-stock-top-add{width:100%!important;min-height:46px!important}
+ .portal-staff .staff-stock-mode-note{font-size:11px;margin:9px 0 13px;padding:9px 11px}
+ .portal-staff .staff-stock-search-field input{height:46px}
+ .portal-staff .staff-stock-item{grid-template-columns:54px minmax(0,1fr) 72px!important;gap:10px!important;padding:11px!important;border-radius:13px!important}
+ .portal-staff .staff-stock-item-photo{width:54px;height:62px}
+ .portal-staff .staff-stock-count{min-width:0!important;justify-items:end!important;text-align:right}
+ .portal-staff .staff-stock-count small{font-size:8px}
+ .portal-staff .staff-stock-count strong{font-size:20px}
+ .portal-staff .staff-sold-action{grid-column:1/-1!important;grid-template-columns:minmax(135px,1fr) minmax(135px,1fr)!important;gap:10px!important}
+ .portal-staff .staff-stock-quantity{grid-template-columns:42px minmax(28px,1fr) 42px!important;height:46px!important}
+ .portal-staff .staff-stock-minus,.portal-staff .staff-stock-plus{width:42px!important;min-width:42px!important;max-width:42px!important}
+ .portal-staff .staff-stock-confirm{width:100%;font-size:12px!important}
+ .portal-staff .staff-stock-main b{font-size:13px!important}
+ .portal-staff .staff-stock-main .staff-stock-option{font-size:11px!important}
+ .portal-staff .staff-stock-main small{font-size:9px!important}
+ .portal-staff .staff-stock-results{font-size:11px}
+}
+@media(max-width:375px){
+ .portal-staff .staff-stock-item{grid-template-columns:49px minmax(0,1fr) 62px!important;gap:7px!important;padding:10px!important}
+ .portal-staff .staff-stock-item-photo{width:49px;height:56px}
+ .portal-staff .staff-sold-action{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important}
+ .portal-staff .staff-stock-quantity{grid-template-columns:35px minmax(24px,1fr) 35px!important}
+ .portal-staff .staff-stock-minus,.portal-staff .staff-stock-plus{width:35px!important;min-width:35px!important;max-width:35px!important}
+ .portal-staff .staff-stock-confirm{font-size:11px!important;padding:0 6px!important}
+}
+
+/* v206 selective visual return to v203 item editor, preserving v205 controls */
+.editor-page.classic-v203-item-editor .kids-uniform-editor>fieldset{gap:14px!important;padding:14px!important}
+.editor-page.classic-v203-item-editor .kids-uniform-admin-card{padding:14px!important;border:1px solid #e3d9e6!important;border-radius:13px!important;background:#fff!important;gap:11px!important;box-shadow:none!important}
+.editor-page.classic-v203-item-editor .kids-uniform-admin-head{margin-bottom:2px!important}
+.editor-page.classic-v203-item-editor .kids-uniform-admin-grid{gap:12px!important}
+.editor-page.classic-v203-item-editor .kids-uniform-stock-analysis span{padding:10px!important;background:#f8f5f9!important}
+.editor-page.classic-v203-item-editor .uniform-variant-inline-edit,.editor-page.classic-v203-item-editor .kids-uniform-multi-images{padding:6px 0!important}
+.editor-page.classic-v203-item-editor .kids-uniform-section-title{margin-bottom:5px!important}
+.editor-page.classic-v203-ready-editor .portal-edit-section{background:transparent!important;border-color:#e9e1ed!important;box-shadow:none!important}
+.editor-page.classic-v203-ready-editor .portal-edit-section>header{background:transparent!important;border-bottom:1px solid #ede6ef!important;padding:12px 0!important}
+.editor-page.classic-v203-ready-editor .portal-edit-section fieldset{padding:12px 0 20px!important;background:transparent!important}
+.editor-corner-photo{gap:0!important;padding:6px!important}
+@media(max-width:620px){.editor-page.classic-v203-item-editor .kids-uniform-admin-card{padding:11px!important}.editor-page.classic-v203-ready-editor .portal-edit-section fieldset{padding:11px 0 17px!important}}
