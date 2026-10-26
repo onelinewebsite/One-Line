@@ -7346,3 +7346,12 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .ready-stock-highlight-value{font-size:inherit;font-weight:400;color:inherit}
 @media(min-width:650px){.ready-stock-highlights-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(min-width:1024px){.ready-stock-highlights-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* v211: optional crossed-out MRP only; Final Rate remains the sales price. */
+.catalogue-mrp-crossed{display:inline-block;font-size:.78em!important;color:#877d87!important;opacity:.9;text-decoration:line-through;text-decoration-thickness:1.5px;margin-right:8px;font-weight:500!important}
+.catalogue-card-pricing{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.catalogue-card-pricing .catalogue-mrp-crossed{margin-right:1px}
+.custom-item-rate .catalogue-mrp-crossed{font-size:.65em!important}
+.catalogue-special-size-rate .catalogue-mrp-crossed{font-size:inherit!important;margin-right:5px}
+.bulk-variant-price{display:flex!important;flex-wrap:wrap;gap:3px;align-items:baseline}
+.bulk-variant-price strong{font-weight:750;color:inherit}

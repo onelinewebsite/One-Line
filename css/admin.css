@@ -1944,3 +1944,51 @@ html,body{background:#f6f2f7;color:#241c27}
 .ready-stock-highlight-admin-row>button{display:grid;place-items:center;width:36px;height:42px;padding:0;border:1px solid #f1ced6;border-radius:9px;background:#fff5f6;color:#bd2948;font-size:20px;font-weight:600;cursor:pointer}
 .ready-stock-highlights-empty{margin:0;color:#8b7e8e;font-size:12px}
 @media(max-width:500px){.ready-stock-highlight-admin-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 30px;gap:6px}.ready-stock-highlight-admin-row>button{width:30px}.ready-stock-highlight-admin-row input{padding:8px;font-size:12px}}
+
+/* v211: extra MRP field in compact per-size/per-variant admin rows. */
+.kids-uniform-size-row.simple.rate-enabled{grid-template-columns:minmax(54px,1.1fr) minmax(48px,.9fr) minmax(72px,.9fr) minmax(55px,.8fr) minmax(55px,.8fr) minmax(62px,.95fr) minmax(62px,.95fr) 26px!important}
+.uniform-size-columns{grid-template-columns:minmax(54px,1.1fr) minmax(48px,.9fr) minmax(72px,.9fr) minmax(55px,.8fr) minmax(55px,.8fr) minmax(62px,.95fr) minmax(62px,.95fr) 26px!important}
+.ready-stock-inline-size{grid-template-columns:minmax(82px,1fr) minmax(82px,1fr) minmax(82px,1fr) minmax(90px,1fr) minmax(90px,1fr) minmax(90px,.9fr) 32px!important}
+.ready-stock-inline-size>button{grid-column:7!important;align-self:center!important;margin:0!important}
+.jersey-admin-size-row:not(.ready-stock-inline-size){grid-template-columns:repeat(5,minmax(110px,1fr)) 34px!important}
+@media(max-width:800px){.ready-stock-inline-list,.jersey-admin-size-list{overflow-x:auto;max-width:100%}.ready-stock-inline-size{min-width:690px}.jersey-admin-size-row:not(.ready-stock-inline-size){min-width:640px}.uniform-size-columns{min-width:600px}.kids-uniform-size-row.simple.rate-enabled{min-width:600px}}
+/* v211 MRP: respect v207 compact variants and v204 single-row printable editor. */
+.editor-page .ready-stock-inline-size,
+.editor-page .ready-stock-inline-size:has([data-jersey-size-stock]){
+  grid-template-columns:minmax(74px,1fr) minmax(78px,1fr) minmax(78px,1fr) minmax(88px,1.05fr) minmax(88px,1.05fr) minmax(82px,.9fr) minmax(90px,.9fr) 34px!important;
+  min-width:760px!important;
+}
+.editor-page .ready-stock-inline-size>label.ready-stock-unlimited{grid-column:7!important;grid-row:1!important}
+.editor-page .ready-stock-inline-size>.ready-stock-size-remove{grid-column:8!important;grid-row:1!important;align-self:end!important}
+.editor-page .uniform-size-columns,
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle){
+  grid-template-columns:minmax(65px,1fr) minmax(70px,1fr) minmax(70px,1fr) minmax(70px,1fr) minmax(70px,1fr) minmax(70px,1fr) minmax(80px,1fr) 30px!important;
+  min-width:685px!important;
+}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-mrp]{grid-column:4!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-rate]{grid-column:5!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-variant-stock]{grid-column:6!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>.uniform-unlimited-toggle{grid-column:7!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>button{grid-column:8!important;grid-row:1!important}
+/* Classic 2-up cards keep their exact old order; allow internal horizontal scroll if narrow. */
+.editor-page.classic-v203-item-editor .uniform-size-columns,
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle){
+  grid-template-columns:minmax(50px,1fr) minmax(42px,.8fr) minmax(76px,.88fr) minmax(48px,.85fr) minmax(48px,.85fr) minmax(63px,1fr) minmax(65px,1fr) 24px!important;
+  min-width:545px!important;
+}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-variant-stock]{grid-column:2!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>.uniform-unlimited-toggle{grid-column:3!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-width]{grid-column:4!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-length]{grid-column:5!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-mrp]{grid-column:6!important;grid-row:1!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-rate]{grid-column:7!important;grid-row:1!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>button{grid-column:8!important;grid-row:1!important}
+/* Keep all eight captions aligned with their controls in the saved JSON variant editor. */
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-variant-size]{grid-column:1!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-variant-stock]{grid-column:2!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>.uniform-unlimited-toggle{grid-column:3!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-width]{grid-column:4!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-length]{grid-column:5!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-mrp]{grid-column:6!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-rate]{grid-column:7!important;grid-row:1!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>button{grid-column:8!important;grid-row:1!important}
