@@ -513,7 +513,7 @@
   }
   function readyStockHighlightsHtml(item){
     const rows=readyStockHighlights(item);
-    return rows.length?'<section class="ready-stock-highlights" aria-label="Product highlights"><h2>Highlights</h2><div class="ready-stock-highlights-grid">'+rows.map(row=>'<div class="ready-stock-highlight"><span class="ready-stock-highlight-name">'+S.esc(row.name)+'</span><strong class="ready-stock-highlight-value">'+S.esc(row.value)+'</strong></div>').join('')+'</div></section>':'';
+    return rows.length?'<section class="ready-stock-highlights" aria-label="Product details"><h2>Details</h2><ul class="ready-stock-highlights-grid">'+rows.map(row=>'<li class="ready-stock-highlight"><span class="ready-stock-highlight-name">'+S.esc(row.name)+'</span> - <span class="ready-stock-highlight-value">'+S.esc(row.value)+'</span></li>').join('')+'</ul></section>':'';
   }
   // Catalogue search works entirely on already-cached rows; no Supabase request per keystroke.
   const catalogueSearchIndexCache=new WeakMap();

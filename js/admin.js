@@ -679,25 +679,36 @@
     return '<section class="portal-edit-section custom-item-options-edit"><header><div><b>Variants &amp; item options</b></div></header><fieldset>'+content+'</fieldset></section>';
   }
 
-  // Ready Stock Printable only: highlights live in the existing fabric_options JSONB.
-  // Preset names appear only until this item has a saved highlight list.
-  // Preserve both Quality rows; customers see only name/value pairs with a value.
-  const READY_STOCK_DEFAULT_HIGHLIGHT_NAMES=['Fabric','Colour','Quality','GasM','Properties','Corn','Quality'];
+  // Ready Stock Printable only: details use existing fabric_options JSONB.
+  // New items get four editable labels. Preserve custom saved highlights.
+  const READY_STOCK_DEFAULT_HIGHLIGHT_NAMES=['Fabric','Colour','GSM','Quality'];
   function readyStockHighlights(item){
     const entries=item?.fabric_options?.highlights;
-    return Array.isArray(entries)
-      ? entries.slice(0,20).map(row=>({name:String(row?.name||'').slice(0,80),value:String(row?.value||'').slice(0,160)}))
-      : READY_STOCK_DEFAULT_HIGHLIGHT_NAMES.map(name=>({name,value:''}));
+    const defaults=()=>READY_STOCK_DEFAULT_HIGHLIGHT_NAMES.map(name=>({name,value:''}));
+    if(!Array.isArray(entries))return defaults();
+    const rows=entries.slice(0,20).map(row=>({name:String(row?.name||'').slice(0,80),value:String(row?.value||'').slice(0,160)}));
+    // Upgrade unchanged v209 seven-row presets only. Never discard entered values.
+    const legacy=['Fabric','Colour','Quality','GasM','Properties','Corn','Quality'];
+    if(rows.length===legacy.length&&rows.every((row,i)=>row.name===legacy[i])){
+      const updated=defaults();
+      updated[0].value=rows[0].value;updated[1].value=rows[1].value;
+      updated[2].value=rows[3].value;
+      updated[3].value=rows[2].value||rows[6].value;
+      if(rows[2].value&&rows[6].value&&rows[2].value!==rows[6].value)updated.push(rows[6]);
+      for(const index of [4,5])if(rows[index].value)updated.push(rows[index]);
+      return updated;
+    }
+    return rows;
   }
   function readyStockHighlightsEditorHtml(item){
     if(!isPrintableCategory(item.category_id))return '';
     const rows=readyStockHighlights(item).map((row,index)=>
       '<div class="ready-stock-highlight-admin-row" data-ready-stock-highlight-row="'+index+'">'+
-      '<label>Name<input type="text" data-highlight-name maxlength="80" value="'+esc(row.name)+'" placeholder="e.g. Material"></label>'+
-      '<label>Value<input type="text" data-highlight-value maxlength="160" value="'+esc(row.value)+'" placeholder="e.g. 100% Cotton"></label>'+
+      '<label>Name<input type="text" data-highlight-name maxlength="80" value="'+esc(row.name)+'"></label>'+
+      '<label>Value<input type="text" data-highlight-value maxlength="160" value="'+esc(row.value)+'"></label>'+
       '<button type="button" data-remove-highlight="'+index+'" aria-label="Remove highlight" title="Remove highlight">&times;</button></div>'
     ).join('');
-    return '<section class="portal-edit-section ready-stock-highlights-admin"><header><div><b>Highlights</b><small>Add a name and value for each highlight. They appear on the customer item page and in catalogue search.</small></div></header><fieldset><div class="ready-stock-highlights-admin-list">'+(rows||'<p class="ready-stock-highlights-empty">No highlights added.</p>')+'</div><button type="button" class="kids-uniform-add-size" data-add-highlight>+ Add highlight</button></fieldset></section>';
+    return '<section class="portal-edit-section ready-stock-highlights-admin"><header><div><b>Details</b></div></header><fieldset><div class="ready-stock-highlights-admin-list">'+(rows||'<p class="ready-stock-highlights-empty">No highlights added.</p>')+'</div><button type="button" class="kids-uniform-add-size" data-add-highlight>+ Add highlight</button></fieldset></section>';
   }
   function syncReadyStockHighlightsFromDom(){
     if(!isPrintableCategory(state.customItemEditor?.category_id))return;

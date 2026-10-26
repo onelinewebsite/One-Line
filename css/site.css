@@ -7336,12 +7336,13 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .catalogue-more-btn{border:1.5px solid var(--accent,#79218e);background:transparent;color:var(--accent,#79218e);border-radius:12px;padding:12px 22px;font-weight:700;font:inherit;cursor:pointer;max-width:100%}
 .catalogue-more-btn:focus-visible{outline:3px solid var(--accent,#79218e);outline-offset:3px}
 
-/* v208: Ready Stock Printable-only customer highlights. */
+/* v210: Ready Stock Printable Details as plain bullet points. Keep title size unchanged. */
 .ready-stock-highlights{margin:16px 0 20px;min-width:0}
 .ready-stock-highlights h2{margin:0 0 10px;font-size:15px;font-weight:800;line-height:1.3;color:inherit}
-.ready-stock-highlights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(136px,1fr));gap:9px}
-.ready-stock-highlight{min-width:0;display:flex;flex-direction:column;gap:5px;padding:12px 13px;border:1px solid #e9e1ec;border-radius:11px;background:#fcfafd;overflow-wrap:anywhere}
-.ready-stock-highlight-name{font-size:11px;color:#776a7c;font-weight:650;line-height:1.35}
-.ready-stock-highlight-value{font-size:13px;font-weight:800;color:#2c2031;line-height:1.4}
-@media(max-width:600px){.ready-stock-highlights-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ready-stock-highlight{padding:10px;min-height:68px}}
-@media(min-width:850px){.ready-stock-highlights-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.ready-stock-highlights-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;list-style:none;margin:0;padding:0}
+.ready-stock-highlight{position:relative;min-width:0;padding:0 0 0 16px;margin:0;border:0;border-radius:0;background:transparent;color:inherit;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+.ready-stock-highlight::before{content:'●';position:absolute;left:0;top:0;color:currentColor;font-size:9px;line-height:2.25}
+.ready-stock-highlight-name{font-size:inherit;font-weight:700;color:inherit}
+.ready-stock-highlight-value{font-size:inherit;font-weight:400;color:inherit}
+@media(min-width:650px){.ready-stock-highlights-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:1024px){.ready-stock-highlights-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
