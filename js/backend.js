@@ -272,14 +272,11 @@
       return decodeURIComponent(u.pathname.slice(i+marker.length));
     }catch(_){return'';}
   }
-  async function deleteImage(url){
-    const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');const path=storageObjectPath(url);if(!path)return false;
-    const {error}=await sb.storage.from(C.STORAGE_BUCKET||'product-images').remove([path]);if(error)throw error;return true;
-  }
-  async function deleteImages(urls){
-    const unique=[...new Set((urls||[]).map(String).filter(Boolean))];for(const url of unique){try{await deleteImage(url);}catch(err){console.warn('Image cleanup failed',err);}}
-    return true;
-  }
+  // Historical order_items keep their purchase-time image URLs. Removing a
+  // catalogue image from Storage would permanently break order history / PDFs.
+  // Remove image references from the catalogue only; retain the source file.
+  async function deleteImage(url){return false;}
+  async function deleteImages(urls){return true;}
   async function upsertCategory(row){const sb=supa();const payload={id:row.id||undefined,name:row.name,image_url:row.image||'',subtitle:row.sub||'',active:row.active!==false,sort_order:Number(row.sort_order||0)};const {data,error}=await sb.from('categories').upsert(payload).select().single();if(error)throw error;await hydrate({force:true});return data;}
   async function upsertProduct(p){
     const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');

@@ -1992,3 +1992,9 @@ html,body{background:#f6f2f7;color:#241c27}
 .editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-mrp]{grid-column:6!important;grid-row:1!important}
 .editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>[data-uniform-size-rate]{grid-column:7!important;grid-row:1!important}
 .editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>button{grid-column:8!important;grid-row:1!important}
+
+/* v212 - the orders panel uses the saved checkout image even after catalogue deletion. */
+.historical-order-mini{display:flex;align-items:center;gap:8px;margin-top:7px;min-width:0}
+.historical-order-mini img{width:34px;height:34px;object-fit:cover;border-radius:5px;flex:none}
+.historical-order-mini small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:245px}
+.historical-order-line-image{width:48px;height:48px;object-fit:cover;flex:none;border-radius:6px}
