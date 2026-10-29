@@ -86,9 +86,9 @@
     y+=2;write('TOTAL AMOUNT',6,y,true);write(amount(order.total),95,y,true,'right');
     doc.setDrawColor(180);doc.line(5,footerY,96.6,footerY);
     doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(56);
-    doc.text('FROM: One-Line Touch Shopping',50.8,116,{align:'center'});
-    doc.text('Omanoor PO, Parappalliyali, Malappuram Dt',50.8,120,{align:'center'});
-    doc.text('Kerala - India 673645  |  9562886916 / 9562886917',50.8,124,{align:'center'});
+    doc.text('FROM: One-Line Touch Shopping',96.6,116,{align:'right'});
+    doc.text('Omanoor PO, Parappalliyali, Malappuram Dt',96.6,120,{align:'right'});
+    doc.text('Kerala - India 673645  |  9562886916 / 9562886917',96.6,124,{align:'right'});
     return doc;
   };
 })();

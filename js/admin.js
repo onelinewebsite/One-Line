@@ -1,6 +1,7 @@
 (function(){
   "use strict";
-  const S=window.OneLineStore,B=window.OneLineBackend,root=document.getElementById('admin-app'),I=window.OneLineStore.icon;
+  const S=window.OneLineStore,B=window.OneLineBackend,I=window.OneLineStore.icon;
+  let root=document.getElementById('admin-app');
   const requested=(document.body.dataset.portalRole||'admin').toLowerCase();
   const esc=S.esc,money=S.money;
   const state={profile:null,view:'customCatalog',loading:true,error:'',toast:'',menu:false,products:[],categories:[],subcategories:[],orders:[],orderItems:[],activity:[],customers:[],customerAddresses:[],customerDataLoaded:false,customerDataLoading:false,customerDataError:'',carts:[],profiles:[],customCatalogCategories:[],customCatalogItems:[],customCatalogFabrics:[],customSportswearFabrics:[],customSportswearTypes:[],customPrintTypes:[],redeemCodes:[],enquiries:[],settings:S.getSettings?.()||{},customSchemaReady:true,sportswearSchemaReady:true,editor:null,editSections:{},editFields:{},categoryEditor:null,categoryType:'custom',customCategoryEditor:null,customItemEditor:null,query:'',orderQuery:'',orderFilter:'All',orderStatusFilter:'All',customerQuery:'',enquiryQuery:'',catalogEnquiryQuery:'',customCatalogQuery:'',customCatalogSearchOpen:false,customCatalogCategoryOpen:'',adminCatalogueShown:{},productCategoryFilter:'',staffStockMode:'sold',detailOrderId:'',detailEnquiryId:''};
@@ -186,6 +187,63 @@
     if(!roleOkay()){root.innerHTML=wrongPortal();bind();return;}
     if(state.loading){root.innerHTML=adminLoader('Loading live data');return;}
     root.innerHTML=shell();bind();renderToast();rememberPortalScreen();
+  }
+  // Search results update without replacing the focused input. Replacing root.innerHTML
+  // on every keystroke dismisses the mobile soft keyboard, even when focus is
+  // restored on the following animation frame.
+  function refreshSearchResults(searchId){
+    if(!root.querySelector('#'+searchId))return;
+    const nextRoot=document.createElement('div');
+    nextRoot.innerHTML=shell();
+    // Attach the existing actions to new result elements, not the live input.
+    // Their handlers still use the active portal root when clicked.
+    const currentRoot=root;
+    try{root=nextRoot;bind();}finally{root=currentRoot;}
+    const replace=selector=>{
+      const previous=currentRoot.querySelector(selector),next=nextRoot.querySelector(selector);
+      if(previous&&next)previous.replaceWith(next);
+      else if(previous&&!next)previous.remove();
+      return next;
+    };
+    if(searchId==='productSearch'){
+      replace('.admin-product-list');
+      const previous=currentRoot.querySelector('.ready-list-controls > span');
+      const next=nextRoot.querySelector('.ready-list-controls > span');
+      if(previous&&next)previous.textContent=next.textContent;
+    }else if(searchId==='customCatalogSearch'){
+      replace('.custom-catalog-category-items-view');
+    }else if(searchId==='customerSearch'){
+      replace('.customer-admin-list');
+      const previous=currentRoot.querySelector('.list-controls > span');
+      const next=nextRoot.querySelector('.list-controls > span');
+      if(previous&&next)previous.textContent=next.textContent;
+    }else if(searchId==='orderSearch'){
+      replace('.portal-summary-list');
+      replace('.order-result-count');
+    }else if(searchId==='enquirySearch'){
+      replace('.portal-summary-list');
+      const previous=currentRoot.querySelector('.list-controls > span');
+      const next=nextRoot.querySelector('.list-controls > span');
+      if(previous&&next)previous.textContent=next.textContent;
+    }else if(searchId==='stockSearch'){
+      const liveArea=currentRoot.querySelector('.staff-stock-search');
+      const nextArea=nextRoot.querySelector('.staff-stock-search');
+      if(liveArea&&nextArea){
+        const oldBadge=liveArea.querySelector('.staff-stock-results');
+        const newBadge=nextArea.querySelector('.staff-stock-results');
+        if(oldBadge)oldBadge.remove();
+        if(newBadge)liveArea.append(newBadge);
+        // Only replace the results and hint below the search row, never its input.
+        for(const selector of ['.staff-stock-list','.staff-search-hint']){
+          const oldNode=currentRoot.querySelector(selector);
+          if(oldNode)oldNode.remove();
+        }
+        const nextResults=nextRoot.querySelector('.staff-stock-list, .staff-search-hint');
+        if(nextResults)liveArea.insertAdjacentElement('afterend',nextResults);
+      }else{
+        replace('.stock-table');
+      }
+    }
   }
   function allowed(v){
     const r=requested;
@@ -1282,9 +1340,9 @@
     root.querySelectorAll('[data-clear-variant-image]').forEach(x=>x.addEventListener('click',async()=>{syncProductEditor();const i=Number(x.dataset.clearVariantImage),url=state.editor.variants[i]?.image||'',color=String(state.editor.variants[i]?.color||'').trim();if(!url)return;const affected=[];state.editor.variants.forEach((v,n)=>{if((state.editor.type==='Colour + Option'&&color&&String(v.color||'').trim().toLowerCase()===color.toLowerCase())||n===i){if(v.image===url){affected.push(n);v.image='';}}});if(state.editor.id){const ok=await persistProduct(false);if(!ok){affected.forEach(n=>{if(state.editor.variants[n])state.editor.variants[n].image=url;});render();return;}}else render();try{await removeOwnedImage(url);notify('Option image removed from website. Saved order images are retained.');}catch(err){notify(err.message||'Image reference removed, but storage cleanup failed.');}}));
     root.querySelectorAll('[data-action="delete-product"]').forEach(x=>x.addEventListener('click',async()=>{const p=state.products.find(v=>v.id===x.dataset.id);if(!p||!confirm('Delete '+p.name+'?'))return;const files=[...(p.images||[]),...(p.variants||[]).map(v=>v.image).filter(Boolean)];try{await B.deleteProduct(p.id);await B.deleteImages?.(files);state.editor=null;await loadAll();notify('Item removed from catalogue. Historical order images are retained.');}catch(e){notify(e.message||'Delete failed');}}));
     root.querySelector('#productCategoryFilter')?.addEventListener('change',e=>{state.productCategoryFilter=e.target.value;render();});
-    root.querySelector('#productSearch')?.addEventListener('input',e=>{state.query=e.target.value;render();requestAnimationFrame(()=>{const n=root.querySelector('#productSearch');n?.focus();if(n)try{n.setSelectionRange(n.value.length,n.value.length);}catch(_){}});});
-    root.querySelector('#stockSearch')?.addEventListener('input',e=>{state.query=e.target.value;const pos=e.target.selectionStart;render();requestAnimationFrame(()=>{const input=root.querySelector('#stockSearch');input?.focus();try{input?.setSelectionRange(pos,pos);}catch(_){}});});
-    root.querySelector('#customerSearch')?.addEventListener('input',e=>{state.customerQuery=e.target.value;render();requestAnimationFrame(()=>{const n=root.querySelector('#customerSearch');n?.focus();if(n)try{n.setSelectionRange(n.value.length,n.value.length);}catch(_){}});});
+    root.querySelector('#productSearch')?.addEventListener('input',e=>{state.query=e.target.value;refreshSearchResults('productSearch');});
+    root.querySelector('#stockSearch')?.addEventListener('input',e=>{state.query=e.target.value;refreshSearchResults('stockSearch');});
+    root.querySelector('#customerSearch')?.addEventListener('input',e=>{state.customerQuery=e.target.value;refreshSearchResults('customerSearch');});
     root.querySelectorAll('[data-stock-change]').forEach(x=>x.addEventListener('click',()=>{const amount=Math.max(1,Number(root.querySelector('[data-stock-amount="'+x.dataset.stockChange+'"]')?.value||1));adjustStock(x.dataset.stockChange,x.dataset.kind,amount*Number(x.dataset.sign));}));
     root.querySelector('[data-action="toggle-stock-mode"]')?.addEventListener('click',()=>{
       state.staffStockMode=state.staffStockMode==='sold'?'add':'sold';
@@ -1336,7 +1394,7 @@
     root.querySelector('[data-action="new-custom-item"]')?.addEventListener('click',()=>{if(!sectionCategories().length){state.categoryType=state.view==='readyMade'?'ready':'custom';state.editor=null;state.view='categories';render();notify('Add a Customizable category first.');return;}state.editor=null;const item=blankCustomItem(),openCategory=state.customCatalogCategories.find(c=>String(c.id)===String(state.customCatalogCategoryOpen||''));if(openCategory){item.category_id=openCategory.id;Object.assign(item,customItemDefaults(openCategory.id));const mode=categoryMode(openCategory);item.fabric_options=(['tshirt','jersey','printable'].includes(mode))?{selection_mode:'all',...(mode==='printable'?{sportswear_sizes:[]}:{})}:{uniform_config:defaultUniformConfig()};}state.customItemEditor=item;state.uniformOptionsOpen=false;state.editSections={};state.editFields={};render();});
     root.querySelectorAll('[data-action="edit-custom-item"]').forEach(x=>x.addEventListener('click',async()=>{const raw=state.customCatalogItems.find(v=>v.id===x.dataset.id);if(!raw)return;const editor={...structured(raw),images:[...(raw.images||[])]};try{await loadItemInternalFields(editor);}catch(err){notify(err.message||'Private details could not load.');return;}state.customCatalogCategoryOpen=String(raw.category_id||state.customCatalogCategoryOpen||'');state.customItemEditor=editor;state.uniformOptionsOpen=false;if(isTshirtCategory(raw.category_id)&&(raw.fabric_options==null||raw.fabric_options.uniform_config||Array.isArray(raw.fabric_options.types)))state.customItemEditor.fabric_options={selection_mode:'all'};if(isSportswearCategory(raw.category_id)&&(raw.fabric_options==null||raw.fabric_options.uniform_config))state.customItemEditor.fabric_options={selection_mode:'all'};state.editSections={};state.editFields={};render();}));
     root.querySelector('[data-action="toggle-custom-catalog-search"]')?.addEventListener('click',()=>{state.customCatalogSearchOpen=!state.customCatalogSearchOpen;if(!state.customCatalogSearchOpen)state.customCatalogQuery='';render();if(state.customCatalogSearchOpen)requestAnimationFrame(()=>root.querySelector('#customCatalogSearch')?.focus());});
-    root.querySelector('#customCatalogSearch')?.addEventListener('input',e=>{state.customCatalogQuery=e.target.value;render();requestAnimationFrame(()=>{const input=root.querySelector('#customCatalogSearch');input?.focus();if(input)try{input.setSelectionRange(input.value.length,input.value.length);}catch(_){}});});
+    root.querySelector('#customCatalogSearch')?.addEventListener('input',e=>{state.customCatalogQuery=e.target.value;refreshSearchResults('customCatalogSearch');});
     root.querySelectorAll('[data-action="close-custom-item"]').forEach(x=>x.addEventListener('click',e=>{e.preventDefault();backInsidePortal(()=>{state.customItemEditor=null;state.editFields={};render();});}));
     root.querySelector('#customItemEditor')?.addEventListener('submit',saveCustomItem);
     root.querySelectorAll('[data-internal-detail]').forEach(input=>input.addEventListener('input',()=>syncItemInternalFields()));
@@ -1421,7 +1479,7 @@
     root.querySelectorAll('[data-item-sports-type-enable]').forEach(x=>x.addEventListener('change',()=>{const id=String(x.dataset.itemSportsTypeEnable),opts=itemSportswearOptions(state.customItemEditor),types=new Set((opts.types||[]).map(String));if(x.checked)types.add(id);else types.delete(id);state.customItemEditor.fabric_options={...opts,selection_mode:'custom',types:[...types]};render();}));
     root.querySelectorAll('[data-item-sports-fabric-enable]').forEach(x=>x.addEventListener('change',()=>{const id=String(x.dataset.itemSportsFabricEnable),opts=itemSportswearOptions(state.customItemEditor),fabrics=structured(opts.fabrics||{});if(x.checked){const f=state.customSportswearFabrics.find(v=>String(v.id)===id);fabrics[id]=fabricQualities(f).map(([q])=>q);}else delete fabrics[id];state.customItemEditor.fabric_options={...opts,selection_mode:'custom',fabrics};render();}));
     root.querySelectorAll('[data-item-sports-fabric-quality]').forEach(x=>x.addEventListener('change',syncItemSportswearSelections));
-    root.querySelector('#enquirySearch')?.addEventListener('input',e=>{const key=e.target.dataset.enquiryKind==='catalogue'?'catalogEnquiryQuery':'enquiryQuery';state[key]=e.target.value;render();requestAnimationFrame(()=>{const n=root.querySelector('#enquirySearch');n?.focus();if(n)try{n.setSelectionRange(n.value.length,n.value.length);}catch(_){}});});
+    root.querySelector('#enquirySearch')?.addEventListener('input',e=>{const key=e.target.dataset.enquiryKind==='catalogue'?'catalogEnquiryQuery':'enquiryQuery';state[key]=e.target.value;refreshSearchResults('enquirySearch');});
     root.querySelectorAll('[data-open-enquiry]').forEach(el=>el.addEventListener('click',ev=>{if(ev.target.closest('button,select,input,a'))return;state.detailEnquiryId=el.dataset.openEnquiry;render();}));
     root.querySelectorAll('[data-open-enquiry].summary-open').forEach(el=>el.addEventListener('click',ev=>{ev.stopPropagation();state.detailEnquiryId=el.dataset.openEnquiry;render();}));
     root.querySelectorAll('[data-open-order]').forEach(el=>el.addEventListener('click',ev=>{if(ev.target.closest('button,select,input,a'))return;state.detailOrderId=el.dataset.openOrder;render();}));
@@ -1452,7 +1510,7 @@
     root.querySelectorAll('[data-custom-final-download]').forEach(btn=>btn.addEventListener('click',async()=>{const found=teamOrderLineByIds(btn.dataset.customFinalDownload,btn.dataset.lineId),d=found.line?.design_json||{},side=btn.dataset.customSide||'front',src=await renderStoredCustomSide(d,side)||customFinalSource(d,side);if(!src){notify('Final ordered item image not found.');return;}btn.disabled=true;try{downloadBlob(await sourceBlob(src),side+'-final-ordered-item.webp');notify('Final ordered item image downloaded.');}catch(err){notify(err.message||'Could not download final image');}finally{btn.disabled=false;}}));
     root.querySelectorAll('[data-custom-layer-download]').forEach(btn=>btn.addEventListener('click',async()=>{const found=teamOrderLineByIds(btn.dataset.customLayerDownload,btn.dataset.lineId),d=found.line?.design_json||{},sideName=btn.dataset.customSide||'front',surface=d.surfaceDesigns?.[sideName]||{},index=Number(btn.dataset.customLayerIndex),layer=(surface.layers||[])[index],src=customLayerSource(layer);if(!src){notify('Customer image file not found.');return;}btn.disabled=true;try{downloadBlob(await sourceBlob(src),customLayerDownloadName(layer,sideName,index));notify('Customer image downloaded.');}catch(err){notify(err.message||'Could not download customer image');}finally{btn.disabled=false;}}));
 
-    root.querySelector('#orderSearch')?.addEventListener('input',e=>{state.orderQuery=e.target.value;render();requestAnimationFrame(()=>root.querySelector('#orderSearch')?.focus());});
+    root.querySelector('#orderSearch')?.addEventListener('input',e=>{state.orderQuery=e.target.value;refreshSearchResults('orderSearch');});
     root.querySelectorAll('[data-order-filter]').forEach(x=>x.addEventListener('click',()=>{state.orderFilter=x.dataset.orderFilter;state.orderStatusFilter='All';state.detailOrderId='';state.detailEnquiryId='';render();}));
     root.querySelectorAll('[data-order-status-filter]').forEach(x=>x.addEventListener('click',()=>{state.orderStatusFilter=x.dataset.orderStatusFilter;render();}));
     root.querySelectorAll('[data-order-phone-toggle]').forEach(button=>button.addEventListener('click',()=>{

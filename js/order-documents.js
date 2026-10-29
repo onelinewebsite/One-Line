@@ -1,4 +1,4 @@
-/* v213: Branded One-Line A4 order summary; separate courier 4x6 shipping label.
+/* v214: Screenshot-style simple One-Line A4 order summary; separate courier 4x6 shipping label.
    PDFs use saved order data; the A4 order summary embeds the business logo and saved item photos where available. */
 (function(){
 'use strict';
@@ -59,29 +59,28 @@ async function documentImage(src){
 // Saved item images are displayed where available; no stale product lookup is needed.
 window.OneLineCustomerPdf=async function(order,items){
  const doc=jsPdf('a4'),rows=linesFor(order,items),recipient=details(order),code=orderCode(order);
- const L=8,R=202,ink=[25,25,25],brand=[100,17,111],brandDeep=[63,8,73],muted=[104,92,107],shade=[247,240,249],pageBottom=267;
+ const L=8,R=202,ink=[25,25,25],brand=[100,17,111],brandDeep=[63,8,73],muted=[76,76,76],shade=[240,234,242],pageBottom=267;
  // This is the same official logo the One-Line website uses in its header.
  // A missing image must not prevent a customer or staff member downloading an order.
  const businessLogo=await documentImage('/one-line-logo.webp');
  let y=13;
  const dark=()=>{doc.setTextColor(...ink);doc.setFont('helvetica','normal');};
  const divider=(top)=>{doc.setDrawColor(205,205,205);doc.setLineWidth(.25);doc.line(L,top,R,top);};
- const section=(label)=>{doc.setFillColor(...shade);doc.rect(L,y-4,R-L,6.8,'F');doc.setFillColor(...brand);doc.rect(L,y-4,1.3,6.8,'F');doc.setTextColor(...brandDeep);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(label,L+3.2,y+.5);y+=10;};
+ const section=(label)=>{doc.setFillColor(...shade);doc.rect(L,y-4,R-L,6.8,'F');doc.setTextColor(...ink);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(label,L+1,y+.5);y+=10;};
  const textRows=(value,width,size=9,bold=false)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);return doc.splitTextToSize(clean(value)||'-',width);};
  const printRows=(value,x,width,size=9,bold=false,lineHeight=4.2)=>{
   const lines=textRows(value,width,size,bold);dark();doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);
   for(const line of lines){if(y+lineHeight>pageBottom)nextPage(false);doc.text(line,x,y);y+=lineHeight;}
  };
  const header=first=>{
-  // Keep the logo and One-Line purple header visible on every A4 page.
-  doc.setFillColor(...brand);doc.rect(0,0,210,3,'F');
+  // Match the supplied simple order-slip reference: logo, title, divider,
+  // order details, muted section rows, and a fixed merchant address footer.
   if(businessLogo){const side=18;doc.addImage(businessLogo.data,'JPEG',L,8,side,side);}
   const brandX=businessLogo?29:L;
-  doc.setTextColor(...brandDeep);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('ONE-LINE',brandX,15.4);
-  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('TOUCH SHOPPING',brandX,21);
-  doc.setTextColor(...brand);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('ORDER SUMMARY',R,17,{align:'right'});
-  doc.setDrawColor(...brand);doc.setLineWidth(.5);doc.line(L,29,R,29);
-  doc.setTextColor(...ink);doc.setFont('helvetica','bold');doc.setFontSize(first?12:10);
+  doc.setTextColor(...ink);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('One Line',brandX,15.4);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('Touch Shopping',brandX,21);
+  doc.setDrawColor(180,180,180);doc.setLineWidth(.3);doc.line(L,29,R,29);
+  doc.setFont('helvetica','bold');doc.setFontSize(first?12:10);
   doc.text('ORDER #'+code+(first?'':'  (continued)'),L,37);
   y=42;
   if(first){doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('Ordered: '+fmtDate(order),L,y);y+=10;}
@@ -96,7 +95,7 @@ window.OneLineCustomerPdf=async function(order,items){
  const address=clean(recipient.address||order.address||'');if(address)printRows(address,L,190,9,false,4.5);
  y+=5;ensure(15);
  const tableHeader=()=>{
-  doc.setFillColor(...brand);doc.rect(L,y-4,R-L,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(255,255,255);
+  doc.setFillColor(...shade);doc.rect(L,y-4,R-L,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...ink);
   doc.text('ITEM / VARIANT / SIZE',L+1,y+.5);doc.text('QTY',145,y+.5,{align:'center'});doc.text('RATE',173,y+.5,{align:'right'});doc.text('AMOUNT',R-1,y+.5,{align:'right'});y+=8;
  };
  tableHeader();
@@ -124,14 +123,12 @@ window.OneLineCustomerPdf=async function(order,items){
   y=start+rowH;divider(y-1);y+=2;
  }
  ensure(17);y+=4;
- doc.setFillColor(...shade);doc.rect(L,y-4,R-L,10,'F');
- doc.setFillColor(...brand);doc.rect(L,y-4,1.3,10,'F');
- doc.setTextColor(...brandDeep);doc.setFont('helvetica','bold');doc.setFontSize(11);
+ doc.setTextColor(...ink);doc.setFont('helvetica','bold');doc.setFontSize(11);
  doc.text('TOTAL AMOUNT',L+1,y+2.5);doc.text(cash(order.total),R-1,y+2.5,{align:'right'});
  // Fixed address footer at lower right of each sheet, independent of the item count.
  for(let page=1,pages=doc.getNumberOfPages();page<=pages;page++){
-  doc.setPage(page);doc.setDrawColor(...brand);doc.setLineWidth(.4);doc.line(L,273,R,273);
-  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...brandDeep);
+  doc.setPage(page);doc.setDrawColor(180,180,180);doc.setLineWidth(.3);doc.line(L,273,R,273);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...ink);
   doc.text('FROM: One-Line Touch Shopping',R,279,{align:'right'});
   doc.setFont('helvetica','normal');doc.setTextColor(...muted);
   doc.text('Omanoor PO, Parappalliyali, Malappuram Dt',R,284,{align:'right'});
