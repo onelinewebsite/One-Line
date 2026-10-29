@@ -1,4 +1,4 @@
-/* v214: Screenshot-style simple One-Line A4 order summary; separate courier 4x6 shipping label.
+/* v215: Screenshot-style readable One-Line A4 order summary; separate courier 4x6 shipping label.
    PDFs use saved order data; the A4 order summary embeds the business logo and saved item photos where available. */
 (function(){
 'use strict';
@@ -7,31 +7,60 @@ const cash=v=>'INR '+Number(v||0).toFixed(2);
 const orderCode=o=>clean(o.order_code||o.orderCode||o.id||'');
 const details=o=>o.metadata?.deliveryRecipient||{};
 const fmtDate=o=>{const s=o.created_at||o.createdAt||o.time||'';const d=new Date(s);return Number.isFinite(d.getTime())?d.toLocaleString('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'medium',timeStyle:'short'})+' IST':clean(s);};
+// Keep ordered sizes, colours and variants once per line. Old order rows can
+// contain the same size both in item.size and in design.sizeQuantities.
 function linesFor(order,items){
  const lines=[];
+ const sizeEntries=source=>Object.entries(source||{}).filter(([size,qty])=>clean(size)&&Number(qty)>0);
+ const sizeKey=v=>clean(v).toLowerCase().replace(/\s+/g,' ').trim();
+ const asSizeText=(name,qty)=>clean(name)+' x '+Number(qty);
  for(const item of items||[]){
-  const d=item.design_json||item.design||item.uniformOrder||{},name=clean(item.item_name||item.name||'Item'),type=clean(item.item_type||item.itemType||'product'),qty=Number(item.qty??item.quantity??1),rate=Number(item.unit_price??item.price??0);
+  const d=item.design_json||item.design||item.uniformOrder||{};
+  const name=clean(item.item_name||item.name||'Item'),type=clean(item.item_type||item.itemType||'product');
+  const qty=Number(item.qty??item.quantity??1),rate=Number(item.unit_price??item.price??0);
   const sourceImages=Array.isArray(d.selectedItems)?d.selectedItems.flatMap(v=>Array.isArray(v.images)?v.images:[]):[];
   const picture=sourceImages.find(Boolean)||(Array.isArray(d.images)?d.images.find(Boolean):'')||d.cardImage||d.image||d.frontCompositeUrl||d.design?.front?.compositeUrl||d.front?.compositeUrl||item.image||'';
-  const entry={name,code:clean(item.item_code||item.code||''),type,qty,rate,total:Number(item.line_total??item.total??qty*rate),image:picture,notes:[]};
-  const note=v=>{if(clean(v))entry.notes.push(clean(v));};
-  note([d.garmentTypeName,d.fabricName,d.quality].filter(Boolean).join(' / '));
-  if(d.garmentColor)note('Colour: '+d.garmentColor);
-  const sizes=Array.isArray(d.jerseySizes)?d.jerseySizes:Array.isArray(d.printableSizes)?d.printableSizes:[];
-  if(sizes.length)note('Sizes: '+sizes.filter(z=>Number(z.qty)>0).map(z=>z.size+' x '+z.qty+(z.rate!==undefined?' @ '+cash(z.rate):'')).join(', '));
-  else if(d.sizeQuantities&&typeof d.sizeQuantities==='object')note('Sizes: '+Object.entries(d.sizeQuantities).filter(([,v])=>Number(v)>0).map(([k,v])=>k+' x '+v).join(', '));
-  if(Array.isArray(d.selectedItems))for(const variant of d.selectedItems){
-   note('Variant: '+[variant.name,variant.code||variant.displayId].filter(Boolean).join(' / '));
-   note('Sizes: '+Object.entries(variant.sizeQuantities||{}).filter(([,v])=>Number(v)>0).map(([k,v])=>k+' x '+v).join(', '));
-  }
+  const code=clean(item.item_code||item.code||'');
+  // Some existing names already include their model/item code (e.g. Socks #85).
+  const codeAlreadyInName=code&&new RegExp('(?:^|[^a-z0-9])#?'+code.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?:$|[^a-z0-9])','i').test(name);
+  const entry={name,code:codeAlreadyInName?'':code,type,qty,rate,total:Number(item.line_total??item.total??qty*rate),image:picture,notes:[]};
+  const seen=new Set();
+  const note=value=>{const v=clean(value);if(v&&!seen.has(v.toLowerCase())){seen.add(v.toLowerCase());entry.notes.push(v);}};
+  const colour=clean(item.color||d.garmentColor||'');
+  const baseSize=clean(item.size||'');
+  const selected=Array.isArray(d.selectedItems)?d.selectedItems.filter(Boolean):[];
+  const sized=Array.isArray(d.jerseySizes)?d.jerseySizes:Array.isArray(d.printableSizes)?d.printableSizes:[];
+  const explicitSizes=sized.filter(row=>clean(row?.size)&&Number(row?.qty)>0).map(row=>[clean(row.size),Number(row.qty)]);
+  const aggregateSizes=sizeEntries(d.sizeQuantities);
+  const variantSizes=selected.flatMap(v=>sizeEntries(v.sizeQuantities));
+  // Prefer the size-specific details for special orders, but avoid showing the
+  // aggregate and per-variant size sets together (the latter is authoritative).
+  // Match the reference's compact 'Item / Colour / Size' table entry.
+  const primarySizes=explicitSizes.length?explicitSizes:aggregateSizes;
+  const inlineSize=!selected.length&&primarySizes.length===1&&primarySizes[0][1]===qty
+   ?primarySizes[0][0]:!selected.length&&!primarySizes.length?baseSize:'';
+  entry.name=[name,colour,inlineSize].filter((part,index,parts)=>part&&parts.findIndex(x=>sizeKey(x)===sizeKey(part))===index).join(' / ');
+  if(selected.length){
+   for(const v of selected){
+    const label=clean(v.name||v.detailTitle||'');
+    const parts=sizeEntries(v.sizeQuantities).map(([size,count])=>asSizeText(size,count));
+    const context=label&&sizeKey(label)!==sizeKey(name)?label:'';
+    if(parts.length)note([context,parts.join(', ')].filter(Boolean).join(' - '));
+    else if(context)note(context);
+   }
+   if(!variantSizes.length&&baseSize)note('Size: '+baseSize);
+  }else if(primarySizes.length){
+   // The QTY column already covers a single chosen size.
+   if(!inlineSize)note('Sizes: '+primarySizes.map(([size,count])=>asSizeText(size,count)).join(', '));
+  }else if(baseSize&&!inlineSize)note('Size: '+baseSize);
+  const extras=[d.garmentTypeName,d.fabricName,d.quality].map(clean).filter(Boolean);
+  if(extras.length)note(extras.join(' / '));
   if(Array.isArray(d.selectedPrints)&&d.selectedPrints.length){
-   note('On every garment: '+d.selectedPrints.map(x=>[x.name,x.sizeLabel||x.size,'x '+x.qty].filter(Boolean).join(' / ')).join('; '));
-   if(d.printsPerGarment!==undefined)note('Printing: '+cash(d.printsPerGarment)+' per garment x '+Number(d.totalPieces||qty)+' garments = '+cash(d.printsTotal));
-  }else if(d.includePrinting===false)note('No printing');
+   note('Printing: '+d.selectedPrints.map(x=>[x.name,x.sizeLabel||x.size,'x '+x.qty].filter(Boolean).join(' / ')).join('; '));
+  }
   if(d.printType||d.printTypeName)note('Print: '+(d.printTypeName||d.printType));
   if(d.materialQuality)note('Cloth: '+d.materialQuality);
   if(d.roster?.length)note('Players: '+d.roster.map(r=>[r.name,r.number,r.size].filter(Boolean).join('/')).join(', '));
-  if(item.color||item.size)note([item.color,item.size].filter(Boolean).join(' / '));
   if(d.detailTitle||d.detailDescription)note([d.detailTitle,d.detailDescription].filter(Boolean).join(': '));
   lines.push(entry);
  }
@@ -55,85 +84,88 @@ async function documentImage(src){
   return {data:canvas.toDataURL('image/jpeg',.83),w:canvas.width,h:canvas.height};
  }catch(_){return null;}
 }
-// v212: Simple A4 order record based only on saved order_items (not live catalogue).
-// Saved item images are displayed where available; no stale product lookup is needed.
+// v215: Readable A4 order format matching the supplied example. Use saved order
+// data only; retain historical item photos and right-aligned merchant footer.
 window.OneLineCustomerPdf=async function(order,items){
  const doc=jsPdf('a4'),rows=linesFor(order,items),recipient=details(order),code=orderCode(order);
- const L=8,R=202,ink=[25,25,25],brand=[100,17,111],brandDeep=[63,8,73],muted=[76,76,76],shade=[240,234,242],pageBottom=267;
- // This is the same official logo the One-Line website uses in its header.
- // A missing image must not prevent a customer or staff member downloading an order.
+ const L=11,R=199,ink=[24,24,24],muted=[72,72,72],shade=[240,235,242],pageBottom=262;
  const businessLogo=await documentImage('/one-line-logo.webp');
- let y=13;
+ let y=12,tableStarted=false;
  const dark=()=>{doc.setTextColor(...ink);doc.setFont('helvetica','normal');};
- const divider=(top)=>{doc.setDrawColor(205,205,205);doc.setLineWidth(.25);doc.line(L,top,R,top);};
- const section=(label)=>{doc.setFillColor(...shade);doc.rect(L,y-4,R-L,6.8,'F');doc.setTextColor(...ink);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(label,L+1,y+.5);y+=10;};
- const textRows=(value,width,size=9,bold=false)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);return doc.splitTextToSize(clean(value)||'-',width);};
- const printRows=(value,x,width,size=9,bold=false,lineHeight=4.2)=>{
-  const lines=textRows(value,width,size,bold);dark();doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);
-  for(const line of lines){if(y+lineHeight>pageBottom)nextPage(false);doc.text(line,x,y);y+=lineHeight;}
+ const rule=(at)=>{doc.setDrawColor(197,197,197);doc.setLineWidth(.27);doc.line(L,at,R,at);};
+ const wrapped=(value,width,size=10,bold=false)=>{
+  doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);
+  return doc.splitTextToSize(clean(value)||'-',width);
  };
  const header=first=>{
-  // Match the supplied simple order-slip reference: logo, title, divider,
-  // order details, muted section rows, and a fixed merchant address footer.
-  if(businessLogo){const side=18;doc.addImage(businessLogo.data,'JPEG',L,8,side,side);}
-  const brandX=businessLogo?29:L;
-  doc.setTextColor(...ink);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('One Line',brandX,15.4);
-  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('Touch Shopping',brandX,21);
-  doc.setDrawColor(180,180,180);doc.setLineWidth(.3);doc.line(L,29,R,29);
-  doc.setFont('helvetica','bold');doc.setFontSize(first?12:10);
-  doc.text('ORDER #'+code+(first?'':'  (continued)'),L,37);
-  y=42;
-  if(first){doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('Ordered: '+fmtDate(order),L,y);y+=10;}
-  else y+=8;
+  if(businessLogo){const side=21;doc.addImage(businessLogo.data,'JPEG',L,9,side,side);}
+  const tx=businessLogo?43:L;
+  dark();doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('One Line',tx,19.5);
+  doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.text('Touch Shopping',tx,27);
+  rule(35);
+  doc.setFont('helvetica','bold');doc.setFontSize(12.5);
+  doc.text('ORDER #'+code+(first?'':' (continued)'),L+1,43);
+  y=50;
+  if(first){doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.text('Ordered: '+fmtDate(order),L+1,50);y=59;}
+  else y=56;
  };
- const nextPage=(showHeader=true)=>{doc.addPage();y=13;if(showHeader)header(false);};
- const ensure=h=>{if(y+h>pageBottom)nextPage();};
+ const tableHeader=()=>{
+  doc.setFillColor(...shade);doc.rect(L,y-4.9,R-L,8.7,'F');dark();doc.setFont('helvetica','bold');doc.setFontSize(10.2);
+  doc.text('ITEM / VARIANT / SIZE',L+2,y+.7);
+  doc.text('QTY',135,y+.7,{align:'center'});
+  doc.text('RATE',164,y+.7,{align:'right'});
+  doc.text('AMOUNT',R-2,y+.7,{align:'right'});
+  y+=10;tableStarted=true;
+ };
+ const nextPage=()=>{doc.addPage();header(false);if(tableStarted)tableHeader();};
+ const ensure=height=>{if(y+height>pageBottom)nextPage();};
+ const section=label=>{
+  ensure(14);doc.setFillColor(...shade);doc.rect(L,y-4.8,R-L,8.5,'F');
+  dark();doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text(label,L+2,y+.7);y+=12;
+ };
+ const printText=(value,{bold=false,size=10.7,step=5.5}={})=>{
+  const lines=wrapped(value,R-L-5,size,bold);doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);
+  for(const line of lines){ensure(step+1);dark();doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.text(line,L+2,y);y+=step;}
+ };
  header(true);
  section('DELIVER TO');
- printRows(recipient.name||order.customer_name||order.customer||'Customer',L,190,10,true,5);
- const phone=clean(recipient.phone||order.phone||'');if(phone)printRows('Phone: '+phone,L,190,9,false,4.5);
- const address=clean(recipient.address||order.address||'');if(address)printRows(address,L,190,9,false,4.5);
- y+=5;ensure(15);
- const tableHeader=()=>{
-  doc.setFillColor(...shade);doc.rect(L,y-4,R-L,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...ink);
-  doc.text('ITEM / VARIANT / SIZE',L+1,y+.5);doc.text('QTY',145,y+.5,{align:'center'});doc.text('RATE',173,y+.5,{align:'right'});doc.text('AMOUNT',R-1,y+.5,{align:'right'});y+=8;
- };
- tableHeader();
+ printText(recipient.name||order.customer_name||order.customer||'Customer',{bold:true,size:11.5,step:6});
+ const phone=clean(recipient.phone||order.phone||'');if(phone)printText('Phone: '+phone);
+ const address=clean(recipient.address||order.address||'');if(address)printText(address);
+ y+=6;ensure(18);tableHeader();
  for(const row of rows){
-  // A single photograph per ordered line makes deleted products identifiable in the PDF.
-  const photo=await documentImage(row.image),photoW=photo?17:0;
-  const nameX=L+(photo?20:1),nameWidth=(photo?112:131)-nameX;
-  const title=[row.name,row.code?('#'+row.code):''].filter(Boolean).join(' ');
-  const titleLines=textRows(title,nameWidth,8.5);
-  const noteLines=row.notes.flatMap(note=>textRows(note,nameWidth,8));
-  const infoH=titleLines.length*4.1+noteLines.length*3.7+2;
-  const rowH=Math.max(photo?20:0,infoH,8)+3;
+  const photo=await documentImage(row.image);
+  const photoW=photo?17:0,nameX=L+2+(photo?20:0),nameWidth=123-nameX;
+  const title=[row.name,row.code?'#'+row.code:''].filter(Boolean).join(' ');
+  const titleLines=wrapped(title,nameWidth,10.3,true);
+  const noteLines=row.notes.flatMap(note=>wrapped(note,nameWidth,9.5,false));
+  const titleHeight=titleLines.length*5.3,noteHeight=noteLines.length*4.9;
+  const rowH=Math.max(photo?19:0,titleHeight+noteHeight+2,9)+5;
   ensure(rowH+1);
-  const start=y;
-  if(photo){const scale=Math.min(17/photo.w,17/photo.h);const w=photo.w*scale,h=photo.h*scale;doc.addImage(photo.data,'JPEG',L+1,start+1+(17-h)/2,w,h);}
-  dark();doc.setFontSize(8.5);doc.setFont('helvetica','normal');
-  let lineY=start+4;
-  doc.setFont('helvetica','bold');for(const line of titleLines){doc.text(line,nameX,lineY);lineY+=4.1;}
-  doc.setFont('helvetica','normal');doc.setFontSize(7.7);
-  for(const line of noteLines){doc.text(line,nameX,lineY);lineY+=3.7;}
-  doc.setFont('helvetica','normal');doc.setFontSize(8.5);
-  doc.text(String(row.qty),145,start+4,{align:'center'});
-  doc.text(cash(row.rate),173,start+4,{align:'right'});
-  doc.text(cash(row.total),R-1,start+4,{align:'right'});
-  y=start+rowH;divider(y-1);y+=2;
+  const start=y;let lineY=start+4.9;
+  if(photo){const scale=Math.min(17/photo.w,17/photo.h),w=photo.w*scale,h=photo.h*scale;doc.addImage(photo.data,'JPEG',L+2,start+2+(17-h)/2,w,h);}
+  dark();doc.setFont('helvetica','bold');doc.setFontSize(10.3);
+  for(const line of titleLines){doc.text(line,nameX,lineY);lineY+=5.3;}
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);
+  for(const line of noteLines){doc.text(line,nameX,lineY);lineY+=4.9;}
+  doc.setFontSize(10.2);
+  doc.text(String(row.qty),135,start+4.9,{align:'center'});
+  doc.text(cash(row.rate),164,start+4.9,{align:'right'});
+  doc.text(cash(row.total),R-2,start+4.9,{align:'right'});
+  y=start+rowH;rule(y-1.5);y+=2;
  }
- ensure(17);y+=4;
- doc.setTextColor(...ink);doc.setFont('helvetica','bold');doc.setFontSize(11);
- doc.text('TOTAL AMOUNT',L+1,y+2.5);doc.text(cash(order.total),R-1,y+2.5,{align:'right'});
- // Fixed address footer at lower right of each sheet, independent of the item count.
- for(let page=1,pages=doc.getNumberOfPages();page<=pages;page++){
-  doc.setPage(page);doc.setDrawColor(180,180,180);doc.setLineWidth(.3);doc.line(L,273,R,273);
-  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...ink);
-  doc.text('FROM: One-Line Touch Shopping',R,279,{align:'right'});
-  doc.setFont('helvetica','normal');doc.setTextColor(...muted);
+ ensure(17);y+=5;dark();doc.setFont('helvetica','bold');doc.setFontSize(12);
+ doc.text('TOTAL AMOUNT',L+2,y+1);doc.text(cash(order.total),R-2,y+1,{align:'right'});
+ // Keep merchant contact fixed at the bottom right; never center it.
+ const count=doc.getNumberOfPages();
+ for(let page=1;page<=count;page++){
+  doc.setPage(page);rule(271);
+  dark();doc.setFont('helvetica','normal');doc.setFontSize(8.6);
+  doc.text('FROM: One-Line Touch Shopping',R,278,{align:'right'});
+  doc.setTextColor(...muted);
   doc.text('Omanoor PO, Parappalliyali, Malappuram Dt',R,284,{align:'right'});
-  doc.text('Kerala - India 673645  |  9562886916 / 9562886917',R,289,{align:'right'});
-  if(pages>1){doc.setFontSize(7);doc.text(page+' / '+pages,L,289);}
+  doc.text('Kerala - India 673645  |  9562886916 / 9562886917',R,290,{align:'right'});
+  if(count>1){doc.setFontSize(8);doc.text(page+' / '+count,L,290);}
  }
  return doc;
 };
