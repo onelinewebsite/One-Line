@@ -69,7 +69,7 @@
     for(const variant of variants){const key=String(variant.product_id),group=variantsByProduct.get(key);if(group)group.push(variant);else variantsByProduct.set(key,[variant]);}
     const catMap=new Map(cats.map(c=>[c.id,c])),subMap=new Map(subs.map(s=>[s.id,s]));
     const products=(data.products||[]).filter(p=>includeInactive||p.active!==false).map(p=>{
-      const vv=(variantsByProduct.get(String(p.id))||[]).filter(v=>includeInactive||v.active!==false);
+      const vv=(variantsByProduct.get(String(p.id))||[]).filter(v=>includeInactive||v.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.created_at||'').localeCompare(String(b.created_at||''))||String(a.id||'').localeCompare(String(b.id||'')));
       const cat=catMap.get(p.category_id),sub=subMap.get(p.subcategory_id);
       const colors=values(vv,'color'),sizes=values(vv,'size');
       const colorVariants=colors.map(color=>{const rows=vv.filter(v=>v.color===color);return{color,image:rows.find(v=>v.image_url)?.image_url||'',sizes:values(rows,'size')};});
@@ -282,7 +282,7 @@
     const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');
     const base={id:p.id||undefined,code:p.code||p.sku||'',barcode:p.barcode||null,name:p.name||'',description:p.description||'',category_id:p.categoryId||null,subcategory_id:p.subcategoryId||null,price:Number(p.price||0),mrp:Number(p.mrp||0),product_type:p.type||'Simple',option_title:p.optionTitle||'Size',images:p.images?.length?p.images:[p.image].filter(Boolean),card_image_url:p.cardImage||null,active:p.active!==false,customer_visible:true,ask_for_price:!!p.askForPrice,stock:Number(p.stock||0)};
     const {data,error}=await sb.from('products').upsert(base).select().single();if(error)throw error;
-    if(Array.isArray(p.variants)){const removed=await sb.from('product_variants').delete().eq('product_id',data.id);if(removed.error)throw removed.error;if(p.variants.length){const rows=p.variants.map(v=>({product_id:data.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??p.price??0),mrp:v.mrp===null||v.mrp===undefined||v.mrp===''?null:Number(v.mrp),barcode:v.barcode||null,image_url:v.image||'',active:v.active!==false}));const r=await sb.from('product_variants').insert(rows);if(r.error)throw r.error;}}
+    if(Array.isArray(p.variants)){const removed=await sb.from('product_variants').delete().eq('product_id',data.id);if(removed.error)throw removed.error;if(p.variants.length){const rows=p.variants.map((v,index)=>({product_id:data.id,color:v.color||'',size:v.size||'',stock:Number(v.stock||0),price:Number(v.price??p.price??0),mrp:v.mrp===null||v.mrp===undefined||v.mrp===''?null:Number(v.mrp),barcode:v.barcode||null,image_url:v.image||'',active:v.active!==false,sort_order:index}));const r=await sb.from('product_variants').insert(rows);if(r.error)throw r.error;}}
     await hydrate({force:true});return data;
   }
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate({force:true});}

@@ -1998,3 +1998,22 @@ html,body{background:#f6f2f7;color:#241c27}
 .historical-order-mini img{width:34px;height:34px;object-fit:cover;border-radius:5px;flex:none}
 .historical-order-mini small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:245px}
 .historical-order-line-image{width:48px;height:48px;object-fit:cover;flex:none;border-radius:6px}
+
+/* v216 — size ordering for Admin and Management; keep the existing fields and layout. */
+.admin-size-row-actions,.admin-option-move{display:flex;align-items:center;justify-content:flex-end;gap:3px;min-width:0;white-space:nowrap}
+.admin-size-row-actions>button,.admin-option-move>.size-order-arrow{display:grid;place-items:center;flex:0 0 23px;width:23px;height:28px;min-width:0;margin:0;padding:0;border:1px solid #e1cfe5;border-radius:6px;background:#fff;color:#64116f;font-size:15px;font-weight:800;line-height:1;cursor:pointer;transition:background .12s}
+.admin-size-row-actions>button:hover:not(:disabled),.admin-option-move>.size-order-arrow:hover:not(:disabled){background:#f9edfc}
+.admin-size-row-actions>button:disabled,.admin-option-move>.size-order-arrow:disabled{opacity:.28;cursor:default}
+.admin-size-row-actions>button[data-remove-jersey-size],.admin-size-row-actions>button[data-uniform-remove-size]{color:#b32d4f;background:#fff4f5;border-color:#f3cbd5}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle),.editor-page .uniform-size-columns{grid-template-columns:minmax(65px,1fr) minmax(70px,1fr) minmax(70px,1fr) minmax(70px,1fr) minmax(70px,1fr) minmax(70px,1fr) minmax(80px,1fr) 82px!important;min-width:760px!important}
+.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle),.editor-page.classic-v203-item-editor .uniform-size-columns{grid-template-columns:minmax(50px,1fr) minmax(42px,.8fr) minmax(76px,.88fr) minmax(48px,.85fr) minmax(48px,.85fr) minmax(63px,1fr) minmax(65px,1fr) 82px!important;min-width:625px!important}
+.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle)>.admin-size-row-actions{grid-column:8!important;grid-row:1!important;justify-self:end!important}
+.editor-page .ready-stock-inline-size,.editor-page .ready-stock-inline-size:has([data-jersey-size-stock]){grid-template-columns:minmax(74px,1fr) minmax(78px,1fr) minmax(78px,1fr) minmax(88px,1.05fr) minmax(88px,1.05fr) minmax(82px,.9fr) minmax(90px,.9fr) 82px!important;min-width:815px!important}
+.editor-page .ready-stock-inline-size>.admin-size-row-actions{grid-column:8!important;grid-row:1!important;align-self:end!important;justify-self:end!important}
+.editor-page .ready-stock-inline-size .ready-stock-size-remove{position:static!important;top:auto!important;right:auto!important;transform:none!important;display:grid!important;place-items:center!important;min-width:23px!important;width:23px!important;height:28px!important;padding:0!important;margin:0!important;border-radius:6px!important}
+.editor-page .ready-stock-inline-size .ready-stock-size-remove>span{display:block!important;width:auto!important;height:auto!important;line-height:1!important;font-size:18px!important;transform:none!important}
+.editor-page .jersey-admin-size-row:not(.ready-stock-inline-size){grid-template-columns:repeat(5,minmax(110px,1fr)) 82px!important}
+.editor-page .jersey-admin-size-row:not(.ready-stock-inline-size)>.admin-size-row-actions{grid-column:-2/-1;align-self:end;justify-self:end}
+.editor-page .enhanced-variant-title .admin-option-move{gap:5px}
+.editor-page .enhanced-variant-title .admin-option-move>button[data-remove-variant]{flex:0 0 auto}
+@media(max-width:800px){.editor-page .jersey-admin-size-row:not(.ready-stock-inline-size){min-width:755px!important}.editor-page .ready-stock-inline-size{min-width:815px!important}.editor-page .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle){min-width:760px!important}.editor-page.classic-v203-item-editor .kids-uniform-size-row.simple.rate-enabled:has(.uniform-unlimited-toggle){min-width:625px!important}}
