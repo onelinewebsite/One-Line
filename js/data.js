@@ -81,6 +81,8 @@
     try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):clone(fallback);}catch(_){return clone(fallback);}
   }
   function setCatalogueCache(key,value){
+    const previous=volatileCatalogue.get(key);
+    if(previous&&JSON.stringify(previous)===JSON.stringify(value))return;
     volatileCatalogue.set(key,value);
     catalogueRevision++;
     try{

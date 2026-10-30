@@ -7355,3 +7355,10 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .catalogue-special-size-rate .catalogue-mrp-crossed{font-size:inherit!important;margin-right:5px}
 .bulk-variant-price{display:flex!important;flex-wrap:wrap;gap:3px;align-items:baseline}
 .bulk-variant-price strong{font-weight:750;color:inherit}
+
+/* v217: quiet feedback while a verified cart refreshes. */
+.cart-sync-notice{display:flex;align-items:center;gap:9px;margin:12px 0 18px;color:var(--text-muted,#696575);font-size:.86rem}
+.cart-sync-spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(103,28,124,.18);border-top-color:#741582;border-radius:50%;animation:one-line-cart-sync .8s linear infinite}
+@keyframes one-line-cart-sync{to{transform:rotate(360deg)}}
+
+.cart-sync-empty{display:flex;justify-content:center;padding:42px 20px}.cart-sync-empty .cart-sync-spinner{height:25px;width:25px}

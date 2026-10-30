@@ -78,6 +78,62 @@
     const categories=cats.filter(c=>c.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(c=>({id:c.id,name:c.name,image:c.image_url||'',sub:subs.filter(s=>s.category_id===c.id&&s.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)).map(s=>s.name).join(' · ')||c.subtitle||'',active:true}));
     return{products,categories,orders:data.orders||[],settings:data.settings||{},prints:data.print_types||null,delivery:data.delivery_methods||null};
   }
+  // Public-only persistent snapshot. No customer, cart, authentication or order data
+  // is ever written to this IndexedDB database.
+  const PUBLIC_CACHE_DB='one-line-public-catalogue-v217';
+  const PUBLIC_CACHE_FIELDS=[
+    ['products','custom-store-products-v3'],
+    ['categories','custom-store-categories-v3'],
+    ['customCategories','one-line-custom-catalog-categories-v1'],
+    ['customItems','one-line-custom-catalog-items-v1'],
+    ['customFabrics','one-line-custom-catalog-fabrics-v1'],
+    ['customSportswearFabrics','one-line-custom-sportswear-fabrics-v1'],
+    ['customSportswearTypes','one-line-custom-sportswear-types-v1'],
+    ['customPrintTypes','one-line-custom-print-types-v155']
+  ];
+  let snapshotSignature=null,publicRevision=0;
+  function openPublicDB(){return new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window))return resolve(null);
+    const request=indexedDB.open(PUBLIC_CACHE_DB,1);
+    request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('snapshots'))request.result.createObjectStore('snapshots');};
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+  });}
+  async function getPublicSnapshot(){let db;try{
+    db=await openPublicDB();if(!db)return null;
+    return await new Promise(resolve=>{const tx=db.transaction('snapshots','readonly'),r=tx.objectStore('snapshots').get('public');r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>resolve(null);});
+  }catch(_){return null;}finally{db?.close();}}
+  async function setPublicSnapshot(snapshot){let db;try{
+    db=await openPublicDB();if(!db)return;
+    await new Promise(resolve=>{const tx=db.transaction('snapshots','readwrite');tx.objectStore('snapshots').put(snapshot,'public');tx.oncomplete=resolve;tx.onerror=resolve;tx.onabort=resolve;});
+  }catch(_){/* Cache is an optimization; never prevent live browsing. */}finally{db?.close();}}
+  function currentPublicSnapshot(){const getters={
+    products:S.getProducts,categories:S.getCategories,customCategories:S.getCustomCatalogCategories,
+    customItems:S.getCustomCatalogItems,customFabrics:S.getCustomCatalogFabrics,
+    customSportswearFabrics:S.getCustomSportswearFabrics,customSportswearTypes:S.getCustomSportswearTypes,
+    customPrintTypes:S.getCustomPrintTypes
+  };const result={updatedAt:Date.now()};for(const [field] of PUBLIC_CACHE_FIELDS)result[field]=getters[field]?.()||[];return result;}
+  function applyPublicSnapshot(snapshot){
+    if(!snapshot||!Array.isArray(snapshot.products)||!Array.isArray(snapshot.customItems))return false;
+    // A previously cached catalogue must remain visible while network requests run.
+    for(const [field,key] of PUBLIC_CACHE_FIELDS){if(!Array.isArray(snapshot[field]))continue;
+      if(field==='products'||field==='customItems')S.setCatalogueCache(key,snapshot[field]);
+      else local(key,snapshot[field]);
+    }
+    snapshotSignature=JSON.stringify(PUBLIC_CACHE_FIELDS.map(([field])=>snapshot[field]||[]));
+    return true;
+  }
+  async function restorePublicSnapshot(){if(cataloguePortal())return false;
+    const snapshot=await getPublicSnapshot();return applyPublicSnapshot(snapshot);
+  }
+  function finishPublicRefresh(){if(cataloguePortal())return;
+    const snapshot=currentPublicSnapshot();const signature=JSON.stringify(PUBLIC_CACHE_FIELDS.map(([field])=>snapshot[field]||[]));
+    if(signature===snapshotSignature)return; // unchanged catalogue: keep rendered cards mounted
+    snapshotSignature=signature;
+    publicRevision++;
+    void setPublicSnapshot(snapshot);
+    window.dispatchEvent(new CustomEvent('one-line-public-updated'));
+  }
   let catalogueFlight=null,catalogueCache=null,catalogueCachedAt=0;
   const CATALOGUE_TTL=120000;
   const CATALOGUE_PAGE_SIZE=350;
@@ -181,9 +237,18 @@
       if(!cq[4].error){customSportswearTypes=cq[4].data||[];local('one-line-custom-sportswear-types-v1',customSportswearTypes);}
       if(!cq[5].error){customPrintTypes=cq[5].data||[];local('one-line-custom-print-types-v155',customPrintTypes);}
     }catch(_){}
+    finishPublicRefresh();
     return{configured:true,...mapped,customCategories,customItems,customFabrics,customSportswearFabrics,customSportswearTypes,customPrintTypes,customSchemaReady,sportswearSchemaReady,rawCategories:settled[0].data||[],rawSubcategories:settled[1].data||[]};
   }
-  function ready(){if(!readyPromise)readyPromise=hydrate().catch(error=>({configured:true,error}));return readyPromise;}
+  function ready(){if(!readyPromise)readyPromise=(async()=>{
+    const restored=await restorePublicSnapshot();
+    if(restored){
+      // Show last successful public catalogue immediately; refresh in background.
+      void hydrate().catch(()=>{});
+      return {configured:configured(),fromCache:true};
+    }
+    return hydrate().catch(error=>({configured:true,error}));
+  })();return readyPromise;}
   async function createCustomerSession(phone,accessToken,name){
     const data=await invoke('otp-session',{phone:cleanPhone(phone),accessToken:String(accessToken||''),name:String(name||'').trim()},false);
     if(data?.session)setSession(data.session);
@@ -286,5 +351,5 @@
     await hydrate({force:true});return data;
   }
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate({force:true});}
-  window.OneLineBackend={portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,updateCustomerProfile,mutateCustomerCart,placeOrder,validateRedeem,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
+  window.OneLineBackend={publicRevision:()=>publicRevision,portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,updateCustomerProfile,mutateCustomerCart,placeOrder,validateRedeem,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
 })();

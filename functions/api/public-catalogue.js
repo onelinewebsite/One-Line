@@ -45,7 +45,7 @@ export async function onRequestGet({request, context}) {
     status:200,
     headers:{
       'Content-Type':'application/json; charset=utf-8',
-      'Cache-Control':'public, max-age=30, s-maxage=120',
+      'Cache-Control':'public, max-age=0, s-maxage=30',
       'X-Content-Type-Options':'nosniff'
     }
   });

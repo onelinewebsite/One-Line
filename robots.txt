@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /management
+Disallow: /staff
+Disallow: /api/
+Sitemap: https://onelinesmart.com/sitemap.xml

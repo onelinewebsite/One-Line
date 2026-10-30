@@ -1,4 +1,4 @@
-const CACHE='one-line-catalogue-v216';
+const CACHE='one-line-catalogue-v217';
 const CORE=[
   './index.html','./print-guide.html','./404.html','./admin.html','./staff.html','./management.html',
   './css/site.css','./css/admin.css',
@@ -7,7 +7,7 @@ const CORE=[
   './assets/product-placeholder.svg','./assets/category-placeholder.svg','./assets/contact-support.webp','./assets/bulk-enquiry-discount.png'
 ];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil((async()=>{const cache=await caches.open(CACHE);await Promise.all(CORE.map(async url=>{try{const request=new Request(url,{cache:'reload'}),response=await fetch(request);if(response&&response.ok)await cache.put(request,response.clone());}catch(_){}}));})());});
-self.addEventListener('activate',event=>{event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>key.startsWith('one-line-')&&key!==CACHE).map(key=>caches.delete(key)));await self.clients.claim();})());});
+self.addEventListener('activate',event=>{event.waitUntil((async()=>{const keys=await caches.keys();const older=keys.filter(key=>key.startsWith('one-line-catalogue-')&&key!==CACHE).sort((a,b)=>Number(b.match(/v(\d+)$/)?.[1]||0)-Number(a.match(/v(\d+)$/)?.[1]||0));await Promise.all(older.slice(1).map(key=>caches.delete(key)));await self.clients.claim();})());});
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
   const url=new URL(event.request.url);if(url.origin!==self.location.origin)return;
