@@ -55,6 +55,7 @@ function customerJson(c:any){
   return {
     id:c?.id||'',phone:c?.phone||'',name:c?.name||'',
     businessName:c?.business_name||'',jobTitle:c?.job_title||'',
+    professionalDashboard:!!c?.professional_dashboard_enabled,professionalCategoryId:c?.professional_dashboard_category_id||'',
     createdAt:c?.created_at||'',updatedAt:c?.updated_at||'',lastSeenAt:c?.last_seen_at||''
   }
 }
@@ -95,6 +96,32 @@ Deno.serve(async(req)=>{
       if(q.error)throw q.error
       await db.from('customer_activity').insert({customer_id:customerId,event_type:'profile_updated',payload:{businessName:patch.business_name,jobTitle:patch.job_title}})
       return json({ok:true,customer:customerJson(q.data)})
+    }
+
+    if(action==='professional_preferences'){
+      const enabled=body?.enabled===true
+      const selected=String(body?.categoryId||'').trim()
+      if(selected&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selected))return json({error:'Choose a valid category.'},400)
+      if(selected){
+        const cat=await db.from('custom_catalog_categories').select('id,active,catalogue_section').eq('id',selected).maybeSingle()
+        if(cat.error)throw cat.error
+        if(!cat.data||cat.data.active===false||cat.data.catalogue_section==='ready')return json({error:'That Custom Catalogue category is unavailable.'},400)
+      }
+      const updated=await db.from('customers').update({professional_dashboard_enabled:enabled,professional_dashboard_category_id:selected||null,updated_at:nowIso()}).eq('id',customerId).select('*').single()
+      if(updated.error)throw updated.error
+      return json({ok:true,customer:customerJson(updated.data)})
+    }
+
+    if(action==='professional_orders'){
+      const page=Math.max(0,Math.min(9999,Math.floor(Number(body?.page||0)||0)))
+      const pageSize=50
+      const from=page*pageSize
+      const q=await db.from('orders').select('*,order_items(*)',{count:'exact'})
+        .eq('customer_id',customerId).order('created_at',{ascending:false}).order('id',{ascending:false})
+        .range(from,from+pageSize-1)
+      if(q.error)throw q.error
+      const totalCount=Number(q.count||0)
+      return json({ok:true,orders:q.data||[],totalCount,nextPage:from+pageSize<totalCount?page+1:null})
     }
 
     if(action==='custom_catalog_enquiry'){
