@@ -40,14 +40,14 @@
     const response=await fetch(url,{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',headers:{'content-type':'text/plain;charset=UTF-8','accept':'application/json'},body:JSON.stringify(body||{})});
     const raw=await response.text();let data={};
     try{data=raw?JSON.parse(raw):{};}catch(_){data={error:raw||('Edge Function '+name+' returned an invalid response.')}}
-    if(!response.ok||data?.error)throw new Error(String(data?.error||data?.message||('Edge Function '+name+' failed ('+response.status+').')));
+    if(!response.ok||data?.error){const err=new Error(String(data?.error||data?.message||('Edge Function '+name+' failed ('+response.status+').')));err.fromServer=true;err.status=response.status;throw err;}
     return data;
   }
   const invoke=async(name,body,auth=true)=>{
     const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');
     if(!auth){
       let directError=null;
-      try{return await invokePublicDirect(name,body);}catch(err){directError=err;}
+      try{return await invokePublicDirect(name,body);}catch(err){if(err?.fromServer)throw err;if(name==='place-order')throw new Error('Order status is uncertain because the network disconnected. Check My Orders before trying again.');directError=err;}
       try{
         const {data,error}=await sb.functions.invoke(name,{body});
         if(error)throw error;if(data?.error)throw new Error(data.error);return data;
@@ -146,15 +146,17 @@
     if(res.error)throw res.error;
     return res.data||[];
   }
+  let publicProxyRetryAfter=0;
   async function cataloguePage(sb,table,page,columns='*'){
     // Staff/admin bypass the public Cloudflare cache to preserve role-filtered records.
-    if(!cataloguePortal()){
+    if(!cataloguePortal()&&Date.now()>publicProxyRetryAfter){
       try{
         const query=new URLSearchParams({table,page:String(page)});
         const response=await fetch('/api/public-catalogue?'+query,{credentials:'omit',headers:{accept:'application/json'}});
         if(response.ok){const rows=await response.json();if(Array.isArray(rows))return rows;}
-        // On a Pages site without Functions, fall back to the original RLS-protected API.
-      }catch(_){/* Keep catalogue available while Cloudflare is unreachable. */}
+        if(response.status>=500)publicProxyRetryAfter=Date.now()+90_000;
+        // Fail over to Supabase public RLS data when the Cloudflare route fails.
+      }catch(_){publicProxyRetryAfter=Date.now()+90_000;}
     }
     return directCataloguePage(sb,table,page,columns);
   }
@@ -307,6 +309,14 @@
   }
   async function validateRedeem(redeemCode,subtotal){const s=session();if(!s?.token)throw new Error('Verify your number first.');return invoke('place-order',{action:'validate_redeem',token:s.token,redeemCode,subtotal},false);}
   async function placeOrder(payload){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');const data=await invoke('place-order',{token:s.token,...payload},false);return data?.order||data;}
+  async function customerLoginWithId(loginId){
+    const data=await invoke('customer-login-id',{loginId:String(loginId||'').trim()},false);
+    if(!data?.session?.token)throw new Error('Login could not be verified.');
+    setSession(data.session);return data;
+  }
+  async function adminCreateCustomerLogin(payload){return invoke('admin-user',{action:'customer_login_create',...payload});}
+  async function adminListCustomerLogins(){return invoke('admin-user',{action:'customer_login_list'});}
+  async function adminRevokeCustomerLogin(id){return invoke('admin-user',{action:'customer_login_revoke',id});}
   async function staffSignIn(username,password){const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');const clean=String(username||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'');if(!clean)throw new Error('Enter username.');const email=clean+'@staff.oneline.local';const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',data.user.id).single();if(pe)throw pe;if(!profile.active){await sb.auth.signOut();throw new Error('This account is suspended.');}return profile;}
   async function staffProfile(){
     const sb=supa();if(!sb)return null;
@@ -366,5 +376,5 @@
     await hydrate({force:true});return data;
   }
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate({force:true});}
-  window.OneLineBackend={publicRevision:()=>publicRevision,portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,updateCustomerProfile,updateProfessionalPreferences,professionalOrdersPage,mutateCustomerCart,placeOrder,validateRedeem,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
+  window.OneLineBackend={publicRevision:()=>publicRevision,portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,customerLoginWithId,adminCreateCustomerLogin,adminListCustomerLogins,adminRevokeCustomerLogin,updateCustomerProfile,updateProfessionalPreferences,professionalOrdersPage,mutateCustomerCart,placeOrder,validateRedeem,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
 })();

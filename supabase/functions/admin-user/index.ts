@@ -50,14 +50,20 @@ async function adminFeed(db:any,syncToken=''){
   // Hide any old production-unit transfer records that may already exist in the live database.
   const orders=(ordersQ.data||[]).filter((o:any)=>o.metadata?.unit_transfer!==true)
   const ids=orders.map((o:any)=>o.id),orderItems:any[]=[]
-  for(let start=0;start<ids.length;start+=100){
-    const batch=ids.slice(start,start+100)
-    for(let offset=0;;offset+=500){
-      const page=await db.from('order_items').select('*').in('order_id',batch).order('created_at',{ascending:true}).order('id').range(offset,offset+499)
-      if(page.error)throw page.error
-      orderItems.push(...(page.data||[]))
-      if((page.data||[]).length<500)break
-    }
+  const batches=[] as string[][]
+  for(let start=0;start<ids.length;start+=100)batches.push(ids.slice(start,start+100))
+  for(let start=0;start<batches.length;start+=4){
+    const results=await Promise.all(batches.slice(start,start+4).map(async(batch:string[])=>{
+      const rows:any[]=[]
+      for(let offset=0;;offset+=500){
+        const page=await db.from('order_items').select('*').in('order_id',batch).order('created_at',{ascending:true}).order('id').range(offset,offset+499)
+        if(page.error)throw page.error
+        rows.push(...(page.data||[]))
+        if((page.data||[]).length<500)break
+      }
+      return rows
+    }))
+    for(const rows of results)orderItems.push(...rows)
   }
   return {orders,orderItems,enquiries:enquiriesQ.data||[],syncToken:token}
 }
@@ -71,6 +77,47 @@ Deno.serve(async(req)=>{
     const body=await req.json(),action=String(body.action||''),db=admin()
 
     if(action==='admin_feed')return json({ok:true,...await adminFeed(db,String(body.syncToken||''))})
+
+
+    // Customer Login IDs are high-entropy bearer credentials (not public user IDs).
+    // Only a verified active administrator may issue or revoke them.
+    if(action==='customer_login_create'){
+      const name=String(body.name||'').trim().slice(0,120),phone=String(body.phone||'').replace(/\D/g,''),mobile=phone.length===10?'91'+phone:phone,description=String(body.description||'').trim().slice(0,1000)
+      if(name.length<2||!/^91\d{10}$/.test(mobile))return json({error:'Enter a name and a valid 10-digit Indian phone number.'},400)
+      let customer:any=null
+      const found=await db.from('customers').select('id,name,phone').eq('phone',mobile).maybeSingle()
+      if(found.error)throw found.error
+      if(found.data){customer=found.data}
+      else {
+        const inserted=await db.from('customers').insert({name,phone:mobile,business_name:'',job_title:''}).select('id,name,phone').single()
+        if(inserted.error)throw inserted.error
+        customer=inserted.data
+      }
+      // A public customer identifier must never serve as the login credential.
+      const raw=crypto.getRandomValues(new Uint8Array(32))
+      const loginId='OL-'+btoa(String.fromCharCode(...raw)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')
+      const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(loginId))
+      const token_hash=[...new Uint8Array(digest)].map(v=>v.toString(16).padStart(2,'0')).join('')
+      const created=await db.from('customer_login_keys').insert({customer_id:customer.id,token_hash,description,created_by:portal.user.id}).select('id,created_at').single()
+      if(created.error)throw created.error
+      return json({ok:true,loginId,customer,credentialId:created.data.id,createdAt:created.data.created_at})
+    }
+    if(action==='customer_login_list'){
+      const q=await db.from('customer_login_keys').select('id,customer_id,description,active,created_at,last_used_at,customers(id,name,phone)').order('created_at',{ascending:false}).limit(250)
+      if(q.error)throw q.error
+      return json({ok:true,credentials:q.data||[]})
+    }
+    if(action==='customer_login_revoke'){
+      const id=String(body.id||'')
+      if(!validUUID(id))return json({error:'Invalid credential.'},400)
+      const revoked=await db.from('customer_login_keys').update({active:false}).eq('id',id).select('id').maybeSingle()
+      if(revoked.error)throw revoked.error
+      if(!revoked.data)return json({error:'Credential not found.'},404)
+      // Revocation also ends sessions minted using this Login ID.
+      const dropped=await db.from('customer_sessions').delete().eq('login_key_id',id)
+      if(dropped.error)throw dropped.error
+      return json({ok:true})
+    }
 
     if(action==='create'){
       const username=validUsername(body.username),password=String(body.password||''),name=String(body.name||'').trim(),role=String(body.role||'staff')

@@ -1528,6 +1528,10 @@
       const enquiryAccount=state.pendingAction==='custom-catalog-enquiry'||state.pendingAction==='team-enquiry';
       title=enquiryAccount?'Create account to enquire':'Mobile number';
       body=(enquiryAccount?'<p class="auth-intro">Enter your mobile number. We will verify it by OTP and ask your name only if needed.</p>':'')+'<form data-auth-phone><label><span>Phone</span><input name="phone" inputmode="numeric" autocomplete="tel" maxlength="10" pattern="[0-9]{10}" value="'+S.esc(String(state.authPhone||'').replace(/^91/,''))+'" placeholder="10-digit mobile number" required></label><button class="primary wide" type="submit" '+(state.authBusy?'disabled':'')+'>'+(state.authBusy?'Sending…':'Send OTP')+'</button></form>';
+      body+='<div class="auth-login-divider"><span>OR</span></div><button type="button" class="auth-login-link" data-action="auth-login-id">Login with Admin-issued ID</button>';
+    }else if(state.authStep==='login-id'){
+      title='Login ID';
+      body='<p class="auth-intro">Enter the private Login ID issued by One-Line Admin. Keep it secret: it grants access to your orders and account.</p><form data-auth-login-id><label><span>Login ID</span><input name="loginId" autocomplete="off" spellcheck="false" autocapitalize="none" minlength="46" maxlength="46" placeholder="OL-…" required></label><button class="primary wide" type="submit" '+(state.authBusy?'disabled':'')+'>'+(state.authBusy?'Signing in…':'Sign in')+'</button></form><button class="auth-login-link" type="button" data-action="auth-change-phone">Use mobile OTP instead</button>';
     }else if(state.authStep==='otp'){
       title='Enter OTP';
       body='<form data-auth-otp><p class="auth-mini">Sent to +'+S.esc(B?.cleanPhone?.(state.authPhone)||state.authPhone)+'</p><label><span>OTP</span><input name="otp" inputmode="numeric" autocomplete="one-time-code" minlength="4" maxlength="8" pattern="[0-9]{4,8}" value="'+S.esc(state.authOtp)+'" placeholder="OTP" required></label><button class="primary wide" type="submit" '+(state.authBusy?'disabled':'')+'>'+(state.authBusy?'Verifying…':'Verify OTP')+'</button><div class="auth-inline-actions"><button class="text-button" type="button" data-action="auth-resend" '+(state.authBusy?'disabled':'')+'>Resend</button><button class="text-button" type="button" data-action="auth-change-phone">Change number</button></div></form>';
@@ -1592,9 +1596,14 @@
       const r=await B.placeOrder(payload);
       state.orderReference=r.orderCode||r.id||'ORDER';state.remarks='';clearDraft('checkout-remarks');state.redeemInput='';state.redeemApplied=null;state.redeemError='';clearDraft('checkout-business');state.orderPlaced=false;state.paymentDemo=false;clearDirectCheckout();
       if(!directOrder){state.cart=[];state.cartVersion=Number(state.cartVersion||0)+1;}broadcastAccountSync('order');
-      await B.hydrate({force:true});await refreshCustomerAccount(false);
       state.orderSubmitting=false;state.authBusy=false;state.checkoutStep=1;
       go('orders');
+      showToast('Order '+state.orderReference+' placed. Updating your order history…');
+      // Prioritize the customer's order list. The larger catalogue refresh is
+      // scheduled afterwards, without holding the Place Order confirmation.
+      void refreshCustomerAccount(true).finally(()=>{
+        setTimeout(()=>{void B.hydrate({force:true}).catch(()=>{});},900);
+      });
     }catch(e){
       state.orderSubmitting=false;state.authBusy=false;showToast(e.message||'Could not place order');if(/stock|unavailable|size|option/i.test(String(e.message||'')))B?.hydrate?.({force:true}).catch(()=>{});
     }
@@ -1830,6 +1839,13 @@
     root.querySelectorAll('[data-filter-choice]').forEach(x=>x.addEventListener('click',()=>{const d=state.filterDraft,k=x.dataset.filterChoice,v=x.dataset.value;const arr=d[k];const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);if(k==='categories'){const allowedSubs=filterPool().filter(p=>!d.categories.length||d.categories.includes(p.category)).map(p=>p.subcategory);d.subs=d.subs.filter(s=>allowedSubs.includes(s));}render();}));
 
     const phoneForm=root.querySelector('[data-auth-phone]');if(phoneForm)phoneForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(phoneForm);state.authPhone=String(fd.get('phone')||'').trim();state.authError='';state.authBusy=true;render();try{await B.requestOtp(state.authPhone);state.authStep='otp';state.authOtp='';}catch(err){state.authError=err.message||'Could not send OTP';}finally{state.authBusy=false;render();}});
+    const idForm=root.querySelector('[data-auth-login-id]');if(idForm)idForm.addEventListener('submit',async e=>{
+      e.preventDefault();const loginId=String(new FormData(idForm).get('loginId')||'').trim();
+      if(state.authBusy)return;state.authBusy=true;state.authError='';
+      const submit=idForm.querySelector('button[type=submit]');if(submit){submit.disabled=true;submit.textContent='Signing in…';}
+      try{const data=await B.customerLoginWithId(loginId);state.customer=data.session;state.accountLoaded=false;state.authModal=false;broadcastAccountSync('login-id');await refreshCustomerAccount(false);state.authBusy=false;await continuePendingAction();}
+      catch(err){state.authBusy=false;state.authError=err?.message||'Invalid Login ID';render();}
+    });
     const otpForm=root.querySelector('[data-auth-otp]');if(otpForm)otpForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(otpForm);state.authOtp=String(fd.get('otp')||'').trim();state.authError='';state.authBusy=true;render();try{const r=await B.verifyOtp(state.authPhone,state.authOtp,'');state.customer=r.session||B.customerSession();state.accountLoaded=false;state.authName=state.customer?.name||'';if(String(state.customer?.name||'').trim().length>=2){state.authModal=false;await refreshCustomerAccount(false);state.authBusy=false;broadcastAccountSync('login');await continuePendingAction();return;}state.accountLoaded=true;state.authStep='name';}catch(err){state.authError=err.message||'Invalid OTP';}finally{state.authBusy=false;render();}});
     const nameForm=root.querySelector('[data-auth-name]');if(nameForm)nameForm.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(nameForm);state.authName=String(fd.get('name')||'').trim();if(!state.authName)return;state.authBusy=true;state.authError='';render();try{const saved=await B.updateCustomerProfile({name:state.authName,businessName:state.customer?.businessName||'',jobTitle:state.customer?.jobTitle||''});state.customer={...(B.customerSession()||state.customer||{}),name:saved?.name||state.authName,businessName:saved?.businessName||'',jobTitle:saved?.jobTitle||''};B.setCustomerSession(state.customer);state.accountLoaded=true;state.authModal=false;broadcastAccountSync('profile');await refreshCustomerAccount(false);state.authBusy=false;await continuePendingAction();}catch(err){state.authBusy=false;state.authError=err.message||'Could not save name';render();}});
 
@@ -1899,6 +1915,7 @@
       else if(a==='team-reset'){resetTeamBuilder();render();}
       else if(a==='close-auth')closeAuth();
       else if(a==='auth-resend'){state.authBusy=true;state.authError='';render();try{await B.retryOtp();showToast('OTP resent');}catch(err){state.authError=err.message||'Could not resend OTP';}finally{state.authBusy=false;render();}}
+      else if(a==='auth-login-id'){state.authStep='login-id';state.authError='';render();}
       else if(a==='auth-change-phone'){window.OneLineOTP?.reset?.();state.authStep='phone';state.authOtp='';state.authError='';render();}
       else if(a==='pro-load-more'){x.disabled=true;await loadProfessionalFeed(false);}
       else if(a==='pro-refresh'){x.disabled=true;await refreshCustomerAccount(false);await loadProfessionalFeed(true);x.disabled=false;showToast('Order data updated');}

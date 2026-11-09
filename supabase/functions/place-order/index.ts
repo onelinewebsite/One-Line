@@ -243,7 +243,15 @@ Deno.serve(async(req)=>{
         if(match?.design)item.design=match.design;
       }
     }
-    const checked=[] as any[];for(const item of items){if(item?.itemType==='uniform_order')checked.push(await validateUniformOrder(db,item));else if(item?.itemType==='printable_order')checked.push(await validatePrintableOrder(db,item));else if(item?.itemType==='jersey_order')checked.push(await validateJerseyOrder(db,item));else checked.push(item);}items=checked;
+    // Independent item checks may run concurrently. Stock is still verified and
+    // deducted atomically by place_bulk_order in the database after these checks.
+    const checked=[] as any[];
+    for(let start=0;start<items.length;start+=6){
+      const batch=items.slice(start,start+6);
+      const resolved=await Promise.all(batch.map((item:any)=>item?.itemType==='uniform_order'?validateUniformOrder(db,item):item?.itemType==='printable_order'?validatePrintableOrder(db,item):item?.itemType==='jersey_order'?validateJerseyOrder(db,item):Promise.resolve(item)));
+      checked.push(...resolved);
+    }
+    items=checked;
     for(const item of items){if(item?.itemType==='team_design')item.design=await persistTeamDesignAssets(db,s.customer_id,item.design||{});else if(item?.itemType==='custom_design')item.design=await persistCustomDesignAssets(db,s.customer_id,item.design||{});}
     // Re-resolve saved address by ownership; never trust a client-supplied delivery recipient.
     let deliveryRecord:any=null
@@ -263,27 +271,52 @@ Deno.serve(async(req)=>{
     const redeemCode=String(body.redeemCode||'').trim().toUpperCase();
     const placed=redeemCode?await db.rpc('place_bulk_order_redeem',{p_customer_id:s.customer_id,p_customer_name:customerName,p_phone:String(customer.phone||details.phone||''),p_address:formattedDelivery,p_business:business,p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:items,p_redeem_code:redeemCode}):await db.rpc('place_bulk_order',{p_customer_id:s.customer_id,p_customer_name:customerName,p_phone:String(customer.phone||details.phone||''),p_address:formattedDelivery,p_business:business,p_delivery:String(body.delivery||''),p_payment:String(body.payment||''),p_items:items});
     if(placed.error)throw placed.error;const order:any=placed.data;
-    // Save images seen at the time of purchase for Ready Made lines as well.
+    // Preserve the purchase-time image, but avoid 2N sequential reads. One
+    // product/variant query per set, then bounded parallel order-item updates.
     const placedLines=await db.from('order_items').select('id,product_id,color,size,design_json').eq('order_id',order.id).eq('item_type','product')
-    if(placedLines.error)throw placedLines.error
-    for(const line of (placedLines.data||[])){
-      if(!line.product_id)continue
-      const prod=await db.from('products').select('images').eq('id',line.product_id).maybeSingle()
-      if(prod.error)throw prod.error
-      const variant=await db.from('product_variants').select('image_url').eq('product_id',line.product_id).eq('color',line.color||'').eq('size',line.size||'').maybeSingle()
-      // Variant photo takes precedence; otherwise use the ordered product's catalogue image.
-      const shot=variant.data?.image_url||prod.data?.images?.[0]||''
-      if(shot){const q=await db.from('order_items').update({design_json:{...(line.design_json||{}),images:[shot],cardImage:shot}}).eq('id',line.id);if(q.error)throw q.error}
+    if(placedLines.error)console.error('Historical image snapshot read failed:',placedLines.error.message)
+    const snapshots=placedLines.data||[]
+    const productIds=[...new Set(snapshots.map((x:any)=>x.product_id).filter(Boolean))]
+    if(productIds.length){
+      const productPhotos=new Map<string,string>(),variantPhotos=new Map<string,string>()
+      for(let start=0;start<productIds.length;start+=100){
+        const ids=productIds.slice(start,start+100)
+        const [pq,vq]=await Promise.all([
+          db.from('products').select('id,images').in('id',ids),
+          db.from('product_variants').select('product_id,color,size,image_url').in('product_id',ids)
+        ])
+        if(pq.error)console.error('Product snapshot lookup:',pq.error.message)
+        if(vq.error)console.error('Variant snapshot lookup:',vq.error.message)
+        for(const r of pq.data||[])productPhotos.set(String(r.id),String(r.images?.[0]||''))
+        for(const r of vq.data||[])if(r.image_url)variantPhotos.set([r.product_id,r.color||'',r.size||''].join('\u0001'),String(r.image_url))
+      }
+      const updates=snapshots.map((line:any)=>{
+        const shot=variantPhotos.get([line.product_id,line.color||'',line.size||''].join('\u0001'))||productPhotos.get(String(line.product_id))||''
+        return shot?{line,shot}:null
+      }).filter(Boolean) as Array<{line:any,shot:string}>
+      for(let i=0;i<updates.length;i+=8){
+        const settled=await Promise.allSettled(updates.slice(i,i+8).map(async({line,shot})=>{
+          const q=await db.from('order_items').update({design_json:{...(line.design_json||{}),images:[shot],cardImage:shot}}).eq('id',line.id)
+          if(q.error)throw q.error
+        }))
+        for(const result of settled)if(result.status==='rejected')console.error('Historical image snapshot update failed:',String(result.reason))
+      }
     }
+    // The order has ALREADY COMMITTED. Independently sync supplementary
+    // metadata, customer profile, cart and activity, without turning a successful
+    // order into a failed request if an optional post-commit write fails.
     const snapshot=await db.from('orders').select('metadata').eq('id',order.id).single()
-    if(snapshot.error)throw snapshot.error
-    const detailsSaved=await db.from('orders').update({metadata:{...(snapshot.data?.metadata||{}),account:{id:s.customer_id,name:customer.name||customerName,phone:customer.phone||'',businessName:customer.business_name||''},deliveryRecipient:recipient,remarks}}).eq('id',order.id)
-    if(detailsSaved.error)throw detailsSaved.error
-    await db.from('customers').update({name:customerName||customer.name||'',business_name:business||customer.business_name||'',updated_at:new Date().toISOString(),last_seen_at:new Date().toISOString()}).eq('id',s.customer_id);
-    if(!directOrder){const cleared=await db.rpc('customer_cart_mutate',{p_customer_id:s.customer_id,p_operation:'clear',p_item_key:null,p_item:null});if(cleared.error)console.error('Order placed but cart clear failed:',cleared.error.message);}
-    const verify=await db.from('order_items').select('id,item_type,design_json').eq('order_id',order.id);if(verify.error)throw verify.error;const teamItems=(verify.data||[]).filter((x:any)=>x.item_type==='team_design');for(const saved of teamItems){const d=saved.design_json||{},front=d?.design?.front||d?.front||{},back=d?.design?.back||d?.back||{};if(!front.compositeUrl||!back.compositeUrl||!Array.isArray(d.roster))throw new Error('Team enquiry was not fully saved. Please try again.');}
-    const customItems=(verify.data||[]).filter((x:any)=>x.item_type==='custom_design');for(const saved of customItems){const d=saved.design_json||{};if(!d.frontCompositeUrl||!d.backCompositeUrl)throw new Error('The final front/back design images were not fully saved. Please try again.');}
-    await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'order_placed',payload:{orderId:order.id,orderCode:order.orderCode,itemCount:items.length,directOrder}});for(const item of items.filter((x:any)=>x.itemType==='team_design')){const a=await db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'team_design_enquiry',payload:{...item.design,orderId:order.id,orderCode:order.orderCode}});if(a.error)console.error('Team enquiry activity log failed:',a.error.message);}
+    if(snapshot.error)console.error('Order metadata read:',snapshot.error.message)
+    const postCommit=[
+      db.from('customers').update({name:customerName||customer.name||'',business_name:business||customer.business_name||'',updated_at:new Date().toISOString(),last_seen_at:new Date().toISOString()}).eq('id',s.customer_id),
+      db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'order_placed',payload:{orderId:order.id,orderCode:order.orderCode,itemCount:items.length,directOrder}})
+    ]
+    // Never overwrite an existing order's metadata if the preceding read failed.
+    if(!snapshot.error)postCommit.push(db.from('orders').update({metadata:{...(snapshot.data?.metadata||{}),account:{id:s.customer_id,name:customer.name||customerName,phone:customer.phone||'',businessName:customer.business_name||''},deliveryRecipient:recipient,remarks}}).eq('id',order.id))
+    if(!directOrder)postCommit.push(db.rpc('customer_cart_mutate',{p_customer_id:s.customer_id,p_operation:'clear',p_item_key:null,p_item:null}))
+    for(const item of items.filter((x:any)=>x.itemType==='team_design'))postCommit.push(db.from('customer_activity').insert({customer_id:s.customer_id,event_type:'team_design_enquiry',payload:{...item.design,orderId:order.id,orderCode:order.orderCode}}))
+    const results=await Promise.allSettled(postCommit)
+    for(const r of results){if(r.status==='rejected')console.error('Order post-commit:',r.reason);else if(r.value?.error)console.error('Order post-commit:',r.value.error.message)}
     return json({ok:true,order,verified:true});
   }catch(e){return json({error:e instanceof Error?e.message:'Order could not be placed.'},400)}
 })

@@ -7386,3 +7386,11 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 
 /* v219: show a visible, accessible error when Dashboard settings cannot be saved. */
 .pro-feature-error{margin:12px 0 0;padding:11px 13px;border:1px solid #eec3cf;border-radius:10px;color:#922d48;background:#fff5f7;font-size:12px;line-height:1.5}
+
+/* v221 — alternate customer login without OTP */
+.auth-login-divider{display:flex;align-items:center;gap:13px;margin:14px 0 10px;color:#8f8395;font-size:11px;letter-spacing:.13em}
+.auth-login-divider:before,.auth-login-divider:after{content:'';height:1px;flex:1;background:#e9e0ec}
+.auth-login-link{display:block;width:100%;border:1px solid #d9c5df;color:#702080;background:#fff;padding:11px 14px;border-radius:11px;font:inherit;font-weight:650;cursor:pointer;text-align:center}
+.auth-login-link:hover,.auth-login-link:focus-visible{background:#f9f2fb}
+.auth-card [data-auth-login-id]{display:grid;gap:12px;margin-bottom:12px}
+.auth-card [data-auth-login-id] input{max-width:100%;box-sizing:border-box;letter-spacing:.02em}

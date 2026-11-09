@@ -4,7 +4,7 @@
   let root=document.getElementById('admin-app');
   const requested=(document.body.dataset.portalRole||'admin').toLowerCase();
   const esc=S.esc,money=S.money;
-  const state={profile:null,view:'customCatalog',loading:true,error:'',toast:'',menu:false,products:[],categories:[],subcategories:[],orders:[],orderItems:[],activity:[],customers:[],customerAddresses:[],customerDataLoaded:false,customerDataLoading:false,customerDataError:'',carts:[],profiles:[],customCatalogCategories:[],customCatalogItems:[],customCatalogFabrics:[],customSportswearFabrics:[],customSportswearTypes:[],customPrintTypes:[],redeemCodes:[],enquiries:[],settings:S.getSettings?.()||{},customSchemaReady:true,sportswearSchemaReady:true,editor:null,editSections:{},editFields:{},categoryEditor:null,categoryType:'custom',customCategoryEditor:null,customItemEditor:null,query:'',orderQuery:'',orderFilter:'All',orderStatusFilter:'All',customerQuery:'',enquiryQuery:'',catalogEnquiryQuery:'',customCatalogQuery:'',customCatalogSearchOpen:false,customCatalogCategoryOpen:'',adminCatalogueShown:{},productCategoryFilter:'',staffStockMode:'sold',detailOrderId:'',detailEnquiryId:''};
+  const state={profile:null,view:'customCatalog',loading:true,error:'',toast:'',menu:false,products:[],categories:[],subcategories:[],orders:[],orderItems:[],activity:[],customers:[],customerAddresses:[],customerDataLoaded:false,customerDataLoading:false,customerDataError:'',carts:[],profiles:[],customerLoginKeys:[],customerLoginLoading:false,newCustomerLoginId:'',customCatalogCategories:[],customCatalogItems:[],customCatalogFabrics:[],customSportswearFabrics:[],customSportswearTypes:[],customPrintTypes:[],redeemCodes:[],enquiries:[],settings:S.getSettings?.()||{},customSchemaReady:true,sportswearSchemaReady:true,editor:null,editSections:{},editFields:{},categoryEditor:null,categoryType:'custom',customCategoryEditor:null,customItemEditor:null,query:'',orderQuery:'',orderFilter:'All',orderStatusFilter:'All',customerQuery:'',enquiryQuery:'',catalogEnquiryQuery:'',customCatalogQuery:'',customCatalogSearchOpen:false,customCatalogCategoryOpen:'',adminCatalogueShown:{},productCategoryFilter:'',staffStockMode:'sold',detailOrderId:'',detailEnquiryId:''};
   const portalBusyEnabled=['admin','management','staff'].includes(requested);
   const portalBusy={pending:0,session:false,armUntil:0,hideTimer:null};
   function portalBusyElement(){
@@ -45,7 +45,7 @@
     const nativeFetch=window.fetch.bind(window);
     window.fetch=async function(input,init){
       const method=String(init?.method||(typeof Request!=='undefined'&&input instanceof Request?input.method:'GET')||'GET').toUpperCase();
-      const track=!['GET','HEAD','OPTIONS'].includes(method)||portalBusy.session||Date.now()<=portalBusy.armUntil;
+      const track=portalBusy.session||Date.now()<=portalBusy.armUntil; // No full-screen loader for background sync.
       if(!track)return nativeFetch(input,init);
       portalBusy.session=true;portalBusy.pending++;showPortalBusy();
       try{return await nativeFetch(input,init);}
@@ -1153,8 +1153,16 @@
     return '<section class="clean-card"><div class="panel-head"><div><p class="tag">LIVE CUSTOMER CARTS</p><h1>Who added what</h1><p>Shows the latest saved cart for each verified customer. Updates automatically while the portal is open.</p></div><button class="ghost-btn" data-action="refresh-data">Refresh now</button></div><div class="live-cart-list">'+(list.length?list.map(c=>'<article class="live-cart-card"><header><div><b>'+esc(c.customers?.name||'Customer')+'</b><span>'+esc(c.customers?.phone||'')+'</span><small>'+esc([c.customers?.job_title,c.customers?.business_name].filter(Boolean).join(' · '))+'</small></div><div><strong>'+Number(c.piece_count||0)+' pcs</strong><b>'+money(c.total||0)+'</b><small>'+new Date(c.updated_at).toLocaleString()+'</small></div></header><div class="live-cart-items">'+((c.items||[]).length?(c.items||[]).map(cartItemSummary).join(''):'<div class="empty-admin">Cart has no item details.</div>')+'</div></article>').join(''):'<div class="empty-admin">No verified customer has items in cart right now.</div>')+'</div></section>';
   }
   function activityView(){return '<section class="clean-card"><div class="panel-head"><div><p class="tag">VERIFIED CUSTOMER ACTIVITY</p><h1>Customer activity</h1><p>Login, cart, checkout, profile and order actions recorded after OTP verification.</p></div><button class="ghost-btn" data-action="refresh-data">Refresh</button></div><div class="activity-list">'+(state.activity.length?state.activity.map(a=>'<article><div><b>'+esc(a.event_type.replaceAll('_',' '))+'</b><small>'+new Date(a.created_at).toLocaleString()+'</small></div><span>'+esc(a.customers?.name||'')+'<small>'+esc(a.customers?.phone||'')+'</small></span><pre>'+esc(JSON.stringify(a.payload||{},null,2))+'</pre></article>').join(''):'<div class="empty-admin">No verified customer activity yet.</div>')+'</div></section>';}
+  function customerLoginsView(){
+    const rows=state.customerLoginKeys||[];
+    return '<section class="clean-card admin-customer-login"><div class="panel-head"><div><p class="tag">CUSTOMER ACCESS</p><h1>Customer Login IDs</h1><p>Create customer access with a name, phone and description. One private Login ID signs them in without OTP. The ID is displayed only once.</p></div><button type="button" class="ghost-btn" data-action="refresh-customer-logins">Refresh</button></div>'+
+      '<form id="customerLoginCreate" class="account-create"><label>Customer name<input name="name" maxlength="120" autocomplete="off" required></label><label>Phone number<input name="phone" inputmode="tel" maxlength="13" pattern="[0-9+ ]{10,13}" required></label><label>Description (admin note)<textarea name="description" rows="2" maxlength="1000"></textarea></label><button type="submit" class="primary-btn">Create Login ID</button></form>'+
+      (state.newCustomerLoginId?'<div class="new-customer-login-secret" role="status"><b>Copy the new Login ID now — it will not be shown again.</b><code>'+esc(state.newCustomerLoginId)+'</code><button type="button" data-action="copy-customer-login-id" class="primary-btn">Copy Login ID</button></div>':'')+
+      '<div class="customer-login-list">'+(rows.length?rows.map(c=>'<article class="customer-login-row"><div><b>'+esc(c.customers?.name||'Customer')+'</b><small>'+esc(c.customers?.phone||'')+'</small><p>'+esc(c.description||'No description')+'</p><small>Issued '+esc(new Date(c.created_at).toLocaleDateString())+(c.last_used_at?' · Last used '+esc(new Date(c.last_used_at).toLocaleDateString()):' · Not used yet')+'</small></div><div><span class="customer-login-status '+(c.active?'is-active':'')+'">'+(c.active?'Active':'Revoked')+'</span>'+(c.active?'<button type="button" data-revoke-customer-login="'+esc(c.id)+'" class="ghost-btn">Revoke</button>':'')+'</div></article>').join(''):'<p class="empty-admin">No admin-issued Login IDs yet.</p>')+'</div></section>';
+  }
+  async function refreshCustomerLogins(){if(state.customerLoginLoading)return;state.customerLoginLoading=true;try{const data=await B.adminListCustomerLogins();state.customerLoginKeys=data.credentials||[];}catch(e){notify(e.message||'Could not load Login IDs. Run v221 SQL and deploy admin-user.');}finally{state.customerLoginLoading=false;}}
   function accountsView(){
-    return '<section class="clean-card"><div class="panel-head"><div><p class="tag">ACCESS CONTROL</p><h1>Staff &amp; management accounts</h1><p>Change an account below and select Save account to apply. Password is optional when editing.</p></div></div>'+ 
+    return customerLoginsView()+'<section class="clean-card"><div class="panel-head"><div><p class="tag">ACCESS CONTROL</p><h1>Staff &amp; management accounts</h1><p>Change an account below and select Save account to apply. Password is optional when editing.</p></div></div>'+ 
       '<form id="accountCreate" class="account-create"><label>Name<input name="name" required></label><label>Username<input name="username" required></label><label>Role<select name="role">'+roles.map(r=>'<option value="'+r+'">'+labels[r]+'</option>').join('')+'</select></label><label>Password<input type="password" name="password" minlength="12" maxlength="128" autocomplete="new-password" required></label><button class="primary-btn">Create account</button></form>'+ 
       '<div class="account-list">'+state.profiles.map(p=>'<article class="account-row-direct">'+
         '<div class="account-identity-fields"><label>Name<input data-account-name="'+p.id+'" value="'+esc(p.name)+'" aria-label="Account name"></label><label>Username<input data-account-username="'+p.id+'" value="'+esc(p.username)+'" aria-label="Username"></label><small>User ID: '+esc(window.OneLineUserId(p.id,'STAFF'))+'</small></div>'+
@@ -1198,6 +1206,11 @@
   async function loadPortalData(silent=false,reuseCatalogue=false){
     if(!silent){state.loading=true;render();}state.error='';try{
       const client=sb();
+      // Requests below do not depend on the catalogue; issue them in parallel.
+      const backgroundAdmin=requested==='admin'?Promise.allSettled([
+        client.from('redeem_codes').select('*').order('created_at',{ascending:false}),
+        B.listProfiles(),B.adminFeed?.()
+      ]):null;
       if(requested==='staff'){
         const catalog=await B.hydrate({force:!reuseCatalogue});state.settings=catalog.settings||S.getSettings?.()||{};state.products=catalog.products;state.categories=[];state.subcategories=[];state.customCatalogCategories=catalog.customCategories||[];state.customCatalogItems=catalog.customItems||[];state.customCatalogFabrics=[];state.customSportswearFabrics=[];state.customSportswearTypes=[];state.customPrintTypes=[];
       }else{
@@ -1206,10 +1219,10 @@
         state.customSchemaReady=catalog.customSchemaReady;state.sportswearSchemaReady=catalog.sportswearSchemaReady;
         const rawCustomCategories=catalog.customCategories||[];state.customCatalogCategories=rawCustomCategories.map(c=>String(c.name||'').trim().toLowerCase()==='kids uniform'?{...c,name:'Uniform',description:String(c.description||'').replace(/Kids uniform/gi,'Uniform')}:c);state.customCatalogItems=catalog.customItems;state.customCatalogFabrics=catalog.customFabrics;state.customSportswearFabrics=catalog.customSportswearFabrics;state.customSportswearTypes=catalog.customSportswearTypes;state.customPrintTypes=catalog.customPrintTypes||[];
         if(requested==='admin'){
-          try{const codes=await client.from('redeem_codes').select('*').order('created_at',{ascending:false});if(!codes.error)state.redeemCodes=codes.data||[];}catch(_){/* Migration may not yet be installed */}
-          try{state.profiles=await B.listProfiles();}catch(_){state.profiles=[];}
-          let feed=null;
-          try{feed=await B.adminFeed?.();}catch(_){feed=null;}
+          const [redeemResult,profileResult,feedResult]=await backgroundAdmin;
+          if(redeemResult.status==='fulfilled'&&!redeemResult.value?.error)state.redeemCodes=redeemResult.value?.data||[];
+          if(profileResult.status==='fulfilled')state.profiles=profileResult.value||[];
+          const feed=feedResult.status==='fulfilled'?feedResult.value:null;
           // Read enquiry activity from both paths and merge it. This keeps the
           // Enquiry menu working even when the deployed admin-user function is
           // older or a historic Custom Catalogue event used a different name.
@@ -1301,7 +1314,7 @@
     root.querySelector('[data-separate-variants]')?.addEventListener('change',async e=>{const files=[...e.target.files||[]];if(!files.length)return;syncCustomItemEditor();const editor=state.customItemEditor,cfg=uniformConfig(editor);e.target.disabled=true;let count=0;try{for(const file of files){const url=await B.uploadImage(file,'custom-catalog/variants'),id='custom-'+crypto.randomUUID(),base=file.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim()||'Variant';let name=base,n=2;while(uniformAllVariants(cfg).some(v=>v.name.toLowerCase()===name.toLowerCase()))name=base+' '+n++;cfg.top.push({...defaultUniformVariant(id,name),enabled:true,images:[url]});cfg.variant_order.push(id);count++;applyUniformConfig(editor,cfg);}notify(count+' variants added. Set sizes and stock, then save.');}catch(err){notify(count+' variants added. '+(err.message||'Upload failed; retry remaining images.'));}finally{render();}});
 
     root.querySelector('#portalLogin')?.addEventListener('submit',async e=>{e.preventDefault();const button=e.currentTarget.querySelector('button[type="submit"]');if(button.disabled)return;button.disabled=true;button.textContent='Signing in…';state.error='';const fd=new FormData(e.currentTarget);try{state.profile=await B.staffSignIn(fd.get('username'),fd.get('password'));if(!roleOkay()){render();return;}await loadAll();}catch(err){state.error=err.message||'Login failed';render();}});
-    root.querySelectorAll('[data-view]').forEach(x=>x.addEventListener('click',()=>{state.view=x.dataset.view;state.menu=false;state.editor=null;state.customItemEditor=null;state.customCatalogCategoryOpen='';state.customCatalogCategorySettings='';state.categoryEditor=null;state.customCategoryEditor=null;state.detailOrderId='';state.detailEnquiryId='';state.query='';render();if(state.view==='customers')void loadCustomerDirectory();window.scrollTo(0,0);}));
+    root.querySelectorAll('[data-view]').forEach(x=>x.addEventListener('click',()=>{state.view=x.dataset.view;state.menu=false;state.editor=null;state.customItemEditor=null;state.customCatalogCategoryOpen='';state.customCatalogCategorySettings='';state.categoryEditor=null;state.customCategoryEditor=null;state.detailOrderId='';state.detailEnquiryId='';state.query='';render();if(state.view==='customers')void loadCustomerDirectory();if(state.view==='accounts')void refreshCustomerLogins().then(()=>{if(state.view==='accounts')render();});else state.newCustomerLoginId='';window.scrollTo(0,0);}));
     root.querySelector('[data-action="menu"]')?.addEventListener('click',()=>{state.menu=!state.menu;render();});
     root.querySelectorAll('[data-action="logout"]').forEach(x=>x.addEventListener('click',async()=>{await B.staffSignOut();state.profile=null;render();}));
     root.querySelector('[data-action="open-store"]')?.addEventListener('click',()=>location.href='index.html');
@@ -1566,9 +1579,24 @@
       }catch(err){notify(err.message||'Could not save expected delivery date.');}
       finally{button.disabled=false;}
     }));
-    root.querySelectorAll('[data-order-status]').forEach(x=>x.addEventListener('change',async()=>{const previous=orderById(x.dataset.orderStatus)?.status||'Confirmed',next=x.value;x.disabled=true;try{const r=await sb().from('orders').update({status:next,updated_at:new Date().toISOString()}).eq('id',x.dataset.orderStatus);if(r.error)throw r.error;await loadAll();notify(next==='Cancelled'?'Order cancelled. Tracked stock restored.':'Order status updated.');}catch(err){x.disabled=false;x.value=previous;notify(err.message||'Could not update order status.');}}));
+    root.querySelectorAll('[data-order-status]').forEach(x=>x.addEventListener('change',async()=>{const previous=orderById(x.dataset.orderStatus)?.status||'Confirmed',next=x.value;x.disabled=true;try{const r=await sb().from('orders').update({status:next,updated_at:new Date().toISOString()}).eq('id',x.dataset.orderStatus).select('id,status,updated_at').single();if(r.error)throw r.error;const row=orderById(x.dataset.orderStatus);if(row){row.status=r.data.status;row.updated_at=r.data.updated_at;}
+      x.disabled=false;notify(next==='Cancelled'?'Order cancelled. Tracked stock restored.':'Order status updated.');
+      // Do not trigger a full orders/catalogue reload here; periodic sync handles it.
+      }catch(err){x.disabled=false;x.value=previous;notify(err.message||'Could not update order status.');}}));
     hydrateAccurateCustomOrderPreviews();
 
+    root.querySelector('#customerLoginCreate')?.addEventListener('submit',async e=>{
+      e.preventDefault();const form=e.currentTarget,button=form.querySelector('button[type=submit]');if(button?.disabled)return;
+      button.disabled=true;button.textContent='Creating…';
+      try{const fd=new FormData(form);const data=await B.adminCreateCustomerLogin(Object.fromEntries(fd.entries()));state.newCustomerLoginId=data.loginId;await refreshCustomerLogins();render();notify('Login ID created. Copy it now.');}
+      catch(err){notify(err.message||'Could not create customer Login ID');if(button?.isConnected){button.disabled=false;button.textContent='Create Login ID';}}
+    });
+    root.querySelector('[data-action="copy-customer-login-id"]')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(state.newCustomerLoginId);notify('Login ID copied. Store and share it securely.');}catch(_){notify('Select and manually copy the ID above.');}});
+    root.querySelector('[data-action="refresh-customer-logins"]')?.addEventListener('click',async()=>{await refreshCustomerLogins();render();});
+    root.querySelectorAll('[data-revoke-customer-login]').forEach(button=>button.addEventListener('click',async()=>{
+      if(!confirm('Revoke this Login ID and sign out sessions created with it?'))return;
+      button.disabled=true;try{await B.adminRevokeCustomerLogin(button.dataset.revokeCustomerLogin);await refreshCustomerLogins();render();notify('Login ID revoked.');}catch(err){notify(err.message||'Could not revoke Login ID');if(button.isConnected)button.disabled=false;}
+    }));
     root.querySelector('#accountCreate')?.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(e.currentTarget);try{await B.adminCreateAccount(Object.fromEntries(fd.entries()));state.profiles=await B.listProfiles();render();notify('Account created.');}catch(err){notify(err.message||'Could not create account');}});
     root.querySelectorAll('[data-action="save-account"]').forEach(x=>x.addEventListener('click',async()=>{if(x.disabled)return;x.disabled=true;const id=x.dataset.id;const existing=state.profiles.find(p=>String(p.id)===String(id)),name=root.querySelector('[data-account-name="'+id+'"]')?.value?.trim()||existing?.name||'',username=root.querySelector('[data-account-username="'+id+'"]')?.value?.trim()||existing?.username||'',role=root.querySelector('[data-account-role="'+id+'"]')?.value,active=root.querySelector('[data-account-active="'+id+'"]')?.checked,password=root.querySelector('[data-account-password="'+id+'"]')?.value||'';try{await B.adminUpdateAccount({id,name,username,role,active,...(password?{password}:{})});state.profiles=await B.listProfiles();state.editSections={};render();notify('Account updated.');}catch(err){notify(err.message||'Could not update account');}finally{if(x.isConnected)x.disabled=false;}}));
   }
