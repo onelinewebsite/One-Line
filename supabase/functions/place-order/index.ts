@@ -125,11 +125,17 @@ async function validatePrintableOrder(db:any,item:any){
   const iq=await db.from('custom_catalog_items').select('*').eq('id',itemId).maybeSingle();
   if(iq.error)throw iq.error;
   const saved=iq.data;if(!saved||saved.active===false)throw new Error('This printable item is no longer available.');
-  const cq=await db.from('custom_catalog_categories').select('name,active').eq('id',saved.category_id).maybeSingle();
+  const cq=await db.from('custom_catalog_categories').select('name,active,item_editor_type').eq('id',saved.category_id).maybeSingle();
   if(cq.error)throw cq.error;
-  if(!cq.data?.active||!['ready stock printable items','corporate tee shirt'].includes(String(cq.data.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()))throw new Error('This is not a supported printable item.');
-  const categoryName=String(cq.data.name||'').toLowerCase().trim();
-  const isReadyStock=categoryName==='ready stock printable items';
+  if(!cq.data||cq.data.active===false)throw new Error('This item is no longer available to order.');
+  // A category can be renamed or given a custom title in Admin. Recognise the
+  // same explicit printable editor mode the storefront uses; do not block a
+  // valid purchasable item because its category name changed.
+  const categoryName=String(cq.data.name||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim();
+  const categoryMode=String(cq.data.item_editor_type||'auto').trim().toLowerCase();
+  const isCorporate=categoryName==='corporate tee shirt';
+  const isReadyStock=!isCorporate&&(categoryName==='ready stock printable items'||categoryMode==='printable');
+  if(!isCorporate&&!isReadyStock)throw new Error('This item has changed its ordering options. Open it from the catalogue and add it to your cart again.');
   const [fq,pq]=await Promise.all([
     isReadyStock?Promise.resolve({data:null,error:null}):db.from('custom_catalog_fabrics').select('*').eq('id',String(incoming.fabricId||'')).maybeSingle(),
     incoming.includePrinting===false?Promise.resolve({data:[],error:null}):db.from('custom_print_types').select('*').eq('active',true)
@@ -225,7 +231,18 @@ Deno.serve(async(req)=>{
     const body=await req.json(),s=await resolveCustomerSession(String(body.token||''));if(!s)return json({error:'Session expired. Verify your number again.'},401);const db=admin(),customer=(s as any).customers||{},details=body.details||body;
     if(body.action==='validate_redeem'){const code=String(body.redeemCode||'').trim().toUpperCase(),gross=Number(body.subtotal||0);if(!/^[A-Z0-9_-]{3,32}$/.test(code)||!Number.isFinite(gross)||gross<=0)return json({error:'Enter a valid code and select items first.'},400);const q=await db.from('redeem_codes').select('*').eq('code',code).maybeSingle();if(q.error)throw q.error;const v=q.data;if(!v||!v.active||v.expires_at&&new Date(v.expires_at).getTime()<=Date.now()||v.max_uses!==null&&v.used_count>=v.max_uses||gross<Number(v.min_order_total||0))return json({error:'Code is invalid, expired, or not eligible for this order.'},400);const uq=await db.from('redeem_redemptions').select('id',{count:'exact',head:true}).eq('customer_id',s.customer_id).eq('redeem_code_id',v.id);if(uq.error)throw uq.error;if(Number(uq.count||0)>=Number(v.per_customer_limit||1))return json({error:'This code has already been used on your account.'},400);return json({ok:true,code:v.code,discount:Math.min(gross,Number(v.amount||0)),preview:true});}
     const cartQ=await db.from('customer_carts').select('items').eq('customer_id',s.customer_id).maybeSingle();if(cartQ.error)throw cartQ.error;const serverCart=Array.isArray(cartQ.data?.items)?cartQ.data.items:[],directOrder=body.directOrder===true,browserItems=Array.isArray(body.items)?body.items:[],sourceItems=directOrder?browserItems:(serverCart.length?serverCart:browserItems);let items=sourceItems.map(normalizeOrderItem);
-    if(!directOrder&&browserItems.length){const prepared=browserItems.map(normalizeOrderItem);for(let i=0;i<items.length;i++){const item=items[i];if(item?.itemType==='custom_design'||item?.itemType==='uniform_order'||item?.itemType==='printable_order'||item?.itemType==='jersey_order'){const match=prepared.find((x:any)=>x?.itemType===item.itemType&&String(x.groupKey||'')&&String(x.groupKey)===String(item.groupKey||''))||prepared.filter((x:any)=>x?.itemType===item.itemType)[i];if(match?.design)item.design=match.design;}}}
+    if(!directOrder&&browserItems.length){
+      const prepared=browserItems.map(normalizeOrderItem),seenByType=new Map<string,number>();
+      for(const item of items){
+        if(!['custom_design','uniform_order','printable_order','jersey_order'].includes(String(item?.itemType||'')))continue;
+        const kind=String(item.itemType),index=seenByType.get(kind)||0;seenByType.set(kind,index+1);
+        // Index within THIS type, not the whole mixed cart: a normal product
+        // must never shift the printable/uniform order's design or size choices.
+        const matching=prepared.filter((x:any)=>x?.itemType===kind);
+        const match=(item.groupKey?matching.find((x:any)=>x.groupKey&&String(x.groupKey)===String(item.groupKey)):null)||matching[index];
+        if(match?.design)item.design=match.design;
+      }
+    }
     const checked=[] as any[];for(const item of items){if(item?.itemType==='uniform_order')checked.push(await validateUniformOrder(db,item));else if(item?.itemType==='printable_order')checked.push(await validatePrintableOrder(db,item));else if(item?.itemType==='jersey_order')checked.push(await validateJerseyOrder(db,item));else checked.push(item);}items=checked;
     for(const item of items){if(item?.itemType==='team_design')item.design=await persistTeamDesignAssets(db,s.customer_id,item.design||{});else if(item?.itemType==='custom_design')item.design=await persistCustomDesignAssets(db,s.customer_id,item.design||{});}
     // Re-resolve saved address by ownership; never trust a client-supplied delivery recipient.

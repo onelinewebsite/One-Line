@@ -7383,3 +7383,6 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 @media(max-width:360px){.pro-ring{width:67px;height:67px}.pro-status-breakdown>div{grid-template-columns:83px 1fr 16px;gap:8px}}
 
 .pro-load-more{margin:17px auto;display:grid;justify-items:center;gap:10px}.pro-load-more span{font-size:11px;color:#817288}.pro-load-more button{background:#7a2485;color:white;border:0;border-radius:11px;font-size:12px;font-weight:800;min-height:42px;padding:0 22px;cursor:pointer;display:flex;align-items:center;gap:8px}.pro-load-more button .icon{width:15px}.pro-load-more button:disabled{opacity:.55}
+
+/* v219: show a visible, accessible error when Dashboard settings cannot be saved. */
+.pro-feature-error{margin:12px 0 0;padding:11px 13px;border:1px solid #eec3cf;border-radius:10px;color:#922d48;background:#fff5f7;font-size:12px;line-height:1.5}

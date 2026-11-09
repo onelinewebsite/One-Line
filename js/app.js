@@ -8,7 +8,7 @@
     bulkQty:{},
     teamStep:1,teamUnlockedStep:1,teamFront:{background:'',fileName:'',layers:[]},teamBack:{background:'',fileName:'',layers:[{id:'team-name',type:'fixedText',text:'NAME',x:50,y:24,sizePct:7},{id:'team-number',type:'fixedText',text:'99',x:50,y:55,sizePct:22}]},teamRows:[{name:'',number:'',size:'M'}],teamActiveLayer:'',teamCrop:null,teamEnquiryBusy:false,teamEnquirySuccess:false,pendingCustomItem:null,
     authModal:false,authStep:'phone',authPhone:'',authOtp:'',authName:'',authBusy:false,authError:'',pendingAction:'',customer:B?.customerSession?.()||null,
-    backendReady:false,backendError:'',catalogQuery:'',catalogueShown:{},catalogueSearchQueries:{custom:'',ready:''},headerSearchQuery:'',headerSearchOpen:false,addresses:[],addressEditor:null,selectedAddressId:'',orderDetailId:'',professionalFilter:'all',professionalSearch:'',professionalSaving:false,professionalFeed:[],professionalFeedLoaded:false,professionalFeedBusy:false,professionalFeedTotal:0,professionalNextPage:0,accountLoaded:false,accountSyncing:false,cartVersion:0,cartUpdatedAt:'',ordersStamp:'',enquiriesStamp:'',profileUpdatedAt:'',
+    backendReady:false,backendError:'',catalogQuery:'',catalogueShown:{},catalogueSearchQueries:{custom:'',ready:''},headerSearchQuery:'',headerSearchOpen:false,addresses:[],addressEditor:null,selectedAddressId:'',orderDetailId:'',professionalFilter:'all',professionalSearch:'',professionalSaving:false,professionalError:'',professionalFeed:[],professionalFeedLoaded:false,professionalFeedBusy:false,professionalFeedTotal:0,professionalNextPage:0,accountLoaded:false,accountSyncing:false,cartVersion:0,cartUpdatedAt:'',ordersStamp:'',enquiriesStamp:'',profileUpdatedAt:'',
     toast:'',legal:'',checkoutStep:1,details:{name:'',phone:'',address:'',business:''},delivery:'Courier',payment:'Cash on delivery',paymentDemo:false,remarks:'',redeemInput:'',redeemApplied:null,redeemBusy:false,redeemError:'',
     orderPlaced:false,orderReference:'',orderSubmitting:false,directOrderItem:null,installPrompt:null,zoomImage:'',zoomAlt:'',zoomImages:[],zoomIndex:0,zoomScale:1,zoomX:0,zoomY:0
   };
@@ -1313,7 +1313,7 @@
   function professionalAccountCard(verified){
     const enabled=professionalActive(),categories=professionalCategories();
     return '<section class="pro-account-panel"><div class="pro-account-top"><div class="pro-feature-glyph">'+I('sliders')+'</div><div class="pro-feature-copy"><h2>Professional Dashboard</h2><p>Track order progress, view spending and savings, and keep your favourite catalogue in one place.</p></div><label class="pro-switch"><input type="checkbox" data-professional-toggle '+(enabled?'checked ':'')+(!verified||state.professionalSaving?'disabled ':'')+'aria-label="Enable Professional Dashboard"><span class="pro-switch-track"></span></label></div>'+
-      (!verified?'<p class="pro-feature-note">Verify your mobile number to enable your dashboard.</p>':
+      (state.professionalError?'<p class="pro-feature-error" role="alert">'+S.esc(state.professionalError)+'</p>':'')+(!verified?'<p class="pro-feature-note">Verify your mobile number to enable your dashboard.</p>':
       enabled?'<div class="pro-account-options"><label for="pro-main-category"><span>Main Custom Catalogue category</span><select id="pro-main-category" data-professional-category '+(state.professionalSaving?'disabled':'')+'><option value="">Choose a main category</option>'+categories.map(c=>'<option value="'+S.esc(c.id)+'" '+(String(state.customer?.professionalCategoryId||'')===String(c.id)?'selected':'')+'>'+S.esc(c.name)+'</option>').join('')+'</select></label><button type="button" class="pro-open-btn" data-go="professional">Open dashboard '+I('arrow')+'</button></div>':'<p class="pro-feature-note">Off by default. Existing shopping and account pages stay the same.</p>')+'</section>';
   }
   function professionalRing(number,label,sub,shade){const pct=Math.max(0,Math.min(100,Math.round(Number(number)||0)));
@@ -1848,8 +1848,32 @@
     // Live filters update only the order list: mobile keyboard never loses focus.
     root.querySelector('[data-pro-search]')?.addEventListener('input',e=>{state.professionalSearch=e.target.value;const list=root.querySelector('[data-pro-order-list]');if(list){list.innerHTML=professionalOrdersHtml();bindProfessionalDynamicOrders(list);}});
     root.querySelectorAll('[data-pro-filter]').forEach(button=>button.addEventListener('click',()=>{state.professionalFilter=button.dataset.proFilter||'all';root.querySelectorAll('[data-pro-filter]').forEach(b=>b.classList.toggle('active',b===button));const list=root.querySelector('[data-pro-order-list]');if(list){list.innerHTML=professionalOrdersHtml();bindProfessionalDynamicOrders(list);}}));
-    root.querySelector('[data-professional-toggle]')?.addEventListener('change',async e=>{if(state.professionalSaving)return;const input=e.target,enabled=input.checked;state.professionalSaving=true;input.disabled=true;try{const saved=await B.updateProfessionalPreferences(enabled,enabled?(state.customer?.professionalCategoryId||''):'');applyServerCustomer(saved);broadcastAccountSync('professional');state.professionalSaving=false;render();showToast(enabled?'Professional Dashboard enabled':'Professional Dashboard disabled');}catch(err){state.professionalSaving=false;input.checked=!enabled;input.disabled=false;showToast(err?.message||'Could not update dashboard setting');return;}state.professionalSaving=false;});
-    root.querySelector('[data-professional-category]')?.addEventListener('change',async e=>{if(state.professionalSaving)return;const selected=e.target.value;state.professionalSaving=true;e.target.disabled=true;try{const saved=await B.updateProfessionalPreferences(true,selected);applyServerCustomer(saved);broadcastAccountSync('professional-category');state.professionalSaving=false;render();showToast('Main category updated');}catch(err){state.professionalSaving=false;e.target.disabled=false;showToast(err?.message||'Could not save main category');return;}state.professionalSaving=false;});
+    root.querySelector('[data-professional-toggle]')?.addEventListener('change',async e=>{
+      if(state.professionalSaving)return;
+      const input=e.target,enabled=input.checked;
+      state.professionalSaving=true;state.professionalError='';input.disabled=true;
+      try{
+        const saved=await B.updateProfessionalPreferences(enabled,enabled?(state.customer?.professionalCategoryId||''):'');
+        applyServerCustomer(saved);broadcastAccountSync('professional');
+        state.professionalSaving=false;render();showToast(enabled?'Professional Dashboard enabled':'Professional Dashboard disabled');
+      }catch(err){
+        state.professionalSaving=false;state.professionalError=err?.message||'Could not update dashboard setting';
+        input.checked=!enabled;input.disabled=false;render();showToast(state.professionalError);
+      }
+    });
+    root.querySelector('[data-professional-category]')?.addEventListener('change',async e=>{
+      if(state.professionalSaving)return;
+      const selected=e.target.value;
+      state.professionalSaving=true;state.professionalError='';e.target.disabled=true;
+      try{
+        const saved=await B.updateProfessionalPreferences(true,selected);
+        applyServerCustomer(saved);broadcastAccountSync('professional-category');
+        state.professionalSaving=false;render();showToast('Main category updated');
+      }catch(err){
+        state.professionalSaving=false;state.professionalError=err?.message||'Could not save main category';
+        e.target.disabled=false;render();showToast(state.professionalError);
+      }
+    });
     root.querySelectorAll('[data-pro-item]').forEach(x=>x.addEventListener('click',()=>{const item=state.customCatalogItems.find(v=>String(v.id)===String(x.dataset.proItem));if(item){state.customCategoryId=String(item.category_id);state.customItemId=String(item.id);go('customItem');}}));
     root.querySelectorAll('[data-action]').forEach(x=>x.addEventListener('click',async()=>{
       const a=x.dataset.action,fromDrawer=!!x.closest('.site-header nav');

@@ -284,7 +284,20 @@
   async function customerTeamEnquiry(payload){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');return invoke('customer-event',{token:s.token,event_type:'team_design_enquiry',payload:payload||{}},false);}
   async function customerAccount(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'get'},false);}
   async function customerAddress(action,address,id){const s=session();if(!s?.token)throw new Error('Sign in to manage addresses.');return invoke('customer-account',{token:s.token,action,address:address||{},id:id||''},false);}
-  async function updateProfessionalPreferences(enabled,categoryId){const s=session();if(!s?.token)throw new Error('Sign in to use Professional Dashboard.');const data=await invoke('customer-account',{token:s.token,action:'professional_preferences',enabled:enabled===true,categoryId:String(categoryId||'')},false);return data.customer;}
+  async function updateProfessionalPreferences(enabled,categoryId){
+    const s=session();if(!s?.token)throw new Error('Sign in to use Professional Dashboard.');
+    const requested=enabled===true,selected=requested?String(categoryId||''):'';
+    const data=await invoke('customer-account',{token:s.token,action:'professional_preferences',enabled:requested,categoryId:selected},false);
+    // Older customer-account deployments silently treat an unknown action as 'get'.
+    // A 200 OK from that older endpoint does NOT mean the preference was saved.
+    if(data?.ok!==true||typeof data?.customer?.professionalDashboard!=='boolean'){
+      throw new Error('Professional Dashboard is not available yet. Please contact One-Line support.');
+    }
+    if(data.customer.professionalDashboard!==requested||(selected&&String(data.customer.professionalCategoryId||'')!==selected)){
+      throw new Error('Professional Dashboard setting was not saved. Please try again or contact support.');
+    }
+    return data.customer;
+  }
   async function professionalOrdersPage(page=0){const s=session();if(!s?.token)throw new Error('Sign in to view orders.');return invoke('customer-account',{token:s.token,action:'professional_orders',page:Math.max(0,Math.floor(Number(page)||0))},false);}
   async function customerSync(){const s=session();if(!s?.token)return null;return invoke('customer-account',{token:s.token,action:'sync'},false);}
   async function updateCustomerProfile(profile){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');const data=await invoke('customer-account',{token:s.token,action:'update',profile:profile||{}},false);return data?.customer||null;}
