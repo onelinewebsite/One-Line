@@ -2037,3 +2037,19 @@ html,body{background:#f6f2f7;color:#241c27}
 .customer-login-status.is-active{color:#28754b}
 @media(max-width:800px){.admin-customer-login .account-create{grid-template-columns:1fr 1fr}.admin-customer-login .account-create label:nth-child(3){grid-column:1/-1}.admin-customer-login .account-create button{grid-column:1/-1}.customer-login-row{align-items:flex-start;flex-wrap:wrap}.customer-login-row>div:last-child{margin-left:auto}}
 @media(max-width:520px){.admin-customer-login .account-create{grid-template-columns:1fr}.admin-customer-login .account-create label:nth-child(3),.admin-customer-login .account-create button{grid-column:auto}.new-customer-login-secret{display:grid}}
+
+/* v222 Admin customer-specific category access */
+.category-audience-fieldset{border:1px solid var(--border,#e7dce9);border-radius:10px;padding:15px 16px;margin:16px 0;background:transparent;min-width:0}
+.category-audience-fieldset legend{font-size:14px;font-weight:750;padding:0 6px;color:inherit}
+.category-audience-intro{font-size:12px;color:var(--muted,#6b6470);line-height:1.5;margin:0 0 12px}
+.category-audience-info{font-size:12px;color:var(--muted,#6b6470);margin:4px 0}
+.category-audience-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.category-audience-user{display:flex!important;align-items:center!important;gap:10px!important;min-width:0;cursor:pointer;padding:10px 12px!important;border:1px solid #e7d8e8;border-radius:8px;background:transparent!important}
+.category-audience-user input{flex:none!important;width:17px!important;height:17px!important;margin:0!important;accent-color:#791785;display:block!important}
+.category-audience-user span{display:flex;flex-direction:column;min-width:0;gap:3px}
+.category-audience-user b{font-size:13px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.category-audience-user small{font-size:11px;font-weight:400;opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.category-audience-user:has(input:checked){border-color:#882291;background:#8822910a!important}
+.category-audience-user:has(input:disabled){opacity:.5;cursor:not-allowed}
+@media(max-width:1000px){.category-audience-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.category-audience-grid{grid-template-columns:minmax(0,1fr)}.category-audience-fieldset{padding:12px}}

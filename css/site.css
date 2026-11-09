@@ -7394,3 +7394,8 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .auth-login-link:hover,.auth-login-link:focus-visible{background:#f9f2fb}
 .auth-card [data-auth-login-id]{display:grid;gap:12px;margin-bottom:12px}
 .auth-card [data-auth-login-id] input{max-width:100%;box-sizing:border-box;letter-spacing:.02em}
+
+/* v222: Account Login ID is an unobtrusive purple text link. */
+.auth-login-link.login-id-text-only{display:block!important;width:auto!important;margin:12px auto 4px!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;color:#75198b!important;font-weight:650!important;font-size:14px!important;text-decoration:none!important;cursor:pointer}
+.auth-login-link.login-id-text-only:hover{text-decoration:underline!important}
+.auth-login-link.login-id-text-only:focus-visible{outline:2px solid #75198b;outline-offset:5px}

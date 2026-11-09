@@ -106,6 +106,13 @@ Deno.serve(async(req)=>{
         const cat=await db.from('custom_catalog_categories').select('id,active,catalogue_section').eq('id',selected).maybeSingle()
         if(cat.error)throw cat.error
         if(!cat.data||cat.data.active===false||cat.data.catalogue_section==='ready')return json({error:'That Custom Catalogue category is unavailable.'},400)
+        const restrictions=await db.from('custom_catalog_categories').select('access_restricted').eq('id',selected).single()
+        if(restrictions.error)throw restrictions.error
+        if(restrictions.data?.access_restricted){
+          const grant=await db.from('customer_category_access').select('category_id').eq('category_id',selected).eq('customer_id',customerId).maybeSingle()
+          if(grant.error)throw grant.error
+          if(!grant.data)return json({error:'That category is not available for your account.'},403)
+        }
       }
       const updated=await db.from('customers').update({professional_dashboard_enabled:enabled,professional_dashboard_category_id:selected||null,updated_at:nowIso()}).eq('id',customerId).select('*').single()
       if(updated.error)throw updated.error

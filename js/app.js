@@ -180,8 +180,8 @@
     try{
       const data=await B.customerAccount();if(!data?.customer)return null;
       applyServerCustomer(data.customer);state.addresses=Array.isArray(data.addresses)?data.addresses:[];if(!state.selectedAddressId||!state.addresses.some(a=>String(a.id)===String(state.selectedAddressId)))state.selectedAddressId=String(state.addresses.find(a=>a.is_default)?.id||state.addresses[0]?.id||'');applyServerCart(data.cart||null);state.orders=mapServerOrders(data.orders||[]);state.enquiries=mapServerEnquiries(data.enquiries||[]);state.ordersStamp=orderMetaStamp(data.ordersMeta||{count:(data.orders||[]).length,updatedAt:(data.orders||[]).reduce((m,o)=>String(o.updated_at||'')>m?String(o.updated_at||''):m,'')});state.enquiriesStamp=orderMetaStamp(data.enquiriesMeta||{count:(data.enquiries||[]).length,updatedAt:(data.enquiries||[]).reduce((m,e)=>String(e.created_at||'')>m?String(e.created_at||''):m,'')});state.accountLoaded=true;
-      lastAccountSyncAt=Date.now();if(renderAfter)render();return data;
-    }catch(err){if(/session expired/i.test(String(err?.message||''))){clearCartPreview();B?.clearCustomerSession?.();state.customer=null;state.cart=[];state.orders=[];state.enquiries=[];state.professionalFeed=[];state.professionalFeedLoaded=false;state.professionalNextPage=0;state.addresses=[];state.selectedAddressId='';state.accountLoaded=false;}return null;}
+      lastAccountSyncAt=Date.now();void refreshAssignedCatalogue();if(renderAfter)render();return data;
+    }catch(err){if(/session expired/i.test(String(err?.message||''))){clearCartPreview();B?.clearCustomerSession?.();clearPrivateCatalogue();state.customer=null;state.cart=[];state.orders=[];state.enquiries=[];state.professionalFeed=[];state.professionalFeedLoaded=false;state.professionalNextPage=0;state.addresses=[];state.selectedAddressId='';state.accountLoaded=false;}return null;}
   }
   function queueCartMutation(operation,itemKey,item,optimistic=false){
     const key=String(itemKey||item?.key||'');cartMutationsPending++;
@@ -199,7 +199,7 @@
       const needFull=remoteCartVersion!==Number(state.cartVersion||0)||remoteOrderStamp!==String(state.ordersStamp||'')||remoteEnquiryStamp!==String(state.enquiriesStamp||'');
       if(needFull)await refreshCustomerAccount(false);else state.accountLoaded=true;
       if((force||profileChanged||needFull)&&state.screen!=='customize'&&state.screen!=='profileDetails'&&!state.authBusy){if(state.screen==='checkout'&&state.checkoutStep===1){saveAddressDraft();}render();}
-    }catch(err){if(/session expired/i.test(String(err?.message||''))){clearCartPreview();B?.clearCustomerSession?.();state.customer=null;state.cart=[];state.orders=[];state.enquiries=[];state.professionalFeed=[];state.professionalFeedLoaded=false;state.professionalNextPage=0;state.addresses=[];state.selectedAddressId='';state.accountLoaded=false;render();}}finally{accountPollBusy=false;}
+    }catch(err){if(/session expired/i.test(String(err?.message||''))){clearCartPreview();B?.clearCustomerSession?.();clearPrivateCatalogue();state.customer=null;state.cart=[];state.orders=[];state.enquiries=[];state.professionalFeed=[];state.professionalFeedLoaded=false;state.professionalNextPage=0;state.addresses=[];state.selectedAddressId='';state.accountLoaded=false;render();}}finally{accountPollBusy=false;}
   }
   async function addCart(item,navigate){
     // Hold the lock through the server response; a rapid double tap must never create two cart rows.
@@ -447,6 +447,33 @@
     return '<nav class="mobile-bottom"><button data-go="home" class="'+(state.screen==='home'?'active':'')+'">'+I('home')+'Home</button><button data-go="customCatalog" class="'+(['customCatalog','customCategory','customItem'].includes(state.screen)?'active':'')+'">'+I('sparkle')+'Custom</button><button data-go="customize" class="create-only '+(state.screen==='customize'?'active':'')+'" aria-label="Create custom apparel">'+I('plus')+'</button><button data-go="orders" class="'+(state.screen==='orders'?'active':'')+'">'+I('orders')+'Orders</button><button data-go="profile" class="'+(accountActive?'active':'')+'">'+I('user')+'Profile</button></nav>';
   }
   let sortedPublicItemsSource=null,sortedPublicItemsCache=[];
+  let privateCategoryRows=[],privateItemRows=[],privateCategoryAccount='';
+  function mergeCustomerCatalogue(){
+    const loggedId=String(B?.customerSession?.()?.customerId||'');
+    const allowed=loggedId&&loggedId===privateCategoryAccount;
+    const categories=(S.getCustomCatalogCategories?.()||[]).filter(c=>c.access_restricted!==true);
+    const publicIds=new Set(categories.map(c=>String(c.id)));
+    const items=(S.getCustomCatalogItems?.()||[]).filter(i=>publicIds.has(String(i.category_id)));
+    const extraCategories=allowed?privateCategoryRows:[],extraItems=allowed?privateItemRows:[];
+    state.customCatalogCategories=[...categories,...extraCategories].map(c=>['uniform','kids uniform'].includes(String(c.name||'').trim().toLowerCase())?{...c,name:'Uniform'}:c);
+    state.customCatalogItems=[...items,...extraItems];
+    sortedPublicItemsSource=null;
+  }
+  function clearPrivateCatalogue(){privateCategoryRows=[];privateItemRows=[];privateCategoryAccount='';mergeCustomerCatalogue();}
+  async function refreshAssignedCatalogue(){
+    const sess=B?.customerSession?.();const id=String(sess?.customerId||'');
+    if(!id){clearPrivateCatalogue();return;}
+    try{
+      const data=await B.customerAssignedCatalogue();
+      if(String(B?.customerSession?.()?.customerId||'')!==id)return;
+      privateCategoryRows=Array.isArray(data?.categories)?data.categories:[];
+      privateItemRows=Array.isArray(data?.items)?data.items:[];
+      privateCategoryAccount=id;mergeCustomerCatalogue();
+      if(['home','customCatalog','customCategory','customItem','readyMade','search','professional'].includes(state.screen))render();
+    }catch(err){ // Fail closed: do not show previously fetched private rows on failed verification.
+      clearPrivateCatalogue();
+    }
+  }
   function visibleCustomCatalogItems(){
     const source=state.customCatalogItems||[];
     if(sortedPublicItemsSource!==source){sortedPublicItemsSource=source;sortedPublicItemsCache=source.filter(x=>x.active!==false).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)||(Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0)||String(a.id).localeCompare(String(b.id)));}
@@ -1528,10 +1555,10 @@
       const enquiryAccount=state.pendingAction==='custom-catalog-enquiry'||state.pendingAction==='team-enquiry';
       title=enquiryAccount?'Create account to enquire':'Mobile number';
       body=(enquiryAccount?'<p class="auth-intro">Enter your mobile number. We will verify it by OTP and ask your name only if needed.</p>':'')+'<form data-auth-phone><label><span>Phone</span><input name="phone" inputmode="numeric" autocomplete="tel" maxlength="10" pattern="[0-9]{10}" value="'+S.esc(String(state.authPhone||'').replace(/^91/,''))+'" placeholder="10-digit mobile number" required></label><button class="primary wide" type="submit" '+(state.authBusy?'disabled':'')+'>'+(state.authBusy?'Sending…':'Send OTP')+'</button></form>';
-      body+='<div class="auth-login-divider"><span>OR</span></div><button type="button" class="auth-login-link" data-action="auth-login-id">Login with Admin-issued ID</button>';
+      body+='<button type="button" class="auth-login-link login-id-text-only" data-action="auth-login-id">Login ID</button>';
     }else if(state.authStep==='login-id'){
       title='Login ID';
-      body='<p class="auth-intro">Enter the private Login ID issued by One-Line Admin. Keep it secret: it grants access to your orders and account.</p><form data-auth-login-id><label><span>Login ID</span><input name="loginId" autocomplete="off" spellcheck="false" autocapitalize="none" minlength="46" maxlength="46" placeholder="OL-…" required></label><button class="primary wide" type="submit" '+(state.authBusy?'disabled':'')+'>'+(state.authBusy?'Signing in…':'Sign in')+'</button></form><button class="auth-login-link" type="button" data-action="auth-change-phone">Use mobile OTP instead</button>';
+      body='<p class="auth-intro">Enter the private Login ID issued by One-Line Admin. Keep it secret: it grants access to your orders and account.</p><form data-auth-login-id><label><span>Login ID</span><input name="loginId" autocomplete="off" spellcheck="false" autocapitalize="none" inputmode="numeric" minlength="6" maxlength="6" pattern="[0-9]{6}" placeholder="6-digit Login ID" required></label><button class="primary wide" type="submit" '+(state.authBusy?'disabled':'')+'>'+(state.authBusy?'Signing in…':'Sign in')+'</button></form><button class="auth-login-link" type="button" data-action="auth-change-phone">Use mobile OTP instead</button>';
     }else if(state.authStep==='otp'){
       title='Enter OTP';
       body='<form data-auth-otp><p class="auth-mini">Sent to +'+S.esc(B?.cleanPhone?.(state.authPhone)||state.authPhone)+'</p><label><span>OTP</span><input name="otp" inputmode="numeric" autocomplete="one-time-code" minlength="4" maxlength="8" pattern="[0-9]{4,8}" value="'+S.esc(state.authOtp)+'" placeholder="OTP" required></label><button class="primary wide" type="submit" '+(state.authBusy?'disabled':'')+'>'+(state.authBusy?'Verifying…':'Verify OTP')+'</button><div class="auth-inline-actions"><button class="text-button" type="button" data-action="auth-resend" '+(state.authBusy?'disabled':'')+'>Resend</button><button class="text-button" type="button" data-action="auth-change-phone">Change number</button></div></form>';
@@ -1930,7 +1957,7 @@
       else if(a==='share-customer-order'){try{await shareCustomerOrderPdf(x.dataset.id);}catch(err){showToast(err.message||'Could not share PDF');}}
       else if(a==='download-customer-order'){try{await downloadCustomerOrderPdf(x.dataset.id);}catch(err){showToast(err.message||'PDF could not be downloaded');}}
             else if(a==='profile-cancel-edit'){clearDraft('profile');go('profile');}
-      else if(a==='profile-logout'){clearDirectCheckout();clearDraft('address');clearDraft('profile');clearDraft('checkout-business');clearDraft('checkout-remarks');state.remarks='';state.addressEditor=null;clearCartPreview();B?.clearCustomerSession?.();state.customer=null;state.cart=[];state.orders=[];state.enquiries=[];state.professionalFeed=[];state.professionalFeedLoaded=false;state.professionalNextPage=0;state.cartVersion=0;state.ordersStamp='';state.enquiriesStamp='';state.accountLoaded=false;window.OneLineOTP?.reset?.();broadcastAccountSync('logout');render();}
+      else if(a==='profile-logout'){clearDirectCheckout();clearDraft('address');clearDraft('profile');clearDraft('checkout-business');clearDraft('checkout-remarks');state.remarks='';state.addressEditor=null;clearCartPreview();B?.clearCustomerSession?.();clearPrivateCatalogue();state.customer=null;state.cart=[];state.orders=[];state.enquiries=[];state.professionalFeed=[];state.professionalFeedLoaded=false;state.professionalNextPage=0;state.cartVersion=0;state.ordersStamp='';state.enquiriesStamp='';state.accountLoaded=false;window.OneLineOTP?.reset?.();broadcastAccountSync('logout');render();}
       else if(a==='checkout'){if(state.cart.some(needsReaddForPrinting)){showToast('A saved printed item needs to be removed and added again for the updated per-garment printing price.');return;}clearDirectCheckout();state.redeemInput='';state.redeemApplied=null;state.redeemError='';if(!state.customer?.token){requireCustomer('checkout');return;}B?.customerEvent?.('checkout_started',{cartItems:state.cart.length,pieces:totalQty(),items:state.cart.map(i=>({name:i.name,code:i.code||'',itemType:i.itemType||'product',qty:i.qty||1}))});state.checkoutStep=1;state.orderPlaced=false;go('checkout');}
       else if(a==='delivery-step'){const addr=activeDeliveryAddress();if(!addr){showToast('Choose or add a delivery address');return;}state.details={...state.details,name:state.customer?.name||'',recipientName:addr.recipient_name,address:deliveryAddressLine(addr),business:root.querySelector('[data-checkout-business]')?.value||state.customer?.businessName||''};state.payment='Cash on delivery';state.checkoutStep=2;render();}
       else if(a==='checkout-edit-details'){state.checkoutStep=1;render();}
@@ -2029,7 +2056,7 @@
   setInterval(()=>{if(state.screen==='customItem'&&!document.hidden)void refreshCustomerFabricPricing(state.customItemId,{silent:true});},60000);
   window.addEventListener('focus',()=>{if(state.screen==='customItem')void refreshCustomerFabricPricing(state.customItemId,{silent:true});});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.screen==='customItem')void refreshCustomerFabricPricing(state.customItemId,{silent:true});});
-  window.addEventListener('storage',e=>{state.products=S.getProducts();state.categories=S.getCategories();state.customCatalogCategories=(S.getCustomCatalogCategories?.()||[]).map(c=>['uniform','kids uniform'].includes(String(c.name||'').trim().toLowerCase())?{...c,name:'Uniform'}:c);state.customCatalogItems=S.getCustomCatalogItems?.()||[];state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||[];state.customPrintTypes=S.getCustomPrintTypes?.()||[];state.settings=S.getSettings();state.cart.forEach(item=>{if(item.itemType==='custom_design'&&item.customDesign){item.price=S.customDesignPrice?.(item.customDesign,item.qty,state.settings)??item.price;item.total=Number(item.price||0)*Number(item.qty||0);}});if(e.key===(window.ONE_LINE_CONFIG?.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1')){const sess=B?.customerSession?.();if(sess?.token){state.customer={...(state.customer||{}),...sess};state.accountLoaded=false;refreshCustomerAccount(true);}else{state.customer=null;state.cart=[];state.orders=[];state.enquiries=[];state.professionalFeed=[];state.professionalFeedLoaded=false;state.professionalNextPage=0;state.addresses=[];state.selectedAddressId='';state.accountLoaded=false;render();}}else render();});
+  window.addEventListener('storage',e=>{state.products=S.getProducts();state.categories=S.getCategories();mergeCustomerCatalogue();state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||[];state.customPrintTypes=S.getCustomPrintTypes?.()||[];state.settings=S.getSettings();state.cart.forEach(item=>{if(item.itemType==='custom_design'&&item.customDesign){item.price=S.customDesignPrice?.(item.customDesign,item.qty,state.settings)??item.price;item.total=Number(item.price||0)*Number(item.qty||0);}});if(e.key===(window.ONE_LINE_CONFIG?.CUSTOMER_SESSION_KEY||'one-line-customer-session-v1')){const sess=B?.customerSession?.();if(sess?.token){state.customer={...(state.customer||{}),...sess};state.accountLoaded=false;refreshCustomerAccount(true);}else{clearPrivateCatalogue();state.customer=null;state.cart=[];state.orders=[];state.enquiries=[];state.professionalFeed=[];state.professionalFeedLoaded=false;state.professionalNextPage=0;state.addresses=[];state.selectedAddressId='';state.accountLoaded=false;render();}}else render();});
   window.addEventListener('one-line-public-updated',()=>{
     const next=initialStamp();if(next===renderedStamp)return;
     renderedStamp=next;
@@ -2038,7 +2065,7 @@
   // Refresh public rows without replacing the existing screen while requests run.
   setInterval(()=>{if(!document.hidden&&B?.configured?.())void B.hydrate({force:true}).catch(()=>{});},120000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&B?.configured?.())void B.hydrate().catch(()=>{});});
-  window.addEventListener('one-line-change',()=>{state.products=S.getProducts();state.categories=S.getCategories();state.customCatalogCategories=(S.getCustomCatalogCategories?.()||[]).map(c=>['uniform','kids uniform'].includes(String(c.name||'').trim().toLowerCase())?{...c,name:'Uniform'}:c);state.customCatalogItems=S.getCustomCatalogItems?.()||[];state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||[];state.customPrintTypes=S.getCustomPrintTypes?.()||[];state.settings=S.getSettings();});
+  window.addEventListener('one-line-change',()=>{state.products=S.getProducts();state.categories=S.getCategories();mergeCustomerCatalogue();state.customCatalogFabrics=S.getCustomCatalogFabrics?.()||[];state.customSportswearFabrics=S.getCustomSportswearFabrics?.()||[];state.customSportswearTypes=S.getCustomSportswearTypes?.()||[];state.customPrintTypes=S.getCustomPrintTypes?.()||[];state.settings=S.getSettings();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){saveAddressDraft();flushAllCartQuantitySync();}else if(accountView()&&Date.now()-lastAccountSyncAt>30000)void pollCustomerAccount(true);});
   window.addEventListener('pagehide',()=>{saveAddressDraft();flushAllCartQuantitySync();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.teamCrop){closeTeamCrop();}else if(e.key==='Escape'&&state.zoomImage){closeZoom();}else if(e.key==='Escape'&&state.filterOpen){closeFilter(false);}else if(e.key==='Escape'&&state.menu){closeMenu(false);}else if(e.key==='Escape'&&state.headerSearchOpen){state.headerSearchOpen=false;const y=window.scrollY;render();window.scrollTo(0,y);root.querySelector('[data-action="toggle-header-search"]')?.focus({preventScroll:true});}if((e.ctrlKey||e.metaKey)&&['+','-','=','0'].includes(e.key))e.preventDefault();});document.addEventListener('wheel',e=>{if(e.ctrlKey)e.preventDefault();},{passive:false});
@@ -2063,7 +2090,7 @@
     resetZoomState();state.legal='';state.screen=next||'home';restoreRouteState(state.screen,e.state||{});state.menu=false;state.filterOpen=false;state.filterDraft=null;render();if(state.screen==='customItem')void refreshCustomerFabricPricing(state.customItemId,{silent:true});requestAnimationFrame(()=>window.scrollTo(0,Number(e.state?.scrollY||0)));
   });
   if(state.screen==='professional'&&professionalActive())void loadProfessionalFeed(true);
-  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=217').catch(()=>{});
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=222').catch(()=>{});
   // A deep JSON.stringify of 5,000+ items on every refresh blocks low-end phones.
   const initialStamp=()=>String(S.getCatalogueRevision?.()||0)+':'+String(S.getCustomCatalogCategories?.().length||0)+':'+String(S.getCustomCatalogFabrics?.().length||0)+':'+String(B?.publicRevision?.()||0);
   let renderedStamp=initialStamp();

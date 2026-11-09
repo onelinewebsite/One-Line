@@ -128,6 +128,15 @@ async function authoritativeCatalogPayload(db:any,payload:any){
 
 async function saveCatalogEnquiry(db:any,s:any,payload:any){
   const customer=(s as any).customers||{},savedPayload=await authoritativeCatalogPayload(db,payload)
+  if(savedPayload?.categoryId){
+    const category=await db.from('custom_catalog_categories').select('id,access_restricted').eq('id',String(savedPayload.categoryId)).maybeSingle()
+    if(category.error)throw category.error
+    if(category.data?.access_restricted){
+      const allowed=await db.from('customer_category_access').select('category_id').eq('category_id',category.data.id).eq('customer_id',s.customer_id).maybeSingle()
+      if(allowed.error)throw allowed.error
+      if(!allowed.data)throw new Error('This category is not available for your account.')
+    }
+  }
   const itemId=trim(savedPayload?.itemId,180),itemTitle=trim(savedPayload?.itemTitle||savedPayload?.title,240)
   if(!itemId&&!itemTitle)throw new Error('Custom Catalogue item is required.')
   const size=new TextEncoder().encode(JSON.stringify(savedPayload||{})).byteLength

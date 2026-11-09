@@ -73,6 +73,16 @@
   function money(value){ return "₹"+Number(value||0).toLocaleString("en-IN"); }
   function esc(value){ return String(value ?? "").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[c]); }
   // Large catalogues live in memory instead of exhausting the browser's 5MB localStorage budget.
+  // v222: one-time invalidation of older anonymous catalogue snapshots.
+  // Previous public snapshots may contain categories that Admin has since made private.
+  // Account-specific private rows are fetched only with the verified customer session.
+  if(!document.body.dataset.portalRole){
+    try{if(localStorage.getItem('one-line-public-catalogue-scope-v222')!=='1'){
+      localStorage.removeItem('one-line-custom-catalog-categories-v1');
+      localStorage.removeItem('one-line-custom-catalog-items-v1');
+      localStorage.setItem('one-line-public-catalogue-scope-v222','1');
+    }}catch(_){}
+  }
   const volatileCatalogue=new Map();
   let catalogueRevision=0;
   const largeCatalogueKeys=new Set(['custom-store-products-v3','one-line-custom-catalog-items-v1']);

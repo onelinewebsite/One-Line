@@ -19,7 +19,7 @@ Deno.serve(async(req)=>{
     if(!limit.data)return json({error:'Too many login attempts from this network. Try again in 15 minutes.'},429)
     const body=await req.json()
     const loginId=String(body?.loginId||'').trim()
-    if(!/^OL-[A-Za-z0-9_-]{43}$/.test(loginId))return failure()
+    if(!(/^[0-9]{6}$/.test(loginId)||/^OL-[A-Za-z0-9_-]{43}$/.test(loginId)))return failure()
     const key=await db.from('customer_login_keys').select('id,customer_id,active,customers(id,phone,name,business_name,job_title)').eq('token_hash',await sha(loginId)).eq('active',true).maybeSingle()
     if(key.error)return json({error:'Login is temporarily unavailable.'},503)
     if(!key.data?.customers)return failure()

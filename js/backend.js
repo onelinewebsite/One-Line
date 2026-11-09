@@ -80,7 +80,7 @@
   }
   // Public-only persistent snapshot. No customer, cart, authentication or order data
   // is ever written to this IndexedDB database.
-  const PUBLIC_CACHE_DB='one-line-public-catalogue-v217';
+  const PUBLIC_CACHE_DB='one-line-public-catalogue-v222';
   const PUBLIC_CACHE_FIELDS=[
     ['products','custom-store-products-v3'],
     ['categories','custom-store-categories-v3'],
@@ -309,6 +309,7 @@
   }
   async function validateRedeem(redeemCode,subtotal){const s=session();if(!s?.token)throw new Error('Verify your number first.');return invoke('place-order',{action:'validate_redeem',token:s.token,redeemCode,subtotal},false);}
   async function placeOrder(payload){const s=session();if(!s?.token)throw new Error('Please verify your phone number first.');const data=await invoke('place-order',{token:s.token,...payload},false);return data?.order||data;}
+  async function customerAssignedCatalogue(){const s=session();if(!s?.token)return {categories:[],items:[]};return invoke('customer-catalogue',{token:s.token},false);}
   async function customerLoginWithId(loginId){
     const data=await invoke('customer-login-id',{loginId:String(loginId||'').trim()},false);
     if(!data?.session?.token)throw new Error('Login could not be verified.');
@@ -316,6 +317,8 @@
   }
   async function adminCreateCustomerLogin(payload){return invoke('admin-user',{action:'customer_login_create',...payload});}
   async function adminListCustomerLogins(){return invoke('admin-user',{action:'customer_login_list'});}
+  async function adminListCategoryAccess(){return invoke('admin-user',{action:'customer_category_access_list'});}
+  async function adminSaveCategoryAccess(categoryId,customerIds){return invoke('admin-user',{action:'customer_category_access_save',categoryId,customerIds});}
   async function adminRevokeCustomerLogin(id){return invoke('admin-user',{action:'customer_login_revoke',id});}
   async function staffSignIn(username,password){const sb=supa();if(!sb)throw new Error('Supabase is not configured yet.');const clean=String(username||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'');if(!clean)throw new Error('Enter username.');const email=clean+'@staff.oneline.local';const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',data.user.id).single();if(pe)throw pe;if(!profile.active){await sb.auth.signOut();throw new Error('This account is suspended.');}return profile;}
   async function staffProfile(){
@@ -376,5 +379,5 @@
     await hydrate({force:true});return data;
   }
   async function deleteProduct(id){const sb=supa();const {error}=await sb.from('products').delete().eq('id',id);if(error)throw error;await hydrate({force:true});}
-  window.OneLineBackend={publicRevision:()=>publicRevision,portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,customerLoginWithId,adminCreateCustomerLogin,adminListCustomerLogins,adminRevokeCustomerLogin,updateCustomerProfile,updateProfessionalPreferences,professionalOrdersPage,mutateCustomerCart,placeOrder,validateRedeem,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
+  window.OneLineBackend={publicRevision:()=>publicRevision,portalProducts:()=>portalProducts,configured,supa,ready,hydrate,patchCatalogue,requestOtp,retryOtp,verifyOtp,customerSession:session,setCustomerSession:setSession,clearCustomerSession:clearSession,customerEvent,customerEnquiry,customerTeamEnquiry,customerAccount,customerSync,customerAddress,customerAssignedCatalogue,customerLoginWithId,adminCreateCustomerLogin,adminListCustomerLogins,adminListCategoryAccess,adminSaveCategoryAccess,adminRevokeCustomerLogin,updateCustomerProfile,updateProfessionalPreferences,professionalOrdersPage,mutateCustomerCart,placeOrder,validateRedeem,staffSignIn,staffProfile,staffSignOut,adminCreateAccount,adminUpdateAccount,adminFeed,listProfiles,uploadImage,deleteImage,deleteImages,upsertCategory,upsertProduct,deleteProduct,cleanPhone};
 })();

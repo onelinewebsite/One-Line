@@ -243,6 +243,24 @@ Deno.serve(async(req)=>{
         if(match?.design)item.design=match.design;
       }
     }
+    // Private-category access: reject stale/forged item IDs, not merely hidden UI cards.
+    // The lookup is based on the authoritative saved item ID, never the browser's category name.
+    const guardedIds=[...new Set(items.filter((x:any)=>['uniform_order','printable_order','jersey_order'].includes(String(x?.itemType||''))).map((x:any)=>String(x?.design?.itemId||'')).filter(Boolean))];
+    if(guardedIds.length){
+      const rows=await db.from('custom_catalog_items').select('id,category_id').in('id',guardedIds)
+      if(rows.error)throw rows.error
+      if((rows.data||[]).length!==guardedIds.length)throw new Error('One of the ordered items is no longer available.')
+      const catIds=[...new Set((rows.data||[]).map((x:any)=>x.category_id).filter(Boolean))]
+      const cats=await db.from('custom_catalog_categories').select('id,access_restricted').in('id',catIds)
+      if(cats.error)throw cats.error
+      const restricted=(cats.data||[]).filter((x:any)=>x.access_restricted===true).map((x:any)=>x.id)
+      if(restricted.length){
+        const access=await db.from('customer_category_access').select('category_id').eq('customer_id',s.customer_id).in('category_id',restricted)
+        if(access.error)throw access.error
+        const allowed=new Set((access.data||[]).map((x:any)=>String(x.category_id)))
+        if(restricted.some((id:any)=>!allowed.has(String(id))))throw new Error('This category is not available for your account.')
+      }
+    }
     // Independent item checks may run concurrently. Stock is still verified and
     // deducted atomically by place_bulk_order in the database after these checks.
     const checked=[] as any[];

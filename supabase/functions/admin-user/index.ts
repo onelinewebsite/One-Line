@@ -94,12 +94,22 @@ Deno.serve(async(req)=>{
         customer=inserted.data
       }
       // A public customer identifier must never serve as the login credential.
-      const raw=crypto.getRandomValues(new Uint8Array(32))
-      const loginId='OL-'+btoa(String.fromCharCode(...raw)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')
-      const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(loginId))
-      const token_hash=[...new Uint8Array(digest)].map(v=>v.toString(16).padStart(2,'0')).join('')
-      const created=await db.from('customer_login_keys').insert({customer_id:customer.id,token_hash,description,created_by:portal.user.id}).select('id,created_at').single()
-      if(created.error)throw created.error
+      // Numeric-only, six-digit credential requested by Admin. Six digits are
+      // weak as a password: v222 SQL enforces per-IP and site-wide throttles.
+      // Never derive the credential from the customer's name, phone or ID.
+      let loginId='',created:any=null,lastError:any=null
+      for(let attempt=0;attempt<12;attempt++){
+        const n=new Uint32Array(1);crypto.getRandomValues(n)
+        if(n[0]>=4294800000)continue // reject biased range before modulo
+        loginId=String(100000+(n[0]%900000))
+        const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(loginId))
+        const token_hash=[...new Uint8Array(digest)].map(v=>v.toString(16).padStart(2,'0')).join('')
+        const row=await db.from('customer_login_keys').insert({customer_id:customer.id,token_hash,description,created_by:portal.user.id}).select('id,created_at').single()
+        if(!row.error){created=row;break}
+        if(row.error.code!=='23505')throw row.error
+        lastError=row.error
+      }
+      if(!created)throw lastError||new Error('Could not issue a unique Login ID')
       return json({ok:true,loginId,customer,credentialId:created.data.id,createdAt:created.data.created_at})
     }
     if(action==='customer_login_list'){
@@ -107,15 +117,37 @@ Deno.serve(async(req)=>{
       if(q.error)throw q.error
       return json({ok:true,credentials:q.data||[]})
     }
+    if(action==='customer_category_access_list'){
+      const q=await db.from('customer_category_access').select('category_id,customer_id').limit(10000)
+      if(q.error)throw q.error
+      return json({ok:true,grants:q.data||[]})
+    }
+    if(action==='customer_category_access_save'){
+      const categoryId=String(body.categoryId||'')
+      const ids=Array.isArray(body.customerIds)?[...new Set(body.customerIds.map((v:any)=>String(v||'')))]:[]
+      if(!validUUID(categoryId)||ids.length>250||ids.some((v:string)=>!validUUID(v)))return json({error:'Invalid category or user selection.'},400)
+      const change=await db.rpc('one_line_set_customer_category_access',{p_category_id:categoryId,p_customer_ids:ids})
+      if(change.error)return json({error:change.error.message||'Could not save category access.'},400)
+      return json({ok:true,categoryId,customerIds:ids})
+    }
     if(action==='customer_login_revoke'){
       const id=String(body.id||'')
       if(!validUUID(id))return json({error:'Invalid credential.'},400)
-      const revoked=await db.from('customer_login_keys').update({active:false}).eq('id',id).select('id').maybeSingle()
+      const revoked=await db.from('customer_login_keys').update({active:false}).eq('id',id).select('id,customer_id').maybeSingle()
       if(revoked.error)throw revoked.error
       if(!revoked.data)return json({error:'Credential not found.'},404)
       // Revocation also ends sessions minted using this Login ID.
       const dropped=await db.from('customer_sessions').delete().eq('login_key_id',id)
       if(dropped.error)throw dropped.error
+      // Revocation removes category grants if this customer has no other active issued IDs.
+      const other=await db.from('customer_login_keys').select('id').eq('customer_id',revoked.data.customer_id).eq('active',true).limit(1)
+      if(other.error)throw other.error
+      if(!other.data?.length){
+        const removed=await db.from('customer_category_access').delete().eq('customer_id',revoked.data.customer_id)
+        if(removed.error)throw removed.error
+        // Leave access_restricted=true when its last assignee is revoked.
+        // Automatically making that category public would leak private catalogue data.
+      }
       return json({ok:true})
     }
 
