@@ -7413,3 +7413,21 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .saved-address-search{margin:0 0 12px}
 .saved-address-search input{width:100%;height:40px;border:1px solid #dcd0df;border-radius:8px;padding:8px 11px;background:white;color:#241829;font:inherit}
 .saved-address-search input:focus{outline:2px solid rgba(105,20,118,.18);border-color:#691478}
+
+/* v225 — exclusively Order Details (Custom Catalogue): one-tap size availability boxes. */
+.order-details-catalogue-page .order-details-size-picker{margin-top:18px;max-width:100%}
+.order-details-catalogue-page .order-details-size-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:13px}
+.order-details-catalogue-page .order-details-size-heading strong{font-size:14px;font-weight:800;color:#211827}
+.order-details-catalogue-page .order-details-size-heading small{font-size:11px;color:#827588;font-weight:600}
+.order-details-catalogue-page .order-details-size-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:10px}
+.order-details-catalogue-page button.order-details-size-button{appearance:none;display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:11px 14px;border:1px solid #e0d2e6;border-radius:11px;background:#fff;color:#26142d;box-shadow:none;cursor:pointer;font-family:inherit;transition:border-color .15s ease,background-color .15s ease,color .15s ease}
+.order-details-catalogue-page button.order-details-size-button strong{font-weight:800;font-size:16px;line-height:1.2;color:inherit}
+.order-details-catalogue-page .order-details-size-dash{font-size:16px;font-weight:500;color:#b4a9b9}
+.order-details-catalogue-page .order-details-size-stock{font-size:16px;font-weight:600;line-height:1.2;color:#9a8fa3}
+.order-details-catalogue-page button.order-details-size-button:hover:not(:disabled),.order-details-catalogue-page button.order-details-size-button:focus-visible{border-color:#772185;outline:none;background:#faf5fb}
+.order-details-catalogue-page button.order-details-size-button.selected{border-color:#7b1488;background:#f8ecfa;box-shadow:inset 0 0 0 1px #7b1488}
+.order-details-catalogue-page button.order-details-size-button.selected .order-details-size-stock{color:#8d7097}
+.order-details-catalogue-page button.order-details-size-button:disabled{cursor:not-allowed;opacity:.43;background:#f7f5f8}
+.order-details-catalogue-page .uniform-order-actions{gap:10px}
+@media(max-width:520px){.order-details-catalogue-page .order-details-size-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.order-details-catalogue-page button.order-details-size-button{gap:6px;min-height:49px;padding:9px 6px}.order-details-catalogue-page button.order-details-size-button strong,.order-details-catalogue-page .order-details-size-stock{font-size:14px}}
+@media(max-width:340px){.order-details-catalogue-page .order-details-size-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
