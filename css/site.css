@@ -7405,3 +7405,11 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .uniform-selected-highlights h3{font-size:14px;font-weight:800;margin:0 0 9px}
 .retail-variant-highlights{margin:12px 0 16px}
 .retail-variant-highlights .ready-stock-highlights{margin:10px 0}
+
+/* v224: Optional delivery address search on Account and Checkout only. */
+.saved-address-header-actions{display:flex;align-items:center;gap:8px}
+.saved-address-header-actions .address-search-toggle{display:inline-grid;place-items:center;width:36px;height:36px;min-width:36px;padding:0;border:1px solid #e3d4e6;border-radius:8px;background:transparent;color:#691478;cursor:pointer}
+.saved-address-header-actions .address-search-toggle svg{width:19px;height:19px}
+.saved-address-search{margin:0 0 12px}
+.saved-address-search input{width:100%;height:40px;border:1px solid #dcd0df;border-radius:8px;padding:8px 11px;background:white;color:#241829;font:inherit}
+.saved-address-search input:focus{outline:2px solid rgba(105,20,118,.18);border-color:#691478}
