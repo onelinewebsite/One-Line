@@ -2,6 +2,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-one-line-public","Access-Control-Allow-Methods":"POST, OPTIONS"}
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"content-type":"application/json"}})
+// This catalogue category is a read-only showcase, not a purchasable catalogue.
+const DISPLAY_ONLY_CATEGORY_ID='967a85d4-52dd-467f-b8c1-db68dc8dff9f'
 const secretKey=()=>{const packed=Deno.env.get('SUPABASE_SECRET_KEYS');if(packed){try{const obj=JSON.parse(packed);if(obj.default)return obj.default;const first=Object.values(obj)[0];if(first)return String(first)}catch{}}return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}
 const admin=()=>createClient(Deno.env.get('SUPABASE_URL')!,secretKey(),{auth:{persistSession:false,autoRefreshToken:false}})
 const hashToken=async(token:string)=>{const bytes=new TextEncoder().encode(token);const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('')}
@@ -27,6 +29,7 @@ function uniformRate(v:any,row:any,itemRate:any=null){const sr=row?.rate!==undef
 async function validateUniformOrder(db:any,item:any){
   const design=structuredClone(item?.design||{}),itemId=String(design.itemId||'');if(!itemId)throw new Error('Uniform item is missing. Add it to cart again.');
   const q=await db.from('custom_catalog_items').select('*').eq('id',itemId).maybeSingle();if(q.error)throw q.error;if(!q.data||q.data.active===false)throw new Error('This uniform item is no longer available.');
+  if(String(q.data.category_id||'').toLowerCase()===DISPLAY_ONLY_CATEGORY_ID)throw new Error('This item is for display only and cannot be ordered.');
   const categoryResult=await db.from('custom_catalog_categories').select('catalogue_section').eq('id',q.data.category_id).single();if(categoryResult.error)throw categoryResult.error;design.catalogueSection=categoryResult.data?.catalogue_section==='ready'?'ready':'custom';
   const cfg=uniformConfig(q.data),available=[...(Array.isArray(cfg.top)?cfg.top:[]),...(Array.isArray(cfg.bottom)?cfg.bottom:[])].filter((v:any)=>v?.enabled===true&&(uniformVariantTotal(v)>0||(v.sizes||[]).some((r:any)=>r.unlimited))),availableMap=new Map(available.map((v:any)=>[String(v.id),v]));
   const requestedRaw=Array.isArray(design.selectedItems)?design.selectedItems:[],requestedIds:string[]=[...new Set<string>(requestedRaw.map((v:any)=>String(v?.id||'')).filter(Boolean))],selected=requestedIds.map((id:string)=>availableMap.get(id)).filter(Boolean) as any[];
@@ -250,6 +253,7 @@ Deno.serve(async(req)=>{
       const rows=await db.from('custom_catalog_items').select('id,category_id').in('id',guardedIds)
       if(rows.error)throw rows.error
       if((rows.data||[]).length!==guardedIds.length)throw new Error('One of the ordered items is no longer available.')
+      if((rows.data||[]).some((x:any)=>String(x.category_id||'').toLowerCase()===DISPLAY_ONLY_CATEGORY_ID))throw new Error('Order Details items are for display only and cannot be ordered.')
       const catIds=[...new Set((rows.data||[]).map((x:any)=>x.category_id).filter(Boolean))]
       const cats=await db.from('custom_catalog_categories').select('id,access_restricted').in('id',catIds)
       if(cats.error)throw cats.error

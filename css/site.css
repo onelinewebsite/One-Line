@@ -7431,3 +7431,10 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .order-details-catalogue-page .uniform-order-actions{gap:10px}
 @media(max-width:520px){.order-details-catalogue-page .order-details-size-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.order-details-catalogue-page button.order-details-size-button{gap:6px;min-height:49px;padding:9px 6px}.order-details-catalogue-page button.order-details-size-button strong,.order-details-catalogue-page .order-details-size-stock{font-size:14px}}
 @media(max-width:340px){.order-details-catalogue-page .order-details-size-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* v226: Custom Catalogue / Order Details is a read-only stock showcase. */
+.order-details-catalogue-page .order-details-size-display{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:11px 14px;border:1px solid #e0d2e6;border-radius:11px;background:#fff;color:#26142d;box-shadow:none;cursor:default;font-family:inherit}
+.order-details-catalogue-page .order-details-size-display strong{font-weight:800;font-size:16px;line-height:1.2;color:inherit}
+.order-details-catalogue-page .order-details-size-display .order-details-size-stock{font-weight:600;color:#9a8fa3}
+
+@media(max-width:520px){.order-details-catalogue-page .order-details-size-display{gap:6px;min-height:49px;padding:9px 6px}.order-details-catalogue-page .order-details-size-display strong{font-size:14px}}
