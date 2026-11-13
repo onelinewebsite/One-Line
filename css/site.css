@@ -7438,3 +7438,7 @@ html body .product-card .product-image-wrap .product-slide img,html body .custom
 .order-details-catalogue-page .order-details-size-display .order-details-size-stock{font-weight:600;color:#9a8fa3}
 
 @media(max-width:520px){.order-details-catalogue-page .order-details-size-display{gap:6px;min-height:49px;padding:9px 6px}.order-details-catalogue-page .order-details-size-display strong{font-size:14px}}
+
+/* v227: selectable size/stock boxes preview ONE unit price; purchasing stays disabled. */
+.order-details-catalogue-page .order-details-size-button.selected{border-color:#7b1488;background:#f8ecfa;box-shadow:inset 0 0 0 1px #7b1488}
+.order-details-catalogue-page .order-details-size-button.selected .order-details-size-stock{color:#9888a0}
